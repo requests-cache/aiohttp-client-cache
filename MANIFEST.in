@@ -1,0 +1,12 @@
+include LICENSE README.rst HISTORY.rst CONTRIBUTORS.rst
+include *.py
+recursive-include tests *.py
+recursive-include examples *.py
+recursive-include docs *
+recursive-exclude docs *.pyc
+recursive-exclude docs *.pyo
+prune docs/_build
+prune temp/*
+
+
+
