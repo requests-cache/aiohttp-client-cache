@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Path hack
 import os, sys
 
@@ -21,7 +20,6 @@ from requests import Request
 
 import requests_cache
 from requests_cache import CachedSession
-from requests_cache.compat import bytes, str, is_py3
 
 CACHE_BACKEND = 'sqlite'
 CACHE_NAME = 'requests_cache_test'
@@ -212,10 +210,7 @@ class CacheTestCase(unittest.TestCase):
         d1 = json.dumps({'param1': 'test1'})
         d2 = json.dumps({'param1': 'test1', 'param2': 'test2'})
         d3 = str('some unicode data')
-        if is_py3:
-            bin_data = bytes('some binary data', 'utf8')
-        else:
-            bin_data = bytes('some binary data')
+        bin_data = bytes('some binary data', 'utf8')
 
         for d in (d1, d2, d3):
             self.assertEqual(self.post(d)['data'], d)
