@@ -23,6 +23,7 @@ from .storage.gridfspickledict import GridFSPickleDict
 class GridFSCache(BaseCache):
     """ ``gridfs`` cache backend.
     """
+
     def __init__(self, db_name, **options):
         """
         :param db_name: database name
@@ -31,4 +32,3 @@ class GridFSCache(BaseCache):
         super(GridFSCache, self).__init__(**options)
         self.responses = GridFSPickleDict(db_name, options.get('connection'))
         self.keys_map = MongoDict(db_name, 'http_redirects', self.responses.connection)
-

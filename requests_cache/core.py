@@ -32,10 +32,17 @@ class CachedSession(OriginalSession):
     """ Requests ``Sessions`` with caching support.
     """
 
-    def __init__(self, cache_name='cache', backend=None, expire_after=None,
-                 allowable_codes=(200,), allowable_methods=('GET',),
-                 filter_fn=lambda r: True, old_data_on_error=False,
-                 **backend_options):
+    def __init__(
+        self,
+        cache_name='cache',
+        backend=None,
+        expire_after=None,
+        allowable_codes=(200,),
+        allowable_methods=('GET',),
+        filter_fn=lambda r: True,
+        old_data_on_error=False,
+        **backend_options,
+    ):
         """
         :param cache_name: for ``sqlite`` backend: cache file will start with this prefix,
                            e.g ``cache.sqlite``
@@ -85,8 +92,7 @@ class CachedSession(OriginalSession):
         super(CachedSession, self).__init__()
 
     def send(self, request, **kwargs):
-        if (self._is_cache_disabled
-            or request.method not in self._cache_allowable_methods):
+        if self._is_cache_disabled or request.method not in self._cache_allowable_methods:
             response = super(CachedSession, self).send(request, **kwargs)
             response.from_cache = False
             return response
@@ -130,10 +136,7 @@ class CachedSession(OriginalSession):
 
     def request(self, method, url, params=None, data=None, **kwargs):
         response = super(CachedSession, self).request(
-            method, url,
-            _normalize_parameters(params),
-            _normalize_parameters(data),
-            **kwargs
+            method, url, _normalize_parameters(params), _normalize_parameters(data), **kwargs
         )
         if self._is_cache_disabled:
             return response
@@ -142,15 +145,16 @@ class CachedSession(OriginalSession):
 
         # If self._return_old_data_on_error is set,
         # responses won't always have the from_cache attribute.
-        if (hasattr(response, "from_cache") and not response.from_cache
-            and self._filter_fn(response) is not True):
+        if (
+            hasattr(response, "from_cache")
+            and not response.from_cache
+            and self._filter_fn(response) is not True
+        ):
             self.cache.delete(main_key)
             return response
 
         for r in response.history:
-            self.cache.add_key_mapping(
-                self.cache.create_key(r.request), main_key
-            )
+            self.cache.add_key_mapping(self.cache.create_key(r.request), main_key)
         return response
 
     @contextmanager
@@ -177,19 +181,24 @@ class CachedSession(OriginalSession):
         self.cache.remove_old_entries(datetime.utcnow() - self._cache_expire_after)
 
     def __repr__(self):
-        return (
-            "<CachedSession(%s('%s', ...), expire_after=%s, "
-            "allowable_methods=%s)>" % (
-                self.cache.__class__.__name__, self._cache_name,
-                self._cache_expire_after, self._cache_allowable_methods
-            )
+        return "<CachedSession(%s('%s', ...), expire_after=%s, " "allowable_methods=%s)>" % (
+            self.cache.__class__.__name__,
+            self._cache_name,
+            self._cache_expire_after,
+            self._cache_allowable_methods,
         )
 
 
-def install_cache(cache_name='cache', backend=None, expire_after=None,
-                  allowable_codes=(200,), allowable_methods=('GET',),
-                  filter_fn=lambda r: True, session_factory=CachedSession,
-                  **backend_options):
+def install_cache(
+    cache_name='cache',
+    backend=None,
+    expire_after=None,
+    allowable_codes=(200,),
+    allowable_methods=('GET',),
+    filter_fn=lambda r: True,
+    session_factory=CachedSession,
+    **backend_options,
+):
     """
     Installs cache for all ``Requests`` requests by monkey-patching ``Session``
 
@@ -209,7 +218,7 @@ def install_cache(cache_name='cache', backend=None, expire_after=None,
                 allowable_codes=allowable_codes,
                 allowable_methods=allowable_methods,
                 filter_fn=filter_fn,
-                **backend_options
+                **backend_options,
             )
 
     _patch_session_factory(_ConfiguredCachedSession)

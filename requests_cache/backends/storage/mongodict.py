@@ -27,8 +27,8 @@ except ImportError:
 class MongoDict(MutableMapping):
     """ MongoDict - a dictionary-like interface for ``mongo`` database
     """
-    def __init__(self, db_name,
-                 collection_name='mongo_dict_data', connection=None):
+
+    def __init__(self, db_name, collection_name='mongo_dict_data', connection=None):
         """
         :param db_name: database name (be careful with production databases)
         :param collection_name: collection name (default: mongo_dict_data)
@@ -79,6 +79,7 @@ class MongoDict(MutableMapping):
 class MongoPickleDict(MongoDict):
     """ Same as :class:`MongoDict`, but pickles values before saving
     """
+
     def __setitem__(self, key, item):
         super(MongoPickleDict, self).__setitem__(key, pickle.dumps(item))
 
