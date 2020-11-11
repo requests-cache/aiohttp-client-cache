@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Path hack
 import os, sys
+
 sys.path.insert(0, os.path.abspath('..'))
 
 try:
@@ -69,7 +70,6 @@ class MonkeyPatchTestCase(unittest.TestCase):
         self.assertTrue(isinstance(s, CachedSession))
 
     def test_passing_backend_instance_support(self):
-
         class MyCache(BaseCache):
             pass
 

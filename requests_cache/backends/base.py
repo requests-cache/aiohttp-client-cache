@@ -26,6 +26,7 @@ class BaseCache(object):
     To extend it you can provide dictionary-like objects for
     :attr:`keys_map` and :attr:`responses` or override public methods.
     """
+
     def __init__(self, *args, **kwargs):
         #: `key` -> `key_in_responses` mapping
         self.keys_map = {}
@@ -131,11 +132,27 @@ class BaseCache(object):
         session = requests.Session()
         return self.create_key(session.prepare_request(requests.Request('GET', url)))
 
-    _response_attrs = ['_content', 'url', 'status_code', 'cookies',
-                       'headers', 'encoding', 'request', 'reason', 'raw']
+    _response_attrs = [
+        '_content',
+        'url',
+        'status_code',
+        'cookies',
+        'headers',
+        'encoding',
+        'request',
+        'reason',
+        'raw',
+    ]
 
-    _raw_response_attrs = ['_original_response', 'decode_content', 'headers',
-                            'reason', 'status', 'strict', 'version']
+    _raw_response_attrs = [
+        '_original_response',
+        'decode_content',
+        'headers',
+        'reason',
+        'status',
+        'strict',
+        'version',
+    ]
 
     def reduce_response(self, response, seen=None):
         """ Reduce response object to make it compatible with ``pickle``
@@ -168,7 +185,9 @@ class BaseCache(object):
             for field in self._raw_response_attrs:
                 setattr(result, field, getattr(value, field, None))
             if result._original_response is not None:
-                setattr(result._original_response, "fp", None)  # _io.BufferedReader is not picklable
+                setattr(
+                    result._original_response, "fp", None
+                )  # _io.BufferedReader is not picklable
             value = result
         return value
 
@@ -190,7 +209,6 @@ class BaseCache(object):
         return result
 
     def _remove_ignored_parameters(self, request):
-
         def filter_ignored_parameters(data):
             return [(k, v) for k, v in data if k not in self._ignored_parameters]
 
@@ -208,6 +226,7 @@ class BaseCache(object):
                 body = urlencode(body)
             elif content_type == 'application/json':
                 import json
+
                 if not is_py2 and isinstance(body, bytes):
                     body = str(body, "utf8")  # TODO how to get body encoding?
                 body = json.loads(body)
