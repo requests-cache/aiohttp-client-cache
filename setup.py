@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import sys
 import os
 import glob
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
 
 if sys.argv[-1] == 'test':
@@ -24,7 +20,7 @@ setup(
     author='Roman Haritonov',
     author_email='reclosedev@gmail.com',
     url='https://github.com/reclosedev/requests-cache',
-    install_requires=['requests>=1.1.0'],
+    install_requires=['aiohttp'],
     keywords=['requests', 'cache', 'persistence'],
     license='BSD License',
     include_package_data=True,
