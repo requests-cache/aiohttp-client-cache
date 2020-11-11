@@ -1,9 +1,13 @@
-requests-cache
----------------
+aiohttp-client-cache
+--------------------
 
-Requests-cache is a transparent persistent cache for requests_ (version <= 0.14.2) library.
+aiohttp-client-cache is (or rather, will be) an async-compatible persistent cache for aiohttp_, adapted from requests-cache_.
 
-.. _requests: http://python-requests.org/
+This is a WIP and is not at all functional yet.
+
+.. _aiohttp: https://docs.aiohttp.org
+
+.. requests-cache: https://github.com/reclosedev/requests-cache
 
 .. image:: https://travis-ci.org/reclosedev/requests-cache.svg?branch=master
     :target: https://travis-ci.org/reclosedev/requests-cache
@@ -25,7 +29,7 @@ Just write:
 
     import requests
     import requests_cache
-    
+
     requests_cache.install_cache('demo_cache')
 
 And all responses with headers and cookies will be transparently cached to
@@ -36,7 +40,7 @@ And all responses with headers and cookies will be transparently cached to
 
     for i in range(10):
         requests.get('http://httpbin.org/delay/1')
-    
+
 It can be useful when you are creating some simple data scraper with constantly
 changing parsing logic or data format, and don't want to redownload pages or
 write complex error handling and persistence.
