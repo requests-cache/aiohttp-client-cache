@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
     requests_cache.backends.base
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7,10 +5,11 @@
     Contains BaseCache class which can be used as in-memory cache backend or
     extended to support persistence.
 """
-from datetime import datetime
-import hashlib
 from copy import copy
+from datetime import datetime
 from io import BytesIO
+import hashlib
+import json
 
 import requests
 
@@ -208,48 +207,35 @@ class BaseCache(object):
         result.history = tuple(self.restore_response(r, seen) for r in response.history)
         return result
 
-    def _remove_ignored_parameters(self, request):
-        def filter_ignored_parameters(data):
-            return [(k, v) for k, v in data if k not in self._ignored_parameters]
-
-        url = urlparse(request.url)
-        query = parse_qsl(url.query)
-        query = filter_ignored_parameters(query)
-        query = urlencode(query)
-        url = urlunparse((url.scheme, url.netloc, url.path, url.params, query, url.fragment))
-        body = request.body
-        content_type = request.headers.get('content-type')
-        if body and content_type:
-            if content_type == 'application/x-www-form-urlencoded':
-                body = parse_qsl(body)
-                body = filter_ignored_parameters(body)
-                body = urlencode(body)
-            elif content_type == 'application/json':
-                import json
-
-                if isinstance(body, bytes):
-                    body = str(body, "utf8")  # TODO how to get body encoding?
-                body = json.loads(body)
-                body = filter_ignored_parameters(sorted(body.items()))
-                body = json.dumps(body)
-        return url, body
-
-    def create_key(self, request):
+    def create_key(self, method, url, params=None, data=None, headers=None, **kwargs):
         if self._ignored_parameters:
-            url, body = self._remove_ignored_parameters(request)
-        else:
-            url, body = request.url, request.body
+            url, params, body = self._remove_ignored_parameters(url, params, data)
+
         key = hashlib.sha256()
-        key.update(_to_bytes(request.method.upper()))
-        key.update(_to_bytes(url))
-        if request.body:
-            key.update(_to_bytes(body))
-        else:
-            if self._include_get_headers and request.headers != _DEFAULT_HEADERS:
-                for name, value in sorted(request.headers.items()):
-                    key.update(_to_bytes(name))
-                    key.update(_to_bytes(value))
+        key.update(method.upper().encode())
+        key.update(url.encode())
+        key.update(_encode_dict(params))
+        key.update(_encode_dict(data))
+
+        if self._include_get_headers and headers != _DEFAULT_HEADERS:
+            for name, value in sorted(headers.items()):
+                key.update(name.encode())
+                key.update(value.encode())
         return key.hexdigest()
+
+    def _remove_ignored_parameters(self, url, params, data):
+        def filter_ignored_params(d):
+            return {k: v for k, v in d.items() if k not in self._ignored_parameters}
+        # Strip off any request params manually added to URL and add to `params`
+        u = urlparse(url)
+        if u.query:
+            query = parse_qsl(u.query)
+            params.update(query)
+            url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
+
+        params = filter_ignored_params(params)
+        data = filter_ignored_params(data)
+        return url, params, data
 
     def __str__(self):
         return 'keys: %s\nresponses: %s' % (self.keys_map, self.responses)
@@ -272,7 +258,6 @@ class _RawStore(object):
         return self._io_with_content_.read(chunk_size)
 
 
-def _to_bytes(s, encoding='utf-8'):
-    if isinstance(s, bytes):
-        return s
-    return bytes(s, encoding)
+def _encode_dict(d):
+    item_pairs = [f'{k}={v}' for k, v in sorted(d.items())]
+    return '&'.join(item_pairs).encode()
