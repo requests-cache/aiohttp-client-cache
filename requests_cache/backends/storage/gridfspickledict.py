@@ -24,9 +24,11 @@ except ImportError:
 
 from gridfs import GridFS
 
+
 class GridFSPickleDict(MutableMapping):
     """ MongoDict - a dictionary-like interface for ``mongo`` database
     """
+
     def __init__(self, db_name, connection=None):
         """
         :param db_name: database name (be careful with production databases)
@@ -70,4 +72,3 @@ class GridFSPickleDict(MutableMapping):
 
     def __str__(self):
         return str(dict(self.items()))
-
