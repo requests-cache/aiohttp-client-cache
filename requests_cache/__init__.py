@@ -25,14 +25,4 @@
 __docformat__ = 'restructuredtext'
 __version__ = '0.5.2'
 
-from .core import (
-    CachedSession,
-    install_cache,
-    uninstall_cache,
-    disabled,
-    enabled,
-    get_cache,
-    clear,
-    configure,
-    remove_expired_responses,
-)
+from .core import CachedSession
