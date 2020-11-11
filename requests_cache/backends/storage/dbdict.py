@@ -23,8 +23,6 @@ try:
 except ImportError:
     import pickle
 
-from requests_cache.compat import bytes
-
 
 class DbDict(MutableMapping):
     """ DbDict - a dictionary-like object for saving large datasets to `sqlite` database
@@ -159,11 +157,10 @@ class DbDict(MutableMapping):
 
 
 class DbPickleDict(DbDict):
-    """ Same as :class:`DbDict`, but pickles values before saving
-    """
+    """ Same as :class:`DbDict`, but pickles values before saving """
 
     def __setitem__(self, key, item):
-        super(DbPickleDict, self).__setitem__(key, sqlite.Binary(pickle.dumps(item)))
+        super().__setitem__(key, sqlite.Binary(pickle.dumps(item)))
 
     def __getitem__(self, key):
-        return pickle.loads(bytes(super(DbPickleDict, self).__getitem__(key)))
+        return pickle.loads(bytes(super().__getitem__(key)))

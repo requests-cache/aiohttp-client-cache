@@ -15,7 +15,6 @@ from requests import Session as OriginalSession
 from requests.hooks import dispatch_hook
 
 from requests_cache import backends
-from requests_cache.compat import basestring
 
 try:
     ver = tuple(map(int, requests.__version__.split(".")))
@@ -222,10 +221,6 @@ def install_cache(
             )
 
     _patch_session_factory(_ConfiguredCachedSession)
-
-
-# backward compatibility
-configure = install_cache
 
 
 def uninstall_cache():
