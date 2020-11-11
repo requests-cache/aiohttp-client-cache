@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Path hack
 import os, sys
+
 sys.path.insert(0, os.path.abspath('..'))
 
 try:
@@ -35,7 +36,6 @@ def httpbin(*suffix):
 
 
 class CacheTestCase(unittest.TestCase):
-
     def setUp(self):
         self.s = CachedSession(CACHE_NAME, backend=CACHE_BACKEND, fast_save=FAST_SAVE)
         self.s.cache.clear()
@@ -93,6 +93,7 @@ class CacheTestCase(unittest.TestCase):
             def hook_func(r, *args, **kwargs):
                 state[hook] += 1
                 return r
+
             n = 5
             for i in range(n):
                 r = self.s.get(httpbin('get'), hooks={hook: hook_func})
@@ -107,6 +108,7 @@ class CacheTestCase(unittest.TestCase):
                 self.assert_(r.from_cache, True)
             state[hook] += 1
             return r
+
         n = 5
         for i in range(n):
             r = self.s.get(httpbin('get'), hooks={hook: hook_func})
@@ -138,8 +140,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_enabled(self):
         url = httpbin('get')
-        options = dict(cache_name=CACHE_NAME, backend=CACHE_BACKEND,
-                       fast_save=FAST_SAVE)
+        options = dict(cache_name=CACHE_NAME, backend=CACHE_BACKEND, fast_save=FAST_SAVE)
         with requests_cache.enabled(**options):
             r = requests.get(url)
             self.assertFalse(getattr(r, 'from_cache', False))
@@ -152,8 +153,10 @@ class CacheTestCase(unittest.TestCase):
     def test_content_and_cookies(self):
         requests_cache.install_cache(CACHE_NAME, CACHE_BACKEND)
         s = requests.session()
+
         def js(url):
             return json.loads(s.get(url).text)
+
         r1 = js(httpbin('cookies/set/test1/test2'))
         with requests_cache.disabled():
             r2 = js(httpbin('cookies'))
@@ -169,11 +172,13 @@ class CacheTestCase(unittest.TestCase):
 
     def test_response_history(self):
         r1 = self.s.get(httpbin('relative-redirect/3'))
+
         def test_redirect_history(url):
             r2 = self.s.get(url)
             self.assertTrue(r2.from_cache)
             for r11, r22 in zip(r1.history, r2.history):
                 self.assertEqual(r11.url, r22.url)
+
         test_redirect_history(httpbin('relative-redirect/3'))
         test_redirect_history(httpbin('relative-redirect/2'))
         r3 = requests.get(httpbin('relative-redirect/1'))
@@ -189,8 +194,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_post_params(self):
         # issue #2
-        self.s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                               allowable_methods=('GET', 'POST'))
+        self.s = CachedSession(CACHE_NAME, CACHE_BACKEND, allowable_methods=('GET', 'POST'))
 
         d = {'param1': 'test1'}
         for _ in range(2):
@@ -204,8 +208,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_post_data(self):
         # issue #2, raw payload
-        self.s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                               allowable_methods=('GET', 'POST'))
+        self.s = CachedSession(CACHE_NAME, CACHE_BACKEND, allowable_methods=('GET', 'POST'))
         d1 = json.dumps({'param1': 'test1'})
         d2 = json.dumps({'param1': 'test1', 'param2': 'test2'})
         d3 = str('some unicode data')
@@ -219,8 +222,7 @@ class CacheTestCase(unittest.TestCase):
             r = self.s.post(httpbin('post'), data=d)
             self.assert_(hasattr(r, 'from_cache'))
 
-        self.assertEqual(self.post(bin_data)['data'],
-                         bin_data.decode('utf8'))
+        self.assertEqual(self.post(bin_data)['data'], bin_data.decode('utf8'))
         r = self.s.post(httpbin('post'), data=bin_data)
         self.assert_(hasattr(r, 'from_cache'))
 
@@ -228,7 +230,7 @@ class CacheTestCase(unittest.TestCase):
         for _ in range(5):
             p = {'arg1': 'value1'}
             r = self.s.get(httpbin('get'), params=p)
-            self.assert_(self.s.cache.has_url( httpbin('get?arg1=value1')))
+            self.assert_(self.s.cache.has_url(httpbin('get?arg1=value1')))
 
     @unittest.skipIf(sys.version_info < (2, 7), "No https in 2.6")
     def test_https_support(self):
@@ -280,8 +282,7 @@ class CacheTestCase(unittest.TestCase):
     def test_post_parameters_normalization(self):
         params = {"a": "a", "b": ["1", "2", "3"], "c": "4"}
         url = httpbin("post")
-        s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                          allowable_methods=('GET', 'POST'))
+        s = CachedSession(CACHE_NAME, CACHE_BACKEND, allowable_methods=('GET', 'POST'))
         self.assertFalse(s.post(url, data=params).from_cache)
         self.assertTrue(s.post(url, data=params).from_cache)
         self.assertTrue(s.post(url, data=sorted(params.items())).from_cache)
@@ -332,7 +333,9 @@ class CacheTestCase(unittest.TestCase):
         datetime_mock.utcnow.return_value = datetime.utcnow()
         expire_after = 100
         url = httpbin("get")
-        s = CachedSession(CACHE_NAME, CACHE_BACKEND, old_data_on_error=True, expire_after=expire_after)
+        s = CachedSession(
+            CACHE_NAME, CACHE_BACKEND, old_data_on_error=True, expire_after=expire_after
+        )
         header = "X-Tst"
 
         def get(n):
@@ -370,8 +373,7 @@ class CacheTestCase(unittest.TestCase):
         usual_param = "some"
         params = {ignored_param: "1", usual_param: "1"}
 
-        s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                          ignored_parameters=[ignored_param])
+        s = CachedSession(CACHE_NAME, CACHE_BACKEND, ignored_parameters=[ignored_param])
 
         r = s.get(url, params=params)
         self.assertIn(ignored_param, r.json()['args'].keys())
@@ -391,9 +393,12 @@ class CacheTestCase(unittest.TestCase):
         usual_param = "some"
         d = {ignored_param: "1", usual_param: "1"}
 
-        s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                          allowable_methods=('POST'),
-                          ignored_parameters=[ignored_param])
+        s = CachedSession(
+            CACHE_NAME,
+            CACHE_BACKEND,
+            allowable_methods=('POST'),
+            ignored_parameters=[ignored_param],
+        )
 
         r = s.post(url, data=d)
         self.assertIn(ignored_param, r.json()['form'].keys())
@@ -413,9 +418,12 @@ class CacheTestCase(unittest.TestCase):
         usual_param = "some"
         d = {ignored_param: "1", usual_param: "1"}
 
-        s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                          allowable_methods=('POST'),
-                          ignored_parameters=[ignored_param])
+        s = CachedSession(
+            CACHE_NAME,
+            CACHE_BACKEND,
+            allowable_methods=('POST'),
+            ignored_parameters=[ignored_param],
+        )
 
         r = s.post(url, json=d)
         self.assertIn(ignored_param, json.loads(r.json()['data']).keys())
@@ -434,9 +442,12 @@ class CacheTestCase(unittest.TestCase):
         ignored_param = "ignored"
         raw_data = "raw test data"
 
-        s = CachedSession(CACHE_NAME, CACHE_BACKEND,
-                          allowable_methods=('POST'),
-                          ignored_parameters=[ignored_param])
+        s = CachedSession(
+            CACHE_NAME,
+            CACHE_BACKEND,
+            allowable_methods=('POST'),
+            ignored_parameters=[ignored_param],
+        )
 
         self.assertFalse(s.post(url, data=raw_data).from_cache)
         self.assertTrue(s.post(url, data=raw_data).from_cache)
@@ -470,7 +481,9 @@ class CacheTestCase(unittest.TestCase):
     def test_cache_unpickle_errors(self):
         url = httpbin('get?q=1')
         self.assertFalse(self.s.get(url).from_cache)
-        with mock.patch("requests_cache.backends.base.BaseCache.restore_response", side_effect=TypeError):
+        with mock.patch(
+            "requests_cache.backends.base.BaseCache.restore_response", side_effect=TypeError
+        ):
             resp = self.s.get(url)
             self.assertFalse(resp.from_cache)
             self.assertEquals(resp.json()["args"]["q"], "1")
