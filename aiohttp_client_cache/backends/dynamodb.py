@@ -3,21 +3,10 @@ from .storage.dynamodbdict import DynamoDbDict
 
 
 class DynamoDbCache(BaseCache):
-    """DynamoDB cache backend."""
+    """DynamoDB cache backend"""
 
-    def __init__(self, table_name='requests-cache', **options):
-        """
-        :param namespace: dynamodb table name (default: ``'requests-cache'``)
-        :param connection: (optional) ``boto3.resource('dynamodb')``
-        """
-        super().__init__(**options)
-        self.responses = DynamoDbDict(
-            table_name,
-            'responses',
-            options.get('connection'),
-            options.get('endpont_url'),
-            options.get('region_name'),
-            options.get('read_capacity_units'),
-            options.get('write_capacity_units'),
-        )
-        self.keys_map = DynamoDbDict(table_name, 'urls', self.responses.connection)
+    def __init__(self, cache_name: str, *args, **kwargs):
+        """See :py:class:`.DynamoDbDict` for backend-specific options"""
+        super().__init__(cache_name, *args, **kwargs)
+        self.responses = DynamoDbDict(cache_name, 'responses', **kwargs)
+        self.keys_map = DynamoDbDict(cache_name, 'urls', self.responses.connection)

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union
 
 from dateutil.parser import parse as parse_date
 from io import BytesIO
@@ -55,7 +55,7 @@ class BaseCache:
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
 
-    def is_cacheable(self, response) -> bool:
+    def is_cacheable(self, response: Union[ClientResponse, CachedResponse]) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         return all(
             [
@@ -71,7 +71,7 @@ class BaseCache:
         time_elapsed = datetime.utcnow() - parse_date(timestamp)
         return self.expire_after and time_elapsed >= self.expire_after
 
-    def save_response(self, key: str, response: ClientResponse):
+    async def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
 
         Args:
@@ -81,11 +81,14 @@ class BaseCache:
         if not self.is_cacheable(response):
             return
 
+        response = await CachedResponse.from_client_response(response)
+
         self.responses[key] = self.reduce_response(response), datetime.utcnow()
         # TODO: properly handle history
         # Alias any redirect requests to the same cache key
         for r in response.history:
             self.add_key_mapping(self.create_key(r.request), key)
+        # result.history = tuple(self.reduce_response(r, seen) for r in response.history)
 
     def add_key_mapping(self, new_key: str, key_to_response: str):
         """
@@ -98,7 +101,7 @@ class BaseCache:
         """
         self.keys_map[new_key] = key_to_response
 
-    def get_response(self, key: str) -> Optional[CachedResponse]:
+    async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
         otherwise returns ``None```
 
@@ -118,7 +121,7 @@ class BaseCache:
             self.delete(key)
             response.is_expired = True
 
-        return self.restore_response(response)
+        return response
 
     def clear(self):
         """Clear cache"""
@@ -203,46 +206,6 @@ class BaseCache:
         params = filter_ignored_params(params)
         data = filter_ignored_params(data)
         return url, params, data
-
-    # TODO: replace these three methods with CachedResponse
-    def reduce_response(self, response: ClientResponse, seen=None):
-        """Reduce response object to make it compatible with ``pickle``"""
-        seen = seen or {}
-        if id(response) in seen:
-            return seen[id(response)]
-
-        result = _Store()
-        for field in RESPONSE_ATTRS:
-            setattr(result, field, getattr(response, field))
-        seen[id(response)] = result
-        result.history = tuple(self.reduce_response(r, seen) for r in response.history)
-        return result
-
-    # def _picklable_field(self, response, name):
-    #     value = getattr(response, name)
-    #     if name == 'request':
-    #         value = copy(value)
-    #         value.hooks = []
-    #     elif name == 'raw':
-    #         result = _RawStore()
-    #         for field in RAW_RESPONSE_ATTRS:
-    #             setattr(result, field, getattr(value, field, None))
-    #         value = result
-    #     return value
-
-    def restore_response(self, response, seen=None):
-        """Restore response object after unpickling"""
-        seen = seen or {}
-        if id(response) in seen:
-            return seen[id(response)]
-
-        result = ClientResponse(response.method, response.url)
-        for field in RESPONSE_ATTRS:
-            setattr(result, field, getattr(response, field, None))
-        result.raw._cached_content_ = result.content
-        seen[id(response)] = result
-        result.history = tuple(self.restore_response(r, seen) for r in response.history)
-        return result
 
     def __str__(self):
         return f'keys: {list(self.keys_map.keys())}\nresponses: {list(self.responses.keys())}'
