@@ -1,78 +1,50 @@
-"""Classes and functions for cache persistence"""
+from aiohttp_client_cache.backends.base import BaseCache
 
-
-from .base import BaseCache
-
-registry = {
-    'memory': BaseCache,
-}
-
-_backend_dependencies = {
-    'sqlite': 'sqlite3',
-    'mongo': 'pymongo',
-    'redis': 'redis',
-    'dynamodb': 'dynamodb',
-}
-
+# Import all backends for which dependencies have been installed
 try:
     # Heroku doesn't allow the SQLite3 module to be installed
     from .sqlite import DbCache
-
-    registry['sqlite'] = DbCache
 except ImportError:
     DbCache = None
-
 try:
     from .mongo import MongoCache
-
-    registry['mongo'] = registry['mongodb'] = MongoCache
 except ImportError:
     MongoCache = None
-
-
 try:
     from .gridfs import GridFSCache
-
-    registry['gridfs'] = GridFSCache
 except ImportError:
     GridFSCache = None
-
 try:
     from .redis import RedisCache
-
-    registry['redis'] = RedisCache
 except ImportError:
     RedisCache = None
-
 try:
     from .dynamodb import DynamoDbCache
-
-    registry['dynamodb'] = DynamoDbCache
 except ImportError:
     DynamoDbCache = None
 
+BACKEND_CLASSES = {
+    'dynamodb': DynamoDbCache,
+    'gridfs': GridFSCache,
+    'memory': BaseCache,
+    'mongo': MongoCache,
+    'mongodb': MongoCache,
+    'redis': RedisCache,
+    'sqlite': DbCache,
+}
 
-def create_backend(backend_name, cache_name, options):
+
+def create_backend(backend_name, cache_name, **options):
     if isinstance(backend_name, BaseCache):
         return backend_name
+    if not backend_name:
+        backend_name = 'sqlite' if BACKEND_CLASSES['sqlite'] else 'memory'
+    backend_name = backend_name.lower()
 
-    if backend_name is None:
-        backend_name = _get_default_backend_name()
-    try:
-        return registry[backend_name](cache_name, **options)
-    except KeyError:
-        if backend_name in _backend_dependencies:
-            raise ImportError(
-                'You must install the python package: %s' % _backend_dependencies[backend_name]
-            )
-        else:
-            raise ValueError(
-                'Unsupported backend "%s" try one of: %s'
-                % (backend_name, ', '.join(registry.keys()))
-            )
+    if backend_name not in BACKEND_CLASSES:
+        raise ValueError(f'Invalid backend: {backend_name}')
+    backend_class = BACKEND_CLASSES.get(backend_name)
+    if not backend_class:
+        raise ImportError(f'Dependencies not installed for backend {backend_name}')
 
-
-def _get_default_backend_name():
-    if 'sqlite' in registry:
-        return 'sqlite'
-    return 'memory'
+    return backend_class(cache_name, **options)

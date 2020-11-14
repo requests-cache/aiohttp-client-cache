@@ -49,7 +49,7 @@ class CachedSession(OriginalSession):
                                    Useful when requesting the same resource through different
                                    credentials or access tokens, passed as parameters.
         """
-        self.cache = backends.create_backend(backend, cache_name, backend_options)
+        self.cache = backends.create_backend(backend, cache_name, **backend_options)
         self._cache_name = cache_name
 
         if expire_after is not None and not isinstance(expire_after, timedelta):
