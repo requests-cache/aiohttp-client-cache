@@ -1,6 +1,6 @@
 import json
 from http.cookies import SimpleCookie
-from typing import Mapping, Any, Optional, Dict
+from typing import Mapping, Any, Optional, Dict, Iterable
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError
@@ -32,7 +32,7 @@ class CachedResponse:
     content: Any = attr.ib(default=None)
     content_disposition: ContentDisposition = attr.ib(default=None)
     cookies: SimpleCookie[str] = attr.ib(default=None)
-    history: Any = attr.ib(default=None)
+    history: Iterable = attr.ib(default=None)
     is_expired: bool = attr.ib(default=False)
     headers: Mapping = attr.ib(factory=dict)
 
