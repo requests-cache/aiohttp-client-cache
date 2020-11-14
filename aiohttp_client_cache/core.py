@@ -1,6 +1,6 @@
 """Core functions for cache configuration"""
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Callable, Union
 
 from aiohttp import ClientSession as OriginalSession
