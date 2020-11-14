@@ -68,13 +68,8 @@ class CachedSession(OriginalSession):
     async def request(self, method, url, **kwargs):
         cache_key = self.cache.create_key(method, url, **kwargs)
 
-        # Attempt to fetch cached response before sending request
-        try:
-            response, timestamp = self.cache.get_response_and_time(cache_key)
-        except (ImportError, TypeError):
-            response, timestamp = None, None
-
-        # If the cached response is expired, delete it and fetch new one
+        # Attempt to fetch cached response; if expired, delete it and fetch new one
+        response, timestamp = self.cache.get_response_and_time(cache_key)
         if response is None or self._is_expired(timestamp):
             self.cache.delete(cache_key)
             return await self.send_and_cache_request(method, url, cache_key, **kwargs)
