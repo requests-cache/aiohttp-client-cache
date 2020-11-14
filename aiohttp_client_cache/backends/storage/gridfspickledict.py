@@ -1,32 +1,14 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.mongodict
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Dictionary-like objects for saving large data sets to ``mongodb`` database
-"""
-
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-# Use PyMongo 3 if present
-try:
-    from pymongo import MongoClient
-except ImportError:
-    from pymongo import Connection as MongoClient
+import pickle
+from collections.abc import MutableMapping
 
 from gridfs import GridFS
+from pymongo import MongoClient
+
+from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
 
 
 class GridFSPickleDict(MutableMapping):
-    """MongoDict - a dictionary-like interface for ``mongo`` database"""
+    """A dictionary-like interface for MongoDB GridFS"""
 
     def __init__(self, db_name, connection=None):
         """
@@ -51,7 +33,7 @@ class GridFSPickleDict(MutableMapping):
 
     def __setitem__(self, key, item):
         self.__delitem__(key)
-        self.fs.put(pickle.dumps(item), **{'_id': key})
+        self.fs.put(pickle.dumps(item, protocol=PICKLE_PROTOCOL), **{'_id': key})
 
     def __delitem__(self, key):
         res = self.fs.find_one({'_id': key})

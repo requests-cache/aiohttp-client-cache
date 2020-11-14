@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.sqlite
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    ``sqlite3`` cache backend
-"""
 from .base import BaseCache
 from .storage.dbdict import DbDict, DbPickleDict
 
@@ -13,7 +5,7 @@ from .storage.dbdict import DbDict, DbPickleDict
 class DbCache(BaseCache):
     """sqlite cache backend.
 
-    Reading is fast, saving is a bit slower. It can store big amount of data
+    Reading is fast, saving is a bit slower. It can store a large amount of data
     with low memory usage.
     """
 

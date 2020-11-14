@@ -1,17 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.mongo
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    ``mongo`` cache backend
-"""
 from .base import BaseCache
 from .storage.mongodict import MongoDict, MongoPickleDict
 
 
 class MongoCache(BaseCache):
-    """``mongo`` cache backend."""
+    """MongoDB cache backend"""
 
     def __init__(self, db_name='requests-cache', **options):
         """

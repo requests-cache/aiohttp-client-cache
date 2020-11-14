@@ -1,26 +1,14 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.dynamodbdict
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+from collections.abc import MutableMapping
+import pickle
 
-    Dictionary-like objects for saving large data sets to ``dynamodb`` key-store
-"""
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
+
+from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
 
 
 class DynamoDbDict(MutableMapping):
-    """DynamoDbDict - a dictionary-like interface for ``dynamodb`` key-stores"""
+    """A dictionary-like interface for a DynamoDB key-store"""
 
     def __init__(
         self,
@@ -91,7 +79,11 @@ class DynamoDbDict(MutableMapping):
         return pickle.loads(result['Item']['value'].value)
 
     def __setitem__(self, key, item):
-        item = {'namespace': self._self_key, 'key': str(key), 'value': pickle.dumps(item)}
+        item = {
+            'namespace': self._self_key,
+            'key': str(key),
+            'value': pickle.dumps(item, protocol=PICKLE_PROTOCOL),
+        }
         self._table.put_item(Item=item)
 
     def __delitem__(self, key):

@@ -1,14 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Path hack
 import os, sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 import requests
 from requests.sessions import Session as OriginalSession
