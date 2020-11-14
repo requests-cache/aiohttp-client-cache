@@ -7,7 +7,7 @@ try:
 except ImportError:
     DbCache = None
 try:
-    from .mongo import MongoCache
+    from .mongo import MongoCache, MongoDict
 except ImportError:
     MongoCache = None
 try:
@@ -32,9 +32,10 @@ BACKEND_CLASSES = {
     'redis': RedisCache,
     'sqlite': DbCache,
 }
+PICKLE_PROTOCOL = 4
 
 
-def create_backend(backend_name, cache_name, *args, **kwargs):
+def create_backend(backend_name, *args, **kwargs):
     if isinstance(backend_name, BaseCache):
         return backend_name
     if not backend_name:
@@ -47,4 +48,4 @@ def create_backend(backend_name, cache_name, *args, **kwargs):
     if not backend_class:
         raise ImportError(f'Dependencies not installed for backend {backend_name}')
 
-    return backend_class(cache_name, **options)
+    return backend_class(*args, **kwargs)
