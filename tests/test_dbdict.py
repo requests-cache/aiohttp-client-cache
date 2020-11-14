@@ -1,15 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Path hack
 import os, sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
+import unittest
 from threading import Thread
 from tests.test_custom_dict import BaseCustomDictTestCase
 from aiohttp_client_cache.backends.storage.dbdict import DbDict, DbPickleDict
@@ -89,7 +82,3 @@ class DbdictTestCase(BaseCustomDictTestCase, unittest.TestCase):
         do_test_for(d1)
         do_test_for(d2)
         do_test_for(DbDict(self.NAMESPACE))
-
-
-if __name__ == '__main__':
-    unittest.main()
