@@ -462,7 +462,7 @@ class CacheTestCase(unittest.TestCase):
         s.get(httpbin(ok_url))
         self.assertEqual(len(s.cache.responses), 3)
         self.assertEqual(len(s.cache.keys_map), 3)
-        s.remove_expired_responses()
+        s.delete_expired_responses()
         self.assertEqual(len(s.cache.responses), 1)
         self.assertEqual(len(s.cache.keys_map), 0)
         self.assertIn(ok_url, list(s.cache.responses.values())[0][0].url)
