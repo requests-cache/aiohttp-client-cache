@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Tuple, Optional, Union
+from typing import Optional, Union
 
-from dateutil.parser import parse as parse_date
 from io import BytesIO
 import hashlib
 from urllib.parse import urlparse, parse_qsl, urlunparse
@@ -60,15 +59,16 @@ class BaseCache:
         return all(
             [
                 not self.disabled,
+                not self.is_expired(response),
                 response.status in self.allowable_codes,
                 response.method in self.allowable_methods,
                 self.filter_fn(response),
             ]
         )
 
-    def is_expired(self, timestamp: str) -> bool:
+    def is_expired(self, response: CachedResponse) -> bool:
         """Determine if a given timestamp is expired"""
-        time_elapsed = datetime.utcnow() - parse_date(timestamp)
+        time_elapsed = datetime.utcnow() - response.created_at
         return self.expire_after and time_elapsed >= self.expire_after
 
     async def save_response(self, key: str, response: ClientResponse):
@@ -82,24 +82,11 @@ class BaseCache:
             return
 
         response = await CachedResponse.from_client_response(response)
+        self.responses[key] = response
 
-        self.responses[key] = self.reduce_response(response), datetime.utcnow()
-        # TODO: properly handle history
         # Alias any redirect requests to the same cache key
         for r in response.history:
-            self.add_key_mapping(self.create_key(r.request), key)
-        # result.history = tuple(self.reduce_response(r, seen) for r in response.history)
-
-    def add_key_mapping(self, new_key: str, key_to_response: str):
-        """
-        Adds mapping of `new_key` to `key_to_response` to make it possible to
-        associate many keys with single response
-
-        Args:
-            new_key: new key (e.g. url from redirect)
-            key_to_response: key which can be found in :attr:`responses`
-        """
-        self.keys_map[new_key] = key_to_response
+            self.add_key_mapping(self.create_key(r.method, r.url), key)
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -112,16 +99,27 @@ class BaseCache:
         try:
             if key not in self.responses:
                 key = self.keys_map[key]
-            response, timestamp = self.responses[key]
+            response = self.responses[key]
         except (KeyError, TypeError):
             return None
 
         # If the item is expired or filtered out, delete it from the cache
-        if self.is_expired(timestamp) or not self.is_cacheable(response):
+        if not self.is_cacheable(response):
             self.delete(key)
             response.is_expired = True
 
         return response
+
+    def add_key_mapping(self, new_key: str, key_to_response: str):
+        """
+        Adds mapping of `new_key` to `key_to_response` to make it possible to
+        associate many keys with single response
+
+        Args:
+            new_key: new key (e.g. url from redirect)
+            key_to_response: key which can be found in :attr:`responses`
+        """
+        self.keys_map[new_key] = key_to_response
 
     def clear(self):
         """Clear cache"""
@@ -132,10 +130,10 @@ class BaseCache:
         """ Delete `key` from cache. Also deletes all responses from response history """
         try:
             if key in self.responses:
-                response, _ = self.responses[key]
+                response = self.responses[key]
                 del self.responses[key]
             else:
-                response, _ = self.responses[self.keys_map[key]]
+                response = self.responses[self.keys_map[key]]
                 del self.keys_map[key]
             for r in response.history:
                 del self.keys_map[self.create_key(r.request)]
@@ -150,18 +148,15 @@ class BaseCache:
         self.delete(self.create_key('GET', url))
 
     def delete_expired_responses(self):
-        """Deletes entries from cache with creation time older than ``expire_after``"""
-        if not self.expire_after:
-            return
-        created_before = datetime.utcnow() - self.expire_after
+        """Deletes entries from cache with creation time older than ``expire_after``.
+        **Note:** Also deletes any cache items that are filtered out according to ``filter_fn()``
+        and filter parameters (``allowable_*``)
+        """
         keys_to_delete = set()
 
         for key in self.responses:
-            try:
-                response, created_at = self.responses[key]
-            except KeyError:
-                continue
-            if created_at < created_before:
+            response = self.get_response(key)
+            if response and response.is_expired:
                 keys_to_delete.add(key)
 
         for key in keys_to_delete:

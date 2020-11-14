@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from http.cookies import SimpleCookie
 from typing import Mapping, Any, Optional, Dict, Iterable
 
@@ -9,6 +10,7 @@ from aiohttp.typedefs import StrOrURL
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
+    'created_at',
     'encoding',
     'history',
     'is_expired',
@@ -22,7 +24,6 @@ class CachedResponse:
     """
 
     method: str = attr.ib()
-    encoding: str = attr.ib()
     reason: str = attr.ib()
     request_info: RequestInfo = attr.ib()
     status: int = attr.ib()
@@ -31,10 +32,12 @@ class CachedResponse:
     _body: Any = attr.ib(default=None)
     content: Any = attr.ib(default=None)
     content_disposition: ContentDisposition = attr.ib(default=None)
-    cookies: SimpleCookie[str] = attr.ib(default=None)
-    history: Iterable = attr.ib(default=None)
-    is_expired: bool = attr.ib(default=False)
+    cookies: SimpleCookie = attr.ib(default=None)
+    created_at: datetime = attr.ib(factory=datetime.utcnow)
+    encoding: str = attr.ib(default=None)
     headers: Mapping = attr.ib(factory=dict)
+    history: Iterable = attr.ib(factory=tuple)
+    is_expired: bool = attr.ib(default=False)
 
     @classmethod
     async def from_client_response(cls, client_response: ClientResponse):
@@ -47,13 +50,9 @@ class CachedResponse:
 
         # Set some remaining attributes individually
         response.encoding = client_response.get_encoding()
-        # response._history =  # TODO
+        if client_response.history:
+            response.history = (cls.from_client_response(r) for r in client_response.history)
         return response
-
-    # TODO: Separately cache and fetch each request from history; store keys referencing cached request history
-    @property
-    def history(self):
-        return None
 
     @property
     def ok(self) -> bool:
