@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache
+    aiohttp_client_cache
     ~~~~~~~~~~~~~~
 
     Transparent cache for ``requests`` library with persistence and async support
 
     Just write::
 
-        import requests_cache
-        requests_cache.install_cache()
+        import aiohttp_client_cache
+        aiohttp_client_cache.install_cache()
 
     And requests to resources will be cached for faster repeated access::
 

@@ -11,7 +11,7 @@ except ImportError:
     import unittest
 
 from threading import Thread
-from requests_cache import CachedSession
+from aiohttp_client_cache import CachedSession
 
 CACHE_NAME = 'requests_cache_test'
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.dynamodb
+    aiohttp_client_cache.backends.dynamodb
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     ``dynamodb`` cache backend
@@ -11,8 +11,7 @@ from .storage.dynamodbdict import DynamoDbDict
 
 
 class DynamoDbCache(BaseCache):
-    """ ``dynamodb`` cache backend.
-    """
+    """``dynamodb`` cache backend."""
 
     def __init__(self, table_name='requests-cache', **options):
         """

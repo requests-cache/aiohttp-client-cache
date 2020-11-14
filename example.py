@@ -3,9 +3,9 @@
 import time
 
 import requests
-import requests_cache
+import aiohttp_client_cache
 
-requests_cache.install_cache('example_cache')
+aiohttp_client_cache.install_cache('example_cache')
 
 
 def main():
@@ -17,11 +17,11 @@ def main():
         print(r.text)
 
     # And if we need to get fresh page or don't want to cache it?
-    with requests_cache.disabled():
+    with aiohttp_client_cache.disabled():
         print(requests.get('http://httpbin.org/ip').text)
 
     # Debugging info about cache
-    print(requests_cache.get_cache())
+    print(aiohttp_client_cache.get_cache())
 
 
 if __name__ == "__main__":

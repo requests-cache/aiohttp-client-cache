@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends
+    aiohttp_client_cache.backends
     ~~~~~~~~~~~~~~~~~~~~~~~
 
     Classes and functions for cache persistence
