@@ -2,6 +2,7 @@ from collections.abc import MutableMapping
 import pickle
 
 import boto3
+from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
@@ -12,30 +13,25 @@ class DynamoDbDict(MutableMapping):
 
     def __init__(
         self,
-        table_name,
-        namespace='dynamodb_dict_data',
-        connection=None,
-        endpoint_url=None,
-        region_name='us-east-1',
-        read_capacity_units=1,
-        write_capacity_units=1,
+        table_name: str,
+        namespace: str = 'dynamodb_dict_data',
+        connection: ServiceResource = None,
+        endpoint_url: str = None,
+        region_name: str = 'us-east-1',
+        read_capacity_units: int = 1,
+        write_capacity_units: int = 1,
+        **kwargs,
     ):
 
         """
-        The actual key name on the dynamodb server will be
-        ``namespace``:``namespace_name``
+        The actual key name on the dynamodb server will be ``namespace``:``namespace_name``.
+        In order to deal with how dynamodb stores data/keys, everything must be pickled.
 
-        In order to deal with how dynamodb stores data/keys,
-        everything, i.e. keys and data, must be pickled.
-
-        :param table_name: table name to use
-        :param namespace_name: name of the hash map stored in dynamodb
-                                (default: dynamodb_dict_data)
-        :param connection: ``boto3.resource('dynamodb')`` instance.
-                           If it's ``None`` (default), a new connection with
-                           default options will be created
-        :param endpoint_url: url of dynamodb server.
-
+        Args:
+            table_name: Table name to use
+            namespace_name: Name of the hash map stored in dynamodb
+            connection: boto3 resource instance to use instead of creating a new one
+            endpoint_url: url of dynamodb server
         """
         self._self_key = namespace
         if connection is not None:
