@@ -1,5 +1,5 @@
 """
-    requests_cache.backends.base
+    aiohttp_client_cache.backends.base
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Contains BaseCache class which can be used as in-memory cache backend or
@@ -14,11 +14,11 @@ from aiohttp import ClientResponse, ClientRequest
 from urllib.parse import urlparse, parse_qsl, urlunparse
 
 RESPONSE_ATTRS = [
+    '_body',
     'content',
     'cookies',
     'headers',
-    'method'
-    'reason',
+    'method' 'reason',
     'request',
     'status',
     'url',
@@ -36,7 +36,7 @@ RESPONSE_ATTRS = [
 
 
 class BaseCache(object):
-    """ Base class for cache implementations, can be used as in-memory cache.
+    """Base class for cache implementations, can be used as in-memory cache.
 
     To extend it you can provide dictionary-like objects for
     :attr:`keys_map` and :attr:`responses` or override public methods.
@@ -51,7 +51,7 @@ class BaseCache(object):
         self._ignored_parameters = set(kwargs.get("ignored_parameters") or [])
 
     def save_response(self, key, response):
-        """ Save response to cache
+        """Save response to cache
 
         :param key: key for this response
         :param response: response to save
@@ -73,7 +73,7 @@ class BaseCache(object):
         self.keys_map[new_key] = key_to_response
 
     def get_response_and_time(self, key, default=(None, None)):
-        """ Retrieves response and timestamp for `key` if it's stored in cache,
+        """Retrieves response and timestamp for `key` if it's stored in cache,
         otherwise returns `default`
 
         :param key: key of resource
@@ -105,10 +105,10 @@ class BaseCache(object):
             pass
 
     def delete_url(self, url):
-        """ Delete response associated with `url` from cache.
+        """Delete response associated with `url` from cache.
         Also deletes all responses from response history. Works only for GET requests
         """
-        self.delete(self._url_to_key(url))
+        self.delete(self.create_key('GET', url))
 
     def clear(self):
         """Clear cache"""
@@ -195,6 +195,7 @@ class BaseCache(object):
     def _remove_ignored_parameters(self, url, params, data):
         def filter_ignored_params(d):
             return {k: v for k, v in d.items() if k not in self._ignored_parameters}
+
         # Strip off any request params manually added to URL and add to `params`
         u = urlparse(url)
         if u.query:

@@ -18,8 +18,8 @@ import mock
 import requests
 from requests import Request
 
-import requests_cache
-from requests_cache import CachedSession
+import aiohttp_client_cache
+from aiohttp_client_cache import CachedSession
 
 CACHE_BACKEND = 'sqlite'
 CACHE_NAME = 'requests_cache_test'
@@ -37,7 +37,7 @@ class CacheTestCase(unittest.TestCase):
     def setUp(self):
         self.s = CachedSession(CACHE_NAME, backend=CACHE_BACKEND, fast_save=FAST_SAVE)
         self.s.cache.clear()
-        requests_cache.uninstall_cache()
+        aiohttp_client_cache.uninstall_cache()
 
     @classmethod
     def tearDownClass(cls):
@@ -75,7 +75,7 @@ class CacheTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             CachedSession(CACHE_NAME, backend='nonexistent')
 
-    @mock.patch('requests_cache.backends.registry')
+    @mock.patch('aiohttp_client_cache.backends.registry')
     def test_missing_backend_dependency(self, mocked_registry):
         # Testing that the correct error is thrown when a user does not have
         # the Python package `redis` installed.  We mock out the registry
@@ -123,9 +123,9 @@ class CacheTestCase(unittest.TestCase):
     def test_disabled(self):
 
         url = httpbin('get')
-        requests_cache.install_cache(CACHE_NAME, backend=CACHE_BACKEND, fast_save=FAST_SAVE)
+        aiohttp_client_cache.install_cache(CACHE_NAME, backend=CACHE_BACKEND, fast_save=FAST_SAVE)
         requests.get(url)
-        with requests_cache.disabled():
+        with aiohttp_client_cache.disabled():
             for i in range(2):
                 r = requests.get(url)
                 self.assertFalse(getattr(r, 'from_cache', False))
@@ -139,7 +139,7 @@ class CacheTestCase(unittest.TestCase):
     def test_enabled(self):
         url = httpbin('get')
         options = dict(cache_name=CACHE_NAME, backend=CACHE_BACKEND, fast_save=FAST_SAVE)
-        with requests_cache.enabled(**options):
+        with aiohttp_client_cache.enabled(**options):
             r = requests.get(url)
             self.assertFalse(getattr(r, 'from_cache', False))
             for i in range(2):
@@ -149,23 +149,23 @@ class CacheTestCase(unittest.TestCase):
         self.assertFalse(getattr(r, 'from_cache', False))
 
     def test_content_and_cookies(self):
-        requests_cache.install_cache(CACHE_NAME, CACHE_BACKEND)
+        aiohttp_client_cache.install_cache(CACHE_NAME, CACHE_BACKEND)
         s = requests.session()
 
         def js(url):
             return json.loads(s.get(url).text)
 
         r1 = js(httpbin('cookies/set/test1/test2'))
-        with requests_cache.disabled():
+        with aiohttp_client_cache.disabled():
             r2 = js(httpbin('cookies'))
         self.assertEqual(r1, r2)
         r3 = js(httpbin('cookies'))
-        with requests_cache.disabled():
+        with aiohttp_client_cache.disabled():
             r4 = js(httpbin('cookies/set/test3/test4'))
         # from cache
         self.assertEqual(r3, js(httpbin('cookies')))
         # updated
-        with requests_cache.disabled():
+        with aiohttp_client_cache.disabled():
             self.assertEqual(r4, js(httpbin('cookies')))
 
     def test_response_history(self):
@@ -323,7 +323,7 @@ class CacheTestCase(unittest.TestCase):
         self.assertIn(CACHE_NAME, s)
         self.assertIn("10", s)
 
-    @mock.patch("requests_cache.core.datetime")
+    @mock.patch("aiohttp_client_cache.core.datetime")
     def test_return_old_data_on_error(self, datetime_mock):
         datetime_mock.utcnow.return_value = datetime.utcnow()
         expire_after = 100
@@ -343,7 +343,7 @@ class CacheTestCase(unittest.TestCase):
         with mock.patch.object(s.cache, "save_response", side_effect=Exception):
             self.assertEquals(get("3"), "expired")
 
-        with mock.patch("requests_cache.core.OriginalSession.send") as send_mock:
+        with mock.patch("aiohttp_client_cache.core.OriginalSession.send") as send_mock:
             resp_mock = requests.Response()
             request = requests.Request("GET", url)
             resp_mock.request = request.prepare()
@@ -450,8 +450,8 @@ class CacheTestCase(unittest.TestCase):
         raw_data = "new raw data"
         self.assertFalse(s.post(url, data=raw_data).from_cache)
 
-    @mock.patch("requests_cache.backends.base.datetime")
-    @mock.patch("requests_cache.core.datetime")
+    @mock.patch("aiohttp_client_cache.backends.base.datetime")
+    @mock.patch("aiohttp_client_cache.core.datetime")
     def test_remove_expired_entries(self, datetime_mock, datetime_mock2):
         expire_after = timedelta(minutes=10)
         start_time = datetime.utcnow().replace(year=2010, minute=0)
@@ -477,7 +477,7 @@ class CacheTestCase(unittest.TestCase):
         url = httpbin('get?q=1')
         self.assertFalse(self.s.get(url).from_cache)
         with mock.patch(
-            "requests_cache.backends.base.BaseCache.restore_response", side_effect=TypeError
+            "aiohttp_client_cache.backends.base.BaseCache.restore_response", side_effect=TypeError
         ):
             resp = self.s.get(url)
             self.assertFalse(resp.from_cache)

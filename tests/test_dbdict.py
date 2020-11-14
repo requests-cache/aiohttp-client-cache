@@ -12,7 +12,7 @@ except ImportError:
 
 from threading import Thread
 from tests.test_custom_dict import BaseCustomDictTestCase
-from requests_cache.backends.storage.dbdict import DbDict, DbPickleDict
+from aiohttp_client_cache.backends.storage.dbdict import DbDict, DbPickleDict
 
 
 class DbdictTestCase(BaseCustomDictTestCase, unittest.TestCase):

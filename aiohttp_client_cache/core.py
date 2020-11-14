@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Callable
 
 from aiohttp import ClientSession as OriginalSession
-from requests_cache import backends
+from aiohttp_client_cache import backends
 
 
 class CachedSession(OriginalSession):
@@ -18,7 +18,7 @@ class CachedSession(OriginalSession):
         allowable_codes: tuple = (200,),
         allowable_methods: tuple = ('GET',),
         filter_fn: Callable = lambda r: True,
-        **backend_options
+        **backend_options,
     ):
         """
         :param cache_name: for ``sqlite`` backend: cache file will start with this prefix,
@@ -120,8 +120,7 @@ class CachedSession(OriginalSession):
             self._is_cache_disabled = False
 
     def remove_expired_responses(self):
-        """ Removes expired responses from storage
-        """
+        """Removes expired responses from storage"""
         if not self._cache_expire_after:
             return
         self.cache.remove_old_entries(datetime.utcnow() - self._cache_expire_after)

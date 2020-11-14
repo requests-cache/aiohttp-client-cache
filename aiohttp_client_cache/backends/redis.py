@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.redis
+    aiohttp_client_cache.backends.redis
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     ``redis`` cache backend
@@ -11,8 +11,7 @@ from .storage.redisdict import RedisDict
 
 
 class RedisCache(BaseCache):
-    """ ``redis`` cache backend.
-    """
+    """``redis`` cache backend."""
 
     def __init__(self, namespace='requests-cache', **options):
         """
