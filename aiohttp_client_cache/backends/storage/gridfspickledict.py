@@ -10,18 +10,13 @@ from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
 class GridFSPickleDict(MutableMapping):
     """A dictionary-like interface for MongoDB GridFS"""
 
-    def __init__(self, db_name, connection=None):
+    def __init__(self, db_name, connection: MongoClient = None):
         """
-        :param db_name: database name (be careful with production databases)
-        :param connection: ``pymongo.Connection`` instance. If it's ``None``
-                           (default) new connection with default options will
-                           be created
+        Args:
+            db_name: database name (be careful with production databases)
+            connection: MongoDB connection instance to use instead of creating a new one
         """
-        if connection is not None:
-            self.connection = connection
-        else:
-            self.connection = MongoClient()
-
+        self.connection = connection or MongoClient()
         self.db = self.connection[db_name]
         self.fs = GridFS(self.db)
 

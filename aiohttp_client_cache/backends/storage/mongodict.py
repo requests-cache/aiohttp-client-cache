@@ -9,18 +9,14 @@ from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
 class MongoDict(MutableMapping):
     """MongoDict - a dictionary-like interface for ``mongo`` database"""
 
-    def __init__(self, db_name, collection_name='mongo_dict_data', connection=None):
+    def __init__(self, db_name, collection_name: str, connection: MongoClient = None):
         """
-        :param db_name: database name (be careful with production databases)
-        :param collection_name: collection name (default: mongo_dict_data)
-        :param connection: ``pymongo.Connection`` instance. If it's ``None``
-                           (default) new connection with default options will
-                           be created
+        Args:
+            db_name: database name (be careful with production databases)
+            collection_name: collection name
+            connection: MongoDB connection instance to use instead of creating a new one
         """
-        if connection is not None:
-            self.connection = connection
-        else:
-            self.connection = MongoClient()
+        self.connection = connection or MongoClient()
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
 

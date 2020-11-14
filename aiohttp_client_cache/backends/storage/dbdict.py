@@ -22,7 +22,7 @@ class DbDict(MutableMapping):
     correspondent tables: ``table1``, ``table2`` and ``table3``
     """
 
-    def __init__(self, filename, table_name='data', fast_save=False, **options):
+    def __init__(self, filename, table_name: str, fast_save=False):
         """
         :param filename: filename for database (without extension)
         :param table_name: table name
