@@ -1,20 +1,14 @@
-#!/usr/bin/env python
-# Path hack
 import os, sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 import time
 import json
+import unittest
+from unittest import mock
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-import mock
 import requests
 from requests import Request
 
@@ -485,7 +479,3 @@ class CacheTestCase(unittest.TestCase):
         resp = self.s.get(url)
         self.assertTrue(resp.from_cache)
         self.assertEquals(resp.json()["args"]["q"], "1")
-
-
-if __name__ == '__main__':
-    unittest.main()

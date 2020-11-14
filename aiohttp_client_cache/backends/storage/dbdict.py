@@ -1,27 +1,11 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.dbdict
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Dictionary-like objects for saving large data sets to `sqlite` database
-"""
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
+from collections.abc import MutableMapping
+import pickle
+import threading
 
 import sqlite3 as sqlite
 from contextlib import contextmanager
 
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
 
 
 class DbDict(MutableMapping):
@@ -160,7 +144,7 @@ class DbPickleDict(DbDict):
     """ Same as :class:`DbDict`, but pickles values before saving """
 
     def __setitem__(self, key, item):
-        super().__setitem__(key, sqlite.Binary(pickle.dumps(item)))
+        super().__setitem__(key, sqlite.Binary(pickle.dumps(item, protocol=PICKLE_PROTOCOL)))
 
     def __getitem__(self, key):
         return pickle.loads(bytes(super().__getitem__(key)))

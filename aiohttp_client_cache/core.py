@@ -1,4 +1,4 @@
-""" Core functions for configuring cache """
+"""Core functions for cache configuration"""
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import Callable
@@ -8,7 +8,7 @@ from aiohttp_client_cache import backends
 
 
 class CachedSession(OriginalSession):
-    """ aiohttp ``ClientSession`` with caching support."""
+    """ :py:class:`.aiohttp.ClientSession` with caching support."""
 
     def __init__(
         self,

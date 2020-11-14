@@ -1,28 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache
-    ~~~~~~~~~~~~~~
+__version__ = '0.6'
 
-    Transparent cache for ``requests`` library with persistence and async support
-
-    Just write::
-
-        import aiohttp_client_cache
-        aiohttp_client_cache.install_cache()
-
-    And requests to resources will be cached for faster repeated access::
-
-        import requests
-        for i in range(10):
-            r = requests.get('http://httpbin.org/delay/5')
-        # will took  approximately 5 seconds instead 50
-
-
-    :copyright: (c) 2012 by Roman Haritonov.
-    :license: BSD, see LICENSE for more details.
-"""
-__docformat__ = 'restructuredtext'
-__version__ = '0.5.2'
-
-from .core import CachedSession
+try:
+    from aiohttp_client_cache.core import CachedSession
+# When running setup.py outside a virtualenv
+except ImportError:
+    pass

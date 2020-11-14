@@ -1,9 +1,5 @@
-"""
-    aiohttp_client_cache.backends.base
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Contains BaseCache class which can be used as in-memory cache backend or
-    extended to support persistence.
+"""Contains BaseCache class which can be used as in-memory cache backend or extended to support
+persistence.
 """
 # TODO: Will probably have to make new CachedResponse object, too convoluted to try to create a mock ClientResponse
 from datetime import datetime
@@ -18,7 +14,8 @@ RESPONSE_ATTRS = [
     'content',
     'cookies',
     'headers',
-    'method' 'reason',
+    'method',
+    'reason',
     'request',
     'status',
     'url',

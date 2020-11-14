@@ -1,27 +1,19 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.gridfs
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    ``gridfs`` cache backend
-    
-    Use MongoDB GridFS to support documents greater than 16MB.
-    
-    Usage:
-        aiohttp_client_cache.install_cache(backend='gridfs')
-    
-    Or:
-        from pymongo import MongoClient
-        aiohttp_client_cache.install_cache(backend='gridfs', connection=MongoClient('another-host.local'))
-"""
 from .base import BaseCache
 from .storage.mongodict import MongoDict
 from .storage.gridfspickledict import GridFSPickleDict
 
 
 class GridFSCache(BaseCache):
-    """``gridfs`` cache backend."""
+    """GridFS cache backend.
+    Use MongoDB GridFS to support documents greater than 16MB.
+
+    Usage:
+        aiohttp_client_cache.install_cache(backend='gridfs')
+
+    Or:
+        from pymongo import MongoClient
+        aiohttp_client_cache.install_cache(backend='gridfs', connection=MongoClient('another-host.local'))
+    """
 
     def __init__(self, db_name, **options):
         """

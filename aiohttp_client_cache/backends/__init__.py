@@ -1,11 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends
-    ~~~~~~~~~~~~~~~~~~~~~~~
-
-    Classes and functions for cache persistence
-"""
+"""Classes and functions for cache persistence"""
 
 
 from .base import BaseCache

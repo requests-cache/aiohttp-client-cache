@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Path hack
 import os, sys
 
 sys.path.insert(0, os.path.abspath('..'))
