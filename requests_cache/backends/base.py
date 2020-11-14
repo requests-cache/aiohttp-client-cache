@@ -5,18 +5,34 @@
     Contains BaseCache class which can be used as in-memory cache backend or
     extended to support persistence.
 """
-from copy import copy
+# TODO: Will probably have to make new CachedResponse object, too convoluted to try to create a mock ClientResponse
 from datetime import datetime
 from io import BytesIO
 import hashlib
-import json
 
-import requests
+from aiohttp import ClientResponse, ClientRequest
+from urllib.parse import urlparse, parse_qsl, urlunparse
 
-from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
+RESPONSE_ATTRS = [
+    'content',
+    'cookies',
+    'headers',
+    'method'
+    'reason',
+    'request',
+    'status',
+    'url',
+    'version',
+]
 
-
-_DEFAULT_HEADERS = requests.utils.default_headers()
+# RAW_RESPONSE_ATTRS = [
+#     'decode_content',
+#     'headers',
+#     'reason',
+#     'status',
+#     'strict',
+#     'version',
+# ]
 
 
 class BaseCache(object):
@@ -75,8 +91,7 @@ class BaseCache(object):
         return self.restore_response(response), timestamp
 
     def delete(self, key):
-        """ Delete `key` from cache. Also deletes all responses from response history
-        """
+        """ Delete `key` from cache. Also deletes all responses from response history """
         try:
             if key in self.responses:
                 response, _ = self.responses[key]
@@ -96,14 +111,12 @@ class BaseCache(object):
         self.delete(self._url_to_key(url))
 
     def clear(self):
-        """ Clear cache
-        """
+        """Clear cache"""
         self.responses.clear()
         self.keys_map.clear()
 
     def remove_old_entries(self, created_before):
-        """ Deletes entries from cache with creation time older than ``created_before``
-        """
+        """Deletes entries from cache with creation time older than ``created_before``"""
         keys_to_delete = set()
         for key in self.responses:
             try:
@@ -117,90 +130,46 @@ class BaseCache(object):
             self.delete(key)
 
     def has_key(self, key):
-        """ Returns `True` if cache has `key`, `False` otherwise
-        """
+        """Returns `True` if cache has `key`, `False` otherwise"""
         return key in self.responses or key in self.keys_map
 
     def has_url(self, url):
-        """ Returns `True` if cache has `url`, `False` otherwise.
-        Works only for GET request urls
-        """
-        return self.has_key(self._url_to_key(url))
+        """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
+        return self.has_key(self.create_key('GET', url))
 
-    def _url_to_key(self, url):
-        session = requests.Session()
-        return self.create_key(session.prepare_request(requests.Request('GET', url)))
-
-    _response_attrs = [
-        '_content',
-        'url',
-        'status_code',
-        'cookies',
-        'headers',
-        'encoding',
-        'request',
-        'reason',
-        'raw',
-    ]
-
-    _raw_response_attrs = [
-        '_original_response',
-        'decode_content',
-        'headers',
-        'reason',
-        'status',
-        'strict',
-        'version',
-    ]
-
-    def reduce_response(self, response, seen=None):
-        """ Reduce response object to make it compatible with ``pickle``
-        """
-        if seen is None:
-            seen = {}
-        try:
+    def reduce_response(self, response: ClientResponse, seen=None):
+        """Reduce response object to make it compatible with ``pickle``"""
+        seen = seen or {}
+        if id(response) in seen:
             return seen[id(response)]
-        except KeyError:
-            pass
+
         result = _Store()
-        # prefetch
-        content = response.content
-        for field in self._response_attrs:
-            setattr(result, field, self._picklable_field(response, field))
+        for field in RESPONSE_ATTRS:
+            setattr(result, field, getattr(response, field))
         seen[id(response)] = result
         result.history = tuple(self.reduce_response(r, seen) for r in response.history)
-        # Emulate stream fp is not consumed yet. See #68
-        if response.raw is not None:
-            response.raw._fp = BytesIO(content)
         return result
 
-    def _picklable_field(self, response, name):
-        value = getattr(response, name)
-        if name == 'request':
-            value = copy(value)
-            value.hooks = []
-        elif name == 'raw':
-            result = _RawStore()
-            for field in self._raw_response_attrs:
-                setattr(result, field, getattr(value, field, None))
-            if result._original_response is not None:
-                setattr(
-                    result._original_response, "fp", None
-                )  # _io.BufferedReader is not picklable
-            value = result
-        return value
+    # def _picklable_field(self, response, name):
+    #     value = getattr(response, name)
+    #     if name == 'request':
+    #         value = copy(value)
+    #         value.hooks = []
+    #     elif name == 'raw':
+    #         result = _RawStore()
+    #         for field in RAW_RESPONSE_ATTRS:
+    #             setattr(result, field, getattr(value, field, None))
+    #         value = result
+    #     return value
 
     def restore_response(self, response, seen=None):
-        """ Restore response object after unpickling
-        """
-        if seen is None:
-            seen = {}
-        try:
+        """Restore response object after unpickling"""
+        seen = seen or {}
+        if id(response) in seen:
             return seen[id(response)]
-        except KeyError:
-            pass
-        result = requests.Response()
-        for field in self._response_attrs:
+
+        result = ClientResponse(response.method, response.url)
+        for field in RESPONSE_ATTRS:
             setattr(result, field, getattr(response, field, None))
         result.raw._cached_content_ = result.content
         seen[id(response)] = result
@@ -217,7 +186,7 @@ class BaseCache(object):
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
 
-        if self._include_get_headers and headers != _DEFAULT_HEADERS:
+        if self._include_get_headers and headers != ClientRequest.DEFAULT_HEADERS:
             for name, value in sorted(headers.items()):
                 key.update(name.encode())
                 key.update(value.encode())
@@ -259,5 +228,5 @@ class _RawStore(object):
 
 
 def _encode_dict(d):
-    item_pairs = [f'{k}={v}' for k, v in sorted(d.items())]
+    item_pairs = [f'{k}={v}' for k, v in sorted((d or {}).items())]
     return '&'.join(item_pairs).encode()
