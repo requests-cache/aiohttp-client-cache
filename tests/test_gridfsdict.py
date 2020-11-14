@@ -13,8 +13,8 @@ except ImportError:
 from tests.test_custom_dict import BaseCustomDictTestCase
 
 try:
-    from requests_cache.backends.storage.mongodict import MongoDict
-    from requests_cache.backends.storage.gridfspickledict import GridFSPickleDict
+    from aiohttp_client_cache.backends.storage.mongodict import MongoDict
+    from aiohttp_client_cache.backends.storage.gridfspickledict import GridFSPickleDict
 
 except ImportError:
     print("pymongo not installed")

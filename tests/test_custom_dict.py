@@ -5,7 +5,7 @@ import os, sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-from requests_cache.backends.storage.dbdict import DbDict, DbPickleDict
+from aiohttp_client_cache.backends.storage.dbdict import DbDict, DbPickleDict
 
 
 class BaseCustomDictTestCase(object):

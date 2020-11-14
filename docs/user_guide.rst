@@ -79,6 +79,17 @@ If ``Response`` is taken from cache, ``from_cache`` attribute will be ``True``:
 ::
 
     >>> import requests
+        >>> import requests_cache
+        >>> aiohttp_client_cache.install_cache()
+        >>> requests_cache.clear()
+        >>> r = requests.get('http://httpbin.org/get')
+        >>> r.from_cache
+        False
+        >>> r = requests.get('http://httpbin.org/get')
+        >>> r.from_cache
+        True
+
+    It can be used, for example, for request throttling with help of
     >>> import requests_cache
     >>> requests_cache.install_cache()
     >>> requests_cache.clear()

@@ -13,9 +13,9 @@ except ImportError:
 import requests
 from requests.sessions import Session as OriginalSession
 
-import requests_cache
-from requests_cache import CachedSession
-from requests_cache.backends import BaseCache
+import aiohttp_client_cache
+from aiohttp_client_cache import CachedSession
+from aiohttp_client_cache.backends import BaseCache
 
 
 CACHE_NAME = 'requests_cache_test'
@@ -25,37 +25,37 @@ FAST_SAVE = False
 
 class MonkeyPatchTestCase(unittest.TestCase):
     def setUp(self):
-        requests_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
+        aiohttp_client_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
         requests.Session().cache.clear()
-        requests_cache.uninstall_cache()
+        aiohttp_client_cache.uninstall_cache()
 
     def test_install_uninstall(self):
         for _ in range(2):
-            requests_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
+            aiohttp_client_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
             self.assertTrue(isinstance(requests.Session(), CachedSession))
             self.assertTrue(isinstance(requests.sessions.Session(), CachedSession))
             self.assertTrue(isinstance(requests.session(), CachedSession))
-            requests_cache.uninstall_cache()
+            aiohttp_client_cache.uninstall_cache()
             self.assertFalse(isinstance(requests.Session(), CachedSession))
             self.assertFalse(isinstance(requests.sessions.Session(), CachedSession))
             self.assertFalse(isinstance(requests.session(), CachedSession))
 
     def test_requests_from_cache(self):
-        requests_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
+        aiohttp_client_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
         r = requests.get('http://httpbin.org/get')
         self.assertFalse(r.from_cache)
         r = requests.get('http://httpbin.org/get')
         self.assertTrue(r.from_cache)
 
     def test_session_is_a_class_with_original_attributes(self):
-        requests_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
+        aiohttp_client_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
         self.assertTrue(isinstance(requests.Session, type))
         for attribute in dir(OriginalSession):
             self.assertTrue(hasattr(requests.Session, attribute))
         self.assertTrue(isinstance(requests.Session(), CachedSession))
 
     def test_inheritance_after_monkey_patch(self):
-        requests_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
+        aiohttp_client_cache.install_cache(name=CACHE_NAME, backend=CACHE_BACKEND)
 
         class FooSession(requests.Session):
             __attrs__ = requests.Session.__attrs__ + ["new_one"]
@@ -74,7 +74,7 @@ class MonkeyPatchTestCase(unittest.TestCase):
             pass
 
         backend = MyCache()
-        requests_cache.install_cache(name=CACHE_NAME, backend=backend)
+        aiohttp_client_cache.install_cache(name=CACHE_NAME, backend=backend)
         self.assertIs(requests.Session().cache, backend)
 
         session = CachedSession(backend=backend)

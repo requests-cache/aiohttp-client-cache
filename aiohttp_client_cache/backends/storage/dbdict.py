@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.dbdict
+    aiohttp_client_cache.backends.dbdict
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Dictionary-like objects for saving large data sets to `sqlite` database
@@ -25,7 +25,7 @@ except ImportError:
 
 
 class DbDict(MutableMapping):
-    """ DbDict - a dictionary-like object for saving large datasets to `sqlite` database
+    """DbDict - a dictionary-like object for saving large datasets to `sqlite` database
 
     It's possible to create multiply DbDict instances, which will be stored as separate
     tables in one database::

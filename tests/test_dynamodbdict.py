@@ -13,7 +13,7 @@ except ImportError:
 from tests.test_custom_dict import BaseCustomDictTestCase
 
 try:
-    from requests_cache.backends.storage.dynamodbdict import DynamoDbDict
+    from aiohttp_client_cache.backends.storage.dynamodbdict import DynamoDbDict
 except ImportError:
     print("DynamoDb not installed")
 else:
