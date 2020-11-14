@@ -11,12 +11,15 @@ from aiohttp.typedefs import StrOrURL
 EXCLUDE_ATTRS = {
     'encoding',
     'from_cache',
+    'is_expired',
 }
 
 
 @attr.s(slots=True)
 class CachedResponse:
-    """A dataclass containing cached information from a :py:class:`aiohttp.ClientResponse`"""
+    """A dataclass containing cached response information. Will mostly behave the same as a
+    :py:class:`aiohttp.ClientResponse` that has been read.
+    """
 
     method: str = attr.ib()
     encoding: str = attr.ib()
@@ -29,12 +32,13 @@ class CachedResponse:
     content: Any = attr.ib(default=None)
     content_disposition: ContentDisposition = attr.ib(default=None)
     cookies: SimpleCookie[str] = attr.ib(default=None)
+    is_expired: bool = attr.ib(default=False)
     from_cache: bool = attr.ib(default=True)
     headers: Mapping = attr.ib(factory=dict)
 
     @classmethod
     async def from_client_response(cls, client_response: ClientResponse):
-        # Response should have already been read by this point, unless used outside of CachedSession
+        # Response may not have been read yet, if fetched by something other than CachedSession
         await client_response.read()
 
         # Copy most attributes over as is
@@ -70,6 +74,9 @@ class CachedResponse:
                 message=self.reason,
                 headers=self.headers,
             )
+
+    def get_encoding(self):
+        return self.encoding
 
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""

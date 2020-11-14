@@ -1,9 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Tuple, Optional
+
+from dateutil.parser import parse as parse_date
 from io import BytesIO
 import hashlib
 from urllib.parse import urlparse, parse_qsl, urlunparse
 
 from aiohttp import ClientResponse, ClientRequest
+
+from aiohttp_client_cache.cached_response import CachedResponse
 
 RESPONSE_ATTRS = [
     'content',
@@ -25,55 +30,63 @@ class BaseCache(object):
     :attr:`keys_map` and :attr:`responses` or override public methods.
     """
 
-    def __init__(self, *args, **kwargs):
-        #: `key` -> `key_in_responses` mapping
-        self.keys_map = {}
-        #: `key_in_cache` -> `response` mapping
-        self.responses = {}
-        self._include_get_headers = kwargs.get("include_get_headers", False)
-        self._ignored_parameters = set(kwargs.get("ignored_parameters") or [])
+    def __init__(self, expire_after, include_get_headers=False, ignored_parameters=None, **kwargs):
+        if expire_after is not None and not isinstance(expire_after, timedelta):
+            expire_after = timedelta(seconds=expire_after)
+        self._expire_after = expire_after
 
-    def save_response(self, key, response):
+        self.keys_map = {}  # `key` -> `key_in_responses` mapping
+        self.responses = {}  # `key_in_cache` -> `response` mapping
+        self._include_get_headers = include_get_headers
+        self._ignored_parameters = set(ignored_parameters or [])
+
+    def is_expired(self, timestamp: str) -> bool:
+        time_elapsed = datetime.utcnow() - parse_date(timestamp)
+        return self._expire_after and time_elapsed >= self._expire_after
+
+    def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
 
-        :param key: key for this response
-        :param response: response to save
-
-        .. note:: Response is reduced before saving (with :meth:`reduce_response`)
-                  to make it picklable
+        Args:
+            key: Key for this response
+            response: Response to save
         """
         self.responses[key] = self.reduce_response(response), datetime.utcnow()
 
-    def add_key_mapping(self, new_key, key_to_response):
+    def add_key_mapping(self, new_key: str, key_to_response: str):
         """
         Adds mapping of `new_key` to `key_to_response` to make it possible to
         associate many keys with single response
 
-        :param new_key: new key (e.g. url from redirect)
-        :param key_to_response: key which can be found in :attr:`responses`
-        :return:
+        Args:
+            new_key: new key (e.g. url from redirect)
+            key_to_response: key which can be found in :attr:`responses`
         """
         self.keys_map[new_key] = key_to_response
 
-    def get_response_and_time(self, key, default=(None, None)):
-        """Retrieves response and timestamp for `key` if it's stored in cache,
-        otherwise returns `default`
+    def get_response(self, key: str) -> Optional[CachedResponse]:
+        """Retrieve response and timestamp for `key` if it's stored in cache,
+        otherwise returns ``None```
 
-        :param key: key of resource
-        :param default: return this if `key` not found in cache
-        :returns: tuple (response, datetime)
-
-        .. note:: Response is restored after unpickling with :meth:`restore_response`
+        Args:
+            key: key of resource
         """
+        # Attempt to fetch response from the cache
         try:
             if key not in self.responses:
                 key = self.keys_map[key]
             response, timestamp = self.responses[key]
         except (KeyError, TypeError):
-            return default
-        return self.restore_response(response), timestamp
+            return None
 
-    def delete(self, key):
+        # If the item is expired, delete it from the cache
+        if self.is_expired(timestamp):
+            self.delete(key)
+            response.is_expired = True
+
+        return self.restore_response(response)
+
+    def delete(self, key: str):
         """ Delete `key` from cache. Also deletes all responses from response history """
         try:
             if key in self.responses:
@@ -84,10 +97,11 @@ class BaseCache(object):
                 del self.keys_map[key]
             for r in response.history:
                 del self.keys_map[self.create_key(r.request)]
+        # We don't care if the key is already missing from the cache
         except KeyError:
             pass
 
-    def delete_url(self, url):
+    def delete_url(self, url: str):
         """Delete response associated with `url` from cache.
         Also deletes all responses from response history. Works only for GET requests
         """
@@ -98,9 +112,13 @@ class BaseCache(object):
         self.responses.clear()
         self.keys_map.clear()
 
-    def remove_old_entries(self, created_before):
-        """Deletes entries from cache with creation time older than ``created_before``"""
+    def remove_expired_responses(self):
+        """Deletes entries from cache with creation time older than ``expire_after``"""
+        if not self._expire_after:
+            return
+        created_before = datetime.utcnow() - self._expire_after
         keys_to_delete = set()
+
         for key in self.responses:
             try:
                 response, created_at = self.responses[key]
@@ -112,14 +130,15 @@ class BaseCache(object):
         for key in keys_to_delete:
             self.delete(key)
 
-    def has_key(self, key):
+    def has_key(self, key: str) -> bool:
         """Returns `True` if cache has `key`, `False` otherwise"""
         return key in self.responses or key in self.keys_map
 
-    def has_url(self, url):
+    def has_url(self, url: str) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         return self.has_key(self.create_key('GET', url))
 
+    # TODO: replace these methods with CachedResponse
     def reduce_response(self, response: ClientResponse, seen=None):
         """Reduce response object to make it compatible with ``pickle``"""
         seen = seen or {}
@@ -191,7 +210,7 @@ class BaseCache(object):
         return url, params, data
 
     def __str__(self):
-        return 'keys: %s\nresponses: %s' % (self.keys_map, self.responses)
+        return f'keys: {self.keys_map}\nresponses: {self.responses}'
 
 
 # used for saving response attributes
