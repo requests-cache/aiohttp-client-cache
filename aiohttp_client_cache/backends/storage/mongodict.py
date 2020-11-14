@@ -1,27 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-    aiohttp_client_cache.backends.mongodict
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+import pickle
+from collections.abc import MutableMapping
 
-    Dictionary-like objects for saving large data sets to ``mongodb`` database
-"""
+from pymongo import MongoClient
 
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-# Use PyMongo 3 if present
-try:
-    from pymongo import MongoClient
-except ImportError:
-    from pymongo import Connection as MongoClient
+from aiohttp_client_cache.backends.storage import PICKLE_PROTOCOL
 
 
 class MongoDict(MutableMapping):
@@ -76,10 +58,10 @@ class MongoDict(MutableMapping):
 
 
 class MongoPickleDict(MongoDict):
-    """ Same as :class:`MongoDict`, but pickles values before saving """
+    """Same as :class:`MongoDict`, but pickles values before saving"""
 
     def __setitem__(self, key, item):
-        super().__setitem__(key, pickle.dumps(item))
+        super().__setitem__(key, pickle.dumps(item, protocol=PICKLE_PROTOCOL))
 
     def __getitem__(self, key):
         return pickle.loads(bytes(super().__getitem__(key)))

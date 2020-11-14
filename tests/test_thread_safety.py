@@ -1,14 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Path hack
 import os, sys
 
 sys.path.insert(0, os.path.abspath('..'))
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 from threading import Thread
 from aiohttp_client_cache import CachedSession
@@ -45,7 +38,3 @@ class ThreadSafetyTestCase(unittest.TestCase):
                 do_tests_for(backend)
             except Exception:
                 print("Failed to test %s" % backend)
-
-
-if __name__ == '__main__':
-    unittest.main()
