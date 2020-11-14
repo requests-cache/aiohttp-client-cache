@@ -12,7 +12,7 @@ class CachedSession(OriginalSession):
 
     def __init__(
         self,
-        cache_name: str = 'cache',
+        cache_name: str = 'http-cache',
         backend: str = None,
         expire_after: Union[int, timedelta] = None,
         allowable_codes: tuple = (200,),
@@ -70,11 +70,11 @@ class CachedSession(OriginalSession):
         cache_key = self.cache.create_key(method, url, **kwargs)
 
         # Attempt to fetch cached response; if missing or expired, fetch new one
-        response = self.cache.get_response(cache_key)
+        response = await self.cache.get_response(cache_key)
         if response is None or response.is_expired:
             async with super().request(method, url, **kwargs) as client_response:
                 response = await client_response.read()
-            self.cache.save_response(cache_key, response)
+            await self.cache.save_response(cache_key, response)
 
         return response
 
