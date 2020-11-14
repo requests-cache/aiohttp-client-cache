@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.dynamodbdict
+    aiohttp_client_cache.backends.dynamodbdict
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Dictionary-like objects for saving large data sets to ``dynamodb`` key-store
@@ -20,8 +20,7 @@ from botocore.exceptions import ClientError
 
 
 class DynamoDbDict(MutableMapping):
-    """ DynamoDbDict - a dictionary-like interface for ``dynamodb`` key-stores
-    """
+    """DynamoDbDict - a dictionary-like interface for ``dynamodb`` key-stores"""
 
     def __init__(
         self,
@@ -60,8 +59,14 @@ class DynamoDbDict(MutableMapping):
         try:
             self.connection.create_table(
                 AttributeDefinitions=[
-                    {'AttributeName': 'namespace', 'AttributeType': 'S',},
-                    {'AttributeName': 'key', 'AttributeType': 'S',},
+                    {
+                        'AttributeName': 'namespace',
+                        'AttributeType': 'S',
+                    },
+                    {
+                        'AttributeName': 'key',
+                        'AttributeType': 'S',
+                    },
                 ],
                 TableName=table_name,
                 KeySchema=[

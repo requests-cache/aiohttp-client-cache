@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.sqlite
+    aiohttp_client_cache.backends.sqlite
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     ``sqlite3`` cache backend
@@ -11,7 +11,7 @@ from .storage.dbdict import DbDict, DbPickleDict
 
 
 class DbCache(BaseCache):
-    """ sqlite cache backend.
+    """sqlite cache backend.
 
     Reading is fast, saving is a bit slower. It can store big amount of data
     with low memory usage.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.redisdict
+    aiohttp_client_cache.backends.redisdict
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Dictionary-like objects for saving large data sets to ``redis`` key-store
@@ -18,8 +18,7 @@ from redis import StrictRedis as Redis
 
 
 class RedisDict(MutableMapping):
-    """ RedisDict - a dictionary-like interface for ``redis`` key-stores
-    """
+    """RedisDict - a dictionary-like interface for ``redis`` key-stores"""
 
     def __init__(self, namespace, collection_name='redis_dict_data', connection=None):
         """

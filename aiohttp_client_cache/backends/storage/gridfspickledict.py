@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    requests_cache.backends.mongodict
+    aiohttp_client_cache.backends.mongodict
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Dictionary-like objects for saving large data sets to ``mongodb`` database
@@ -26,8 +26,7 @@ from gridfs import GridFS
 
 
 class GridFSPickleDict(MutableMapping):
-    """ MongoDict - a dictionary-like interface for ``mongo`` database
-    """
+    """MongoDict - a dictionary-like interface for ``mongo`` database"""
 
     def __init__(self, db_name, connection=None):
         """
