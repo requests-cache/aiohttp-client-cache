@@ -1,16 +1,11 @@
-"""Contains BaseCache class which can be used as in-memory cache backend or extended to support
-persistence.
-"""
-# TODO: Will probably have to make new CachedResponse object, too convoluted to try to create a mock ClientResponse
 from datetime import datetime
 from io import BytesIO
 import hashlib
-
-from aiohttp import ClientResponse, ClientRequest
 from urllib.parse import urlparse, parse_qsl, urlunparse
 
+from aiohttp import ClientResponse, ClientRequest
+
 RESPONSE_ATTRS = [
-    '_body',
     'content',
     'cookies',
     'headers',
@@ -21,15 +16,6 @@ RESPONSE_ATTRS = [
     'url',
     'version',
 ]
-
-# RAW_RESPONSE_ATTRS = [
-#     'decode_content',
-#     'headers',
-#     'reason',
-#     'status',
-#     'strict',
-#     'version',
-# ]
 
 
 class BaseCache(object):
@@ -83,7 +69,7 @@ class BaseCache(object):
             if key not in self.responses:
                 key = self.keys_map[key]
             response, timestamp = self.responses[key]
-        except KeyError:
+        except (KeyError, TypeError):
             return default
         return self.restore_response(response), timestamp
 
