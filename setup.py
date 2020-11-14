@@ -11,7 +11,7 @@ setup(
     author='Roman Haritonov',
     author_email='reclosedev@gmail.com',
     url='https://github.com/JWCook/aiohttp-client-cache',
-    install_requires=['aiohttp', 'attrs', 'python-dateutil'],
+    install_requires=['aiohttp', 'attrs'],
     extras_require={
         'dev': [
             'black==20.8b1',
