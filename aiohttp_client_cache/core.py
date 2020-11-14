@@ -18,6 +18,8 @@ class CachedSession(OriginalSession):
         allowable_codes: tuple = (200,),
         allowable_methods: tuple = ('GET',),
         filter_fn: Callable = lambda r: True,
+        include_get_headers: bool = False,
+        ignored_parameters: bool = None,
         **backend_options,
     ):
         """
@@ -27,11 +29,11 @@ class CachedSession(OriginalSession):
                 backend implementation subclassing :py:class:`.BaseCache`. Defaults to ``sqlite``
                 if available, otherwise fallback to ``memory``
             expire_after: Number of seconds after cache will be expired, or ``None`` to never expire
-            allowable_codes: Limit caching only for response with this codes
-            allowable_methods: Cache only requests of this methods
             filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
                 returns a boolean indicating whether or not that response should be cached. Will be
                 applied to both new and previously cached responses
+            allowable_codes: Limit caching only for response with this codes
+            allowable_methods: Cache only requests of this methods
             include_get_headers: Make response headers part of the cache key
             ignored_parameters: List of request parameters to be excluded from the cache key.
             backend_options: Additional backend-specific options; see :py:module:`.backends` for details
@@ -42,16 +44,22 @@ class CachedSession(OriginalSession):
             * ``mongodb``: Database name
             * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
 
-        Note on cache key parameters: Set ``include_get_headers=False`` if you want responses to be
-        cached under the same key if they only differ by headers. You may also provide
+        Note on cache key parameters: Set ``include_get_headers=True`` if you want responses to be
+        cached under different keys if they only differ by headers. You may also provide
         ``ignored_parameters`` to ignore specific request params. This is useful, for example, when
         requesting the same resource with different credentials or access tokens.
         """
-        self.cache = backends.create_backend(backend, cache_name, expire_after, **backend_options)
-        self._cache_name = cache_name
-        self._cache_allowable_codes = allowable_codes
-        self._cache_allowable_methods = allowable_methods
-        self._filter_fn = filter_fn
+        self.cache = backends.create_backend(
+            backend,
+            cache_name,
+            expire_after,
+            filter_fn=filter_fn,
+            allowable_codes=allowable_codes,
+            allowable_methods=allowable_methods,
+            include_get_headers=include_get_headers,
+            ignored_parameters=ignored_parameters,
+            **backend_options,
+        )
         super().__init__()
 
     async def get(self, url: str, **kwargs):
@@ -62,29 +70,12 @@ class CachedSession(OriginalSession):
         cache_key = self.cache.create_key(method, url, **kwargs)
 
         # Attempt to fetch cached response; if missing or expired, fetch new one
-        response, timestamp = self.cache.get_response(cache_key)
+        response = self.cache.get_response(cache_key)
         if response is None or response.is_expired:
-            return await self.send_and_cache_request(method, url, cache_key, **kwargs)
-
-        # TODO: Handle this in BaseCache
-        # If the request is filtered out and has a previously cached response, delete it
-        if getattr(response, "from_cache", False) and not self._filter_fn(response):
-            self.cache.delete(cache_key)
-            return response
-
-        # Alias any redirect requests to the same cache key
-        for r in response.history:
-            self.cache.add_key_mapping(self.cache.create_key(r.request), cache_key)
-
-        response.from_cache = True
-        return response
-
-    async def send_and_cache_request(self, method, url, cache_key, **kwargs):
-        async with super().request(method, url, **kwargs) as response:
-            await response.read()
-        if response.status in self._cache_allowable_codes:
+            async with super().request(method, url, **kwargs) as client_response:
+                response = await client_response.read()
             self.cache.save_response(cache_key, response)
-        response.from_cache = False
+
         return response
 
     @contextmanager
@@ -99,19 +90,10 @@ class CachedSession(OriginalSession):
             ...     s.get('http://httpbin.org/ip')
 
         """
-        self._is_cache_disabled = True
-        try:
-            yield
-        finally:
-            self._is_cache_disabled = False
+        self.cache.disabled = True
+        yield
+        self.cache.disabled = False
 
-    def remove_expired_responses(self):
+    def delete_expired_responses(self):
         """Remove expired responses from storage"""
-        self.cache.remove_expired_responses()
-
-    def __repr__(self):
-        return (
-            f'<CachedSession({self.cache.__class__.__name__}("{self._cache_name}", ...), '
-            f'expire_after={self._cache_expire_after}, '
-            f'allowable_methods={self._cache_allowable_methods})>'
-        )
+        self.cache.delete_expired_responses()

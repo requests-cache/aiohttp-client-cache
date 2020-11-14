@@ -10,7 +10,7 @@ from aiohttp.typedefs import StrOrURL
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
     'encoding',
-    'from_cache',
+    'history',
     'is_expired',
 }
 
@@ -32,8 +32,8 @@ class CachedResponse:
     content: Any = attr.ib(default=None)
     content_disposition: ContentDisposition = attr.ib(default=None)
     cookies: SimpleCookie[str] = attr.ib(default=None)
+    history: Any = attr.ib(default=None)
     is_expired: bool = attr.ib(default=False)
-    from_cache: bool = attr.ib(default=True)
     headers: Mapping = attr.ib(factory=dict)
 
     @classmethod
@@ -46,7 +46,6 @@ class CachedResponse:
         response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
 
         # Set some remaining attributes individually
-        response.from_cache = False
         response.encoding = client_response.get_encoding()
         # response._history =  # TODO
         return response
