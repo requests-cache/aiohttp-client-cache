@@ -23,26 +23,53 @@ RESPONSE_ATTRS = [
 ]
 
 
-class BaseCache(object):
+class BaseCache:
     """Base class for cache implementations, can be used as in-memory cache.
 
     To extend it you can provide dictionary-like objects for
     :attr:`keys_map` and :attr:`responses` or override public methods.
     """
 
-    def __init__(self, expire_after, include_get_headers=False, ignored_parameters=None, **kwargs):
+    def __init__(
+        self,
+        cache_name,
+        expire_after,
+        filter_fn=None,
+        allowable_codes=None,
+        allowable_methods=None,
+        include_get_headers=False,
+        ignored_parameters=None,
+        **kwargs,
+    ):
+        self.name = cache_name
         if expire_after is not None and not isinstance(expire_after, timedelta):
             expire_after = timedelta(seconds=expire_after)
-        self._expire_after = expire_after
+        self.expire_after = expire_after
+        self.allowable_codes = allowable_codes
+        self.allowable_methods = allowable_methods
+        self.filter_fn = filter_fn
+        self.disabled = False
 
         self.keys_map = {}  # `key` -> `key_in_responses` mapping
         self.responses = {}  # `key_in_cache` -> `response` mapping
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
 
+    def is_cacheable(self, response) -> bool:
+        """Perform all checks needed to determine if the given response should be cached"""
+        return all(
+            [
+                not self.disabled,
+                response.status in self.allowable_codes,
+                response.method in self.allowable_methods,
+                self.filter_fn(response),
+            ]
+        )
+
     def is_expired(self, timestamp: str) -> bool:
+        """Determine if a given timestamp is expired"""
         time_elapsed = datetime.utcnow() - parse_date(timestamp)
-        return self._expire_after and time_elapsed >= self._expire_after
+        return self.expire_after and time_elapsed >= self.expire_after
 
     def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
@@ -51,7 +78,14 @@ class BaseCache(object):
             key: Key for this response
             response: Response to save
         """
+        if not self.is_cacheable(response):
+            return
+
         self.responses[key] = self.reduce_response(response), datetime.utcnow()
+        # TODO: properly handle history
+        # Alias any redirect requests to the same cache key
+        for r in response.history:
+            self.add_key_mapping(self.create_key(r.request), key)
 
     def add_key_mapping(self, new_key: str, key_to_response: str):
         """
@@ -79,12 +113,17 @@ class BaseCache(object):
         except (KeyError, TypeError):
             return None
 
-        # If the item is expired, delete it from the cache
-        if self.is_expired(timestamp):
+        # If the item is expired or filtered out, delete it from the cache
+        if self.is_expired(timestamp) or not self.is_cacheable(response):
             self.delete(key)
             response.is_expired = True
 
         return self.restore_response(response)
+
+    def clear(self):
+        """Clear cache"""
+        self.responses.clear()
+        self.keys_map.clear()
 
     def delete(self, key: str):
         """ Delete `key` from cache. Also deletes all responses from response history """
@@ -107,16 +146,11 @@ class BaseCache(object):
         """
         self.delete(self.create_key('GET', url))
 
-    def clear(self):
-        """Clear cache"""
-        self.responses.clear()
-        self.keys_map.clear()
-
-    def remove_expired_responses(self):
+    def delete_expired_responses(self):
         """Deletes entries from cache with creation time older than ``expire_after``"""
-        if not self._expire_after:
+        if not self.expire_after:
             return
-        created_before = datetime.utcnow() - self._expire_after
+        created_before = datetime.utcnow() - self.expire_after
         keys_to_delete = set()
 
         for key in self.responses:
@@ -138,7 +172,39 @@ class BaseCache(object):
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         return self.has_key(self.create_key('GET', url))
 
-    # TODO: replace these methods with CachedResponse
+    def create_key(self, method, url, params=None, data=None, headers=None, **kwargs) -> str:
+        """Create a unique cache key based on request details"""
+        if self._ignored_parameters:
+            url, params, body = self._remove_ignored_parameters(url, params, data)
+
+        key = hashlib.sha256()
+        key.update(method.upper().encode())
+        key.update(url.encode())
+        key.update(_encode_dict(params))
+        key.update(_encode_dict(data))
+
+        if self._include_get_headers and headers != ClientRequest.DEFAULT_HEADERS:
+            for name, value in sorted(headers.items()):
+                key.update(name.encode())
+                key.update(value.encode())
+        return key.hexdigest()
+
+    def _remove_ignored_parameters(self, url, params, data):
+        def filter_ignored_params(d):
+            return {k: v for k, v in d.items() if k not in self._ignored_parameters}
+
+        # Strip off any request params manually added to URL and add to `params`
+        u = urlparse(url)
+        if u.query:
+            query = parse_qsl(u.query)
+            params.update(query)
+            url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
+
+        params = filter_ignored_params(params)
+        data = filter_ignored_params(data)
+        return url, params, data
+
+    # TODO: replace these three methods with CachedResponse
     def reduce_response(self, response: ClientResponse, seen=None):
         """Reduce response object to make it compatible with ``pickle``"""
         seen = seen or {}
@@ -178,39 +244,8 @@ class BaseCache(object):
         result.history = tuple(self.restore_response(r, seen) for r in response.history)
         return result
 
-    def create_key(self, method, url, params=None, data=None, headers=None, **kwargs):
-        if self._ignored_parameters:
-            url, params, body = self._remove_ignored_parameters(url, params, data)
-
-        key = hashlib.sha256()
-        key.update(method.upper().encode())
-        key.update(url.encode())
-        key.update(_encode_dict(params))
-        key.update(_encode_dict(data))
-
-        if self._include_get_headers and headers != ClientRequest.DEFAULT_HEADERS:
-            for name, value in sorted(headers.items()):
-                key.update(name.encode())
-                key.update(value.encode())
-        return key.hexdigest()
-
-    def _remove_ignored_parameters(self, url, params, data):
-        def filter_ignored_params(d):
-            return {k: v for k, v in d.items() if k not in self._ignored_parameters}
-
-        # Strip off any request params manually added to URL and add to `params`
-        u = urlparse(url)
-        if u.query:
-            query = parse_qsl(u.query)
-            params.update(query)
-            url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
-
-        params = filter_ignored_params(params)
-        data = filter_ignored_params(data)
-        return url, params, data
-
     def __str__(self):
-        return f'keys: {self.keys_map}\nresponses: {self.responses}'
+        return f'keys: {list(self.keys_map.keys())}\nresponses: {list(self.responses.keys())}'
 
 
 # used for saving response attributes
