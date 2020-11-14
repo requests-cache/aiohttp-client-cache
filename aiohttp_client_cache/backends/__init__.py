@@ -34,7 +34,7 @@ BACKEND_CLASSES = {
 }
 
 
-def create_backend(backend_name, cache_name, **options):
+def create_backend(backend_name, cache_name, *args, **kwargs):
     if isinstance(backend_name, BaseCache):
         return backend_name
     if not backend_name:
