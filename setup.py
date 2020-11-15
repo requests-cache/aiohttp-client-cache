@@ -31,8 +31,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     version=__version__,
-    author='Roman Haritonov',
-    url='https://github.com/JWCook/aiohttp-client-cache',
     install_requires=['aiohttp', 'attrs'],
     extras_require=extras_require,
 )

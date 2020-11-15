@@ -1,4 +1,4 @@
-__version__ = '0.6.0'
+__version__ = '0.1.0'
 
 try:
     from aiohttp_client_cache.session import CachedSession
