@@ -1,11 +1,13 @@
 """Core functions for cache configuration"""
 from contextlib import contextmanager
 from datetime import timedelta
-from typing import Any, Callable, Union, Optional
+from typing import Callable, Union
 
+import forge
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 from aiohttp_client_cache.backends import create_backend
+from aiohttp_client_cache.response import AnyResponse
 
 
 class CachedSession(ClientSession):
@@ -64,41 +66,20 @@ class CachedSession(ClientSession):
         )
         super().__init__()
 
-    async def get(self, url: StrOrURL, **kwargs):
-        """Perform an HTTP GET request"""
-        return await self.request('GET', url, **kwargs)
-
-    async def head(self, url: StrOrURL, **kwargs):
-        """Perform an HTTP HEAD request"""
-        return await self.request('GET', url, **kwargs)
-
-    async def post(self, url: StrOrURL, data: Any = None, **kwargs):
-        """Perform an HTTP POST request"""
-        return await self.request('GET', url, data=data, **kwargs)
-
-    async def put(self, url: StrOrURL, data: Any = None, **kwargs):
-        """Perform an HTTP PUT request"""
-        return await self.request('GET', url, data=data, **kwargs)
-
-    async def patch(self, url: StrOrURL, data: Any = None, **kwargs):
-        """Perform an HTTP PATCH request"""
-        return await self.request('GET', url, data=data, **kwargs)
-
-    async def delete(self, url: StrOrURL, **kwargs):
-        """Perform an HTTP DELETE request"""
-        return await self.request('GET', url, **kwargs)
-
-    async def request(self, method, url, **kwargs):
-        cache_key = self.cache.create_key(method, url, **kwargs)
+    @forge.copy(ClientSession._request)
+    async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:
+        """Wrapper around :py:func:`.SessionClient._request` that adds caching"""
+        cache_key = self.cache.create_key(method, str_or_url, **kwargs)
 
         # Attempt to fetch cached response; if missing or expired, fetch new one
-        response = await self.cache.get_response(cache_key)
-        if response is None or getattr(response, 'is_expired', False):
-            async with super().request(method, url, **kwargs) as response:
-                await response.read()
-            await self.cache.save_response(cache_key, response)
-
-        return response
+        cached_response = await self.cache.get_response(cache_key)
+        if cached_response is None or getattr(cached_response, 'is_expired', False):
+            client_response = await super()._request(method, str_or_url, **kwargs)
+            await client_response.read()
+            await self.cache.save_response(cache_key, client_response)
+            return client_response
+        else:
+            return cached_response
 
     @contextmanager
     def cache_disabled(self):
