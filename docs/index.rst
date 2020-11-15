@@ -2,7 +2,7 @@ aiohttp-client-cache
 ====================
 
 .. mdinclude:: ../README.md
-    :start-line: 1
+    :start-line: 2
 
 Contents
 ========
