@@ -1,7 +1,7 @@
 """Core functions for cache configuration"""
 from contextlib import contextmanager
 from datetime import timedelta
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
@@ -65,7 +65,27 @@ class CachedSession(ClientSession):
         super().__init__()
 
     async def get(self, url: StrOrURL, **kwargs):
-        """Perform HTTP GET request."""
+        """Perform an HTTP GET request"""
+        return await self.request('GET', url, **kwargs)
+
+    async def head(self, url: StrOrURL, **kwargs):
+        """Perform an HTTP HEAD request"""
+        return await self.request('GET', url, **kwargs)
+
+    async def post(self, url: StrOrURL, data: Any = None, **kwargs):
+        """Perform an HTTP POST request"""
+        return await self.request('GET', url, data=data, **kwargs)
+
+    async def put(self, url: StrOrURL, data: Any = None, **kwargs):
+        """Perform an HTTP PUT request"""
+        return await self.request('GET', url, data=data, **kwargs)
+
+    async def patch(self, url: StrOrURL, data: Any = None, **kwargs):
+        """Perform an HTTP PATCH request"""
+        return await self.request('GET', url, data=data, **kwargs)
+
+    async def delete(self, url: StrOrURL, **kwargs):
+        """Perform an HTTP DELETE request"""
         return await self.request('GET', url, **kwargs)
 
     async def request(self, method, url, **kwargs):
