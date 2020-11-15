@@ -52,11 +52,12 @@ jobs:
 
       - name: Install dependencies
         run: pip install ".[dev]"
-      - name: Run style checks
+      - name: Run code style checks
         run: black --check .
-      # TODO: fix typing issues
-#      - name: Run type checks
-#        run: mypy .
+      - name: Run type checks
+        run: mypy .
+      - name: Run linter
+        run: flake8 aiohttp_client_cache
 #      - name: Generate code coverage report
 #        run: pytest --cov --cov-report=term --cov-report=html
 #      - name: Send code coverage report to Coveralls
