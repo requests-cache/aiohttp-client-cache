@@ -4,7 +4,8 @@ import pickle
 from gridfs import GridFS
 from pymongo import MongoClient
 
-from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache, MongoDict
+from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
+from aiohttp_client_cache.backends.mongo import MongoDict
 
 
 class GridFSCache(BaseCache):
