@@ -7,7 +7,7 @@ from urllib.parse import urlparse, parse_qsl, urlunparse
 
 from aiohttp import ClientResponse, ClientRequest
 
-from aiohttp_client_cache.cached_response import CachedResponse
+from aiohttp_client_cache.response import CachedResponse
 
 RESPONSE_ATTRS = [
     'content',
