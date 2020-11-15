@@ -1,25 +1,29 @@
+from logging import getLogger
 from aiohttp_client_cache.backends.base import BaseCache
+
+PICKLE_PROTOCOL = 4
+logger = getLogger(__name__)
 
 # Import all backends for which dependencies have been installed
 try:
     # Heroku doesn't allow the SQLite3 module to be installed
-    from .sqlite import DbCache
+    from aiohttp_client_cache.backends.sqlite import DbCache
 except ImportError:
     DbCache = None
 try:
-    from .mongo import MongoCache, MongoDict
+    from aiohttp_client_cache.backends.mongo import MongoCache, MongoDict
 except ImportError:
     MongoCache, MongoDict = None, None
 try:
-    from .gridfs import GridFSCache
+    from aiohttp_client_cache.backends.gridfs import GridFSCache
 except ImportError:
     GridFSCache = None
 try:
-    from .redis import RedisCache
+    from aiohttp_client_cache.backends.redis import RedisCache
 except ImportError:
     RedisCache = None
 try:
-    from .dynamodb import DynamoDbCache
+    from aiohttp_client_cache.backends.dynamodb import DynamoDbCache
 except ImportError:
     DynamoDbCache = None
 
@@ -32,11 +36,11 @@ BACKEND_CLASSES = {
     'redis': RedisCache,
     'sqlite': DbCache,
 }
-PICKLE_PROTOCOL = 4
 
 
 def create_backend(backend_name: str, *args, **kwargs):
     """Initialize a backend by name"""
+    logger.info(f'Initializing backend: {backend_name}')
     if isinstance(backend_name, BaseCache):
         return backend_name
     if not backend_name:
@@ -49,4 +53,5 @@ def create_backend(backend_name: str, *args, **kwargs):
     if not backend_class:
         raise ImportError(f'Dependencies not installed for backend {backend_name}')
 
+    logger.info(f'Found backend type: {backend_class}')
     return backend_class(*args, **kwargs)

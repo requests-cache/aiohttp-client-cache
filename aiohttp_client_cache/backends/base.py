@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from logging import getLogger
 from typing import Optional, Union
 
 from io import BytesIO
@@ -6,20 +7,9 @@ import hashlib
 from urllib.parse import urlparse, parse_qsl, urlunparse
 
 from aiohttp import ClientResponse, ClientRequest
-
 from aiohttp_client_cache.response import CachedResponse
 
-RESPONSE_ATTRS = [
-    'content',
-    'cookies',
-    'headers',
-    'method',
-    'reason',
-    'request',
-    'status',
-    'url',
-    'version',
-]
+logger = getLogger(__name__)
 
 
 class BaseCache:
@@ -68,8 +58,9 @@ class BaseCache:
 
     def is_expired(self, response: CachedResponse) -> bool:
         """Determine if a given timestamp is expired"""
-        time_elapsed = datetime.utcnow() - response.created_at
-        return self.expire_after and time_elapsed >= self.expire_after
+        if not getattr(response, 'created_at', None) or not self.expire_after:
+            return False
+        return datetime.utcnow() - response.created_at >= self.expire_after
 
     async def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
@@ -147,7 +138,7 @@ class BaseCache:
         """
         self.delete(self.create_key('GET', url))
 
-    def delete_expired_responses(self):
+    async def delete_expired_responses(self):
         """Deletes entries from cache with creation time older than ``expire_after``.
         **Note:** Also deletes any cache items that are filtered out according to ``filter_fn()``
         and filter parameters (``allowable_*``)
@@ -155,10 +146,11 @@ class BaseCache:
         keys_to_delete = set()
 
         for key in self.responses:
-            response = self.get_response(key)
+            response = await self.get_response(key)
             if response and response.is_expired:
                 keys_to_delete.add(key)
 
+        logger.info(f'Deleting {len(keys_to_delete)} expired cache entries')
         for key in keys_to_delete:
             self.delete(key)
 
@@ -204,23 +196,6 @@ class BaseCache:
 
     def __str__(self):
         return f'keys: {list(self.keys_map.keys())}\nresponses: {list(self.responses.keys())}'
-
-
-# used for saving response attributes
-class _Store(object):
-    pass
-
-
-class _RawStore(object):
-    # noop for cached response
-    def release_conn(self):
-        pass
-
-    # for streaming requests support
-    def read(self, chunk_size=1):
-        if not hasattr(self, "_io_with_content_"):
-            self._io_with_content_ = BytesIO(self._cached_content_)
-        return self._io_with_content_.read(chunk_size)
 
 
 def _encode_dict(d):

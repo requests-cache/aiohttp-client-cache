@@ -5,7 +5,7 @@
 Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache), which is a cache
 for the server side.
 
-**This is WIP and not yet functional!**
+**This is a work in progress and not yet fully functional!**
 
 ## Installation
 Requires python 3.6+
