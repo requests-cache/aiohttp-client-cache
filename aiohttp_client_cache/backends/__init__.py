@@ -9,7 +9,7 @@ except ImportError:
 try:
     from .mongo import MongoCache, MongoDict
 except ImportError:
-    MongoCache = None
+    MongoCache, MongoDict = None, None
 try:
     from .gridfs import GridFSCache
 except ImportError:
@@ -35,7 +35,8 @@ BACKEND_CLASSES = {
 PICKLE_PROTOCOL = 4
 
 
-def create_backend(backend_name, *args, **kwargs):
+def create_backend(backend_name: str, *args, **kwargs):
+    """Initialize a backend by name"""
     if isinstance(backend_name, BaseCache):
         return backend_name
     if not backend_name:
