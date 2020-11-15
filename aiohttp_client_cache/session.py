@@ -3,11 +3,12 @@ from contextlib import contextmanager
 from datetime import timedelta
 from typing import Callable, Union
 
-from aiohttp import ClientSession as OriginalSession
-from aiohttp_client_cache import backends
+from aiohttp import ClientSession
+from aiohttp.typedefs import StrOrURL
+from aiohttp_client_cache.backends import create_backend
 
 
-class CachedSession(OriginalSession):
+class CachedSession(ClientSession):
     """ :py:class:`.aiohttp.ClientSession` with caching support."""
 
     def __init__(
@@ -50,7 +51,7 @@ class CachedSession(OriginalSession):
         ``ignored_parameters`` to ignore specific request params. This is useful, for example, when
         requesting the same resource with different credentials or access tokens.
         """
-        self.cache = backends.create_backend(
+        self.cache = create_backend(
             backend,
             cache_name,
             expire_after,
@@ -63,7 +64,7 @@ class CachedSession(OriginalSession):
         )
         super().__init__()
 
-    async def get(self, url: str, **kwargs):
+    async def get(self, url: StrOrURL, **kwargs):
         """Perform HTTP GET request."""
         return await self.request('GET', url, **kwargs)
 
@@ -72,9 +73,9 @@ class CachedSession(OriginalSession):
 
         # Attempt to fetch cached response; if missing or expired, fetch new one
         response = await self.cache.get_response(cache_key)
-        if response is None or response.is_expired:
-            async with super().request(method, url, **kwargs) as client_response:
-                response = await client_response.read()
+        if response is None or getattr(response, 'is_expired', False):
+            async with super().request(method, url, **kwargs) as response:
+                await response.read()
             await self.cache.save_response(cache_key, response)
 
         return response
@@ -95,6 +96,6 @@ class CachedSession(OriginalSession):
         yield
         self.cache.disabled = False
 
-    def delete_expired_responses(self):
+    async def delete_expired_responses(self):
         """Remove expired responses from storage"""
-        self.cache.delete_expired_responses()
+        await self.cache.delete_expired_responses()
