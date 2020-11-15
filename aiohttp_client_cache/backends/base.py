@@ -2,12 +2,13 @@ from datetime import datetime, timedelta
 from logging import getLogger
 from typing import Optional, Union
 
-from io import BytesIO
 import hashlib
 from urllib.parse import urlparse, parse_qsl, urlunparse
 
 from aiohttp import ClientResponse, ClientRequest
-from aiohttp_client_cache.response import CachedResponse
+from aiohttp.typedefs import StrOrURL
+
+from aiohttp_client_cache.response import CachedResponse, AnyResponse
 
 logger = getLogger(__name__)
 
@@ -56,11 +57,12 @@ class BaseCache:
             ]
         )
 
-    def is_expired(self, response: CachedResponse) -> bool:
+    def is_expired(self, response: AnyResponse) -> bool:
         """Determine if a given timestamp is expired"""
-        if not getattr(response, 'created_at', None) or not self.expire_after:
+        created_at = getattr(response, 'created_at', None)
+        if not created_at or not self.expire_after:
             return False
-        return datetime.utcnow() - response.created_at >= self.expire_after
+        return datetime.utcnow() - created_at >= self.expire_after
 
     async def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
@@ -154,26 +156,31 @@ class BaseCache:
         for key in keys_to_delete:
             self.delete(key)
 
-    def has_key(self, key: str) -> bool:
-        """Returns `True` if cache has `key`, `False` otherwise"""
-        return key in self.responses or key in self.keys_map
-
     def has_url(self, url: str) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
-        return self.has_key(self.create_key('GET', url))
+        key = self.create_key('GET', url)
+        return key in self.responses or key in self.keys_map
 
-    def create_key(self, method, url, params=None, data=None, headers=None, **kwargs) -> str:
+    def create_key(
+        self,
+        method: str,
+        url: StrOrURL,
+        params: dict = None,
+        data: dict = None,
+        headers: dict = None,
+        **kwargs,
+    ) -> str:
         """Create a unique cache key based on request details"""
         if self._ignored_parameters:
             url, params, body = self._remove_ignored_parameters(url, params, data)
 
         key = hashlib.sha256()
         key.update(method.upper().encode())
-        key.update(url.encode())
+        key.update(str(url).encode())
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
 
-        if self._include_get_headers and headers != ClientRequest.DEFAULT_HEADERS:
+        if self._include_get_headers and headers and headers != ClientRequest.DEFAULT_HEADERS:
             for name, value in sorted(headers.items()):
                 key.update(name.encode())
                 key.update(value.encode())
