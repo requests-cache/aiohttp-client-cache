@@ -33,6 +33,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     version=__version__,
-    install_requires=['aiohttp', 'attrs'],
+    install_requires=['aiohttp', 'attrs', 'python-forge'],
     extras_require=extras_require,
 )
