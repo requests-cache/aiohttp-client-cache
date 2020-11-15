@@ -4,7 +4,9 @@ from setuptools import setup, find_packages
 from aiohttp_client_cache import __version__
 
 extras_require = {
-    # Libraries for all supported backends
+    # Packages used for CI jobs
+    "build": ["coveralls", "twine", "wheel"],
+    # Packages for all supported backends
     'backends': ['boto3', 'pymongo', 'redis'],
     # Packages used for documentation builds
     'docs': [
