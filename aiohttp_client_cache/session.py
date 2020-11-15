@@ -28,7 +28,8 @@ class CachedSession(OriginalSession):
             backend: cache backend name; see see :ref:`persistence` for details. May also be a
                 backend implementation subclassing :py:class:`.BaseCache`. Defaults to ``sqlite``
                 if available, otherwise fallback to ``memory``
-            expire_after: Number of seconds after cache will be expired, or ``None`` to never expire
+            expire_after: Number of hours after which a cache entry will expire; se ``None`` to
+                never expire
             filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
                 returns a boolean indicating whether or not that response should be cached. Will be
                 applied to both new and previously cached responses
