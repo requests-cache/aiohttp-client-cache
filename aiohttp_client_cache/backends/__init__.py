@@ -1,4 +1,7 @@
 from logging import getLogger
+from importlib import import_module
+from typing import Optional
+
 from aiohttp_client_cache.backends.base import BaseCache
 
 PICKLE_PROTOCOL = 4
@@ -38,7 +41,7 @@ BACKEND_CLASSES = {
 }
 
 
-def create_backend(backend_name: str, *args, **kwargs):
+def create_backend(backend_name: Optional[str], *args, **kwargs):
     """Initialize a backend by name"""
     logger.info(f'Initializing backend: {backend_name}')
     if isinstance(backend_name, BaseCache):
