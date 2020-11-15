@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
-from typing import Mapping, Any, Optional, Dict, Iterable
+from typing import Mapping, Any, Optional, Dict, Iterable, Union
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError
@@ -17,6 +17,7 @@ EXCLUDE_ATTRS = {
     'is_expired',
     'request_info',
 }
+JsonResponse = Optional[Dict[str, Any]]
 
 
 @attr.s(auto_attribs=True, slots=True)
@@ -91,7 +92,7 @@ class CachedResponse:
     def raise_for_status(self) -> None:
         if self.status >= 400:
             raise ClientResponseError(
-                self.request_info,
+                self.request_info,  # type: ignore  # These types are interchangeable
                 tuple(),
                 status=self.status,
                 message=self.reason,
@@ -112,3 +113,12 @@ class CachedResponse:
         if not stripped:
             return None
         return json.loads(stripped.decode(encoding or self.encoding))
+
+    def read(self):
+        """No-op function for compatibility with ClientResponse"""
+
+    def release(self):
+        """No-op function for compatibility with ClientResponse"""
+
+
+AnyResponse = Union[ClientResponse, CachedResponse]
