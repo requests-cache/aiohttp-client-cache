@@ -1,12 +1,18 @@
-*.pyc
-*.pyo
+*.py[cod]
 *.idea
 *.sqlite
+*.egg
 *.egg-info
-build
-_build
-dist
-MANIFEST
-.mypy_cache/
-.tox/
+build/
+dist/
+venv/
 
+# Test / coverage reports
+.coverage
+.mypy_cache/
+.tox
+test-reports/
+
+# Sphinx
+docs/_build/
+docs/modules/
