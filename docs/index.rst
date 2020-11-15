@@ -2,7 +2,7 @@ aiohttp-client-cache
 ====================
 
 .. mdinclude:: ../README.md
-    :start-line: 2
+    :start-line: 1
 
 Contents
 ========
@@ -11,6 +11,7 @@ Contents
    :maxdepth: 2
 
    reference
+   history
 
 
 Indices and tables

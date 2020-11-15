@@ -1,14 +1,13 @@
 # aiohttp-client-cache
-`aiohttp-client-cache` is (or rather, will be) an async persistent cache for the
-[aiohttp](https://docs.aiohttp.org) client, ~~hastily hacked together~~ adapted from
-[requests-cache](https://github.com/reclosedev/requests-cache).
+`aiohttp-client-cache` is an async persistent cache for [aiohttp](https://docs.aiohttp.org) 
+requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache), which is a cache
-for the server side.
+for the aiohttp web server. This package is, as you might guess, specifically for the aiohttp client.
 
-**This is a work in progress and not yet fully functional!**
+**This is an early work in progress and not yet fully functional!**
 
 ## Installation
-Requires python 3.6+
+Requires python 3.7+
 
 **WIP; package not yet on pypi**
 ```python
@@ -35,7 +34,7 @@ for i in range(10):
 If you need library that uses HTTP headers and status codes, take a look at
 [CacheControl](https://github.com/ionrock/cachecontrol).
 
-## Persistence
+## Cache Backends
 Several backends are available:
 
 * `sqlite`: SQLite database (**default**)
@@ -53,5 +52,5 @@ the same request is made. If you want to manually purge all expired items, you c
 
 ```python
 session = CachedSession(expire_after=1)
-session.remove_expired_responses()
+await session.remove_expired_responses()
 ```
