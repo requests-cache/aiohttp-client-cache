@@ -127,7 +127,7 @@ class BaseCache:
                 response = self.responses[self.keys_map[key]]
                 del self.keys_map[key]
             for r in response.history:
-                del self.keys_map[self.create_key(r.request)]
+                del self.keys_map[self.create_key(r.method, r.url)]
         # We don't care if the key is already missing from the cache
         except KeyError:
             pass
