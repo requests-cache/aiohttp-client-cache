@@ -8,7 +8,7 @@ from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
 
 
 class DbCache(BaseCache):
-    """sqlite cache backend.
+    """SQLite cache backend.
 
     Reading is fast, saving is a bit slower. It can store a large amount of data
     with low memory usage.
@@ -49,7 +49,7 @@ class DbDict(MutableMapping):
             filename: filename for database (without extension)
             table_name: table name
             fast_save: If it's True, then sqlite will be configured with
-                          `"PRAGMA synchronous = 0;" <http://www.sqlite.org/pragma.html#pragma_synchronous>`_
+                          `'PRAGMA synchronous = 0;' <http://www.sqlite.org/pragma.html#pragma_synchronous>`_
                           to speedup cache saving, but be careful, it's dangerous.
                           Tests showed that insertion order of records can be wrong with this option.
         """
@@ -64,9 +64,7 @@ class DbDict(MutableMapping):
         self._pending_connection = None
         self._lock = threading.RLock()
         with self.connection() as con:
-            con.execute(
-                "create table if not exists `%s` (key PRIMARY KEY, value)" % self.table_name
-            )
+            con.execute(f'create table if not exists `{self.table_name}` (key PRIMARY KEY, value)')
 
     @contextmanager
     def connection(self, commit_on_success=False):
@@ -79,7 +77,7 @@ class DbDict(MutableMapping):
                 con = sqlite3.connect(self.filename)
             try:
                 if self.fast_save:
-                    con.execute("PRAGMA synchronous = 0;")
+                    con.execute('PRAGMA synchronous = 0;')
                 yield con
                 if commit_on_success and self.can_commit:
                     con.commit()
@@ -121,10 +119,14 @@ class DbDict(MutableMapping):
                 self._pending_connection.close()
                 self._pending_connection = None
 
+    def get_all(self):
+        with self.connection() as con:
+            return con.execute(f'select value from `{self.table_name}`').fetchall()
+
     def __getitem__(self, key):
         with self.connection() as con:
             row = con.execute(
-                "select value from `%s` where key=?" % self.table_name, (key,)
+                f'select value from `{self.table_name}` where key=?', (key,)
             ).fetchone()
             if not row:
                 raise KeyError
@@ -133,30 +135,30 @@ class DbDict(MutableMapping):
     def __setitem__(self, key, item):
         with self.connection(True) as con:
             con.execute(
-                "insert or replace into `%s` (key,value) values (?,?)" % self.table_name,
+                f'insert or replace into `{self.table_name}` (key,value) values (?,?)',
                 (key, item),
             )
 
     def __delitem__(self, key):
         with self.connection(True) as con:
-            cur = con.execute("delete from `%s` where key=?" % self.table_name, (key,))
+            cur = con.execute(f'delete from `{self.table_name}` where key=?', (key,))
             if not cur.rowcount:
                 raise KeyError
 
     def __iter__(self):
         with self.connection() as con:
-            for row in con.execute("select key from `%s`" % self.table_name):
+            for row in con.execute(f'select key from `{self.table_name}`'):
                 yield row[0]
 
     def __len__(self):
         with self.connection() as con:
-            return con.execute("select count(key) from `%s`" % self.table_name).fetchone()[0]
+            return con.execute(f'select count(key) from `{self.table_name}`').fetchone()[0]
 
     def clear(self):
         with self.connection(True) as con:
-            con.execute("drop table `%s`" % self.table_name)
-            con.execute("create table `%s` (key PRIMARY KEY, value)" % self.table_name)
-            con.execute("vacuum")
+            con.execute(f'drop table `{self.table_name}`')
+            con.execute(f'create table `{self.table_name}` (key PRIMARY KEY, value)')
+            con.execute('vacuum')
 
     def __str__(self):
         return str(dict(self.items()))
