@@ -1,5 +1,5 @@
-from collections.abc import MutableMapping
 import pickle
+from collections.abc import MutableMapping
 
 import boto3
 from boto3.resources.base import ServiceResource

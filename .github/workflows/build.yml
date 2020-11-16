@@ -52,8 +52,10 @@ jobs:
 
       - name: Install dependencies
         run: pip install ".[dev]"
-      - name: Run code style checks
-        run: black --check .
+      - name: Run style checks
+        run: |
+          black --check --diff .
+          isort --check --diff .
       - name: Run type checks
         run: mypy .
       - name: Run linter

@@ -8,7 +8,7 @@ PACKAGE_DIR = join(PROJECT_DIR, 'aiohttp_client_cache')
 
 # Add project path so we can import our package
 sys.path.insert(0, PROJECT_DIR)
-from aiohttp_client_cache import __version__
+from aiohttp_client_cache import __version__  # noqa
 
 # General information about the project.
 project = 'aiohttp-client-cache'
