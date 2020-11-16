@@ -1,5 +1,5 @@
-from collections.abc import MutableMapping
 import pickle
+from collections.abc import MutableMapping
 
 from redis import StrictRedis
 
