@@ -9,7 +9,7 @@ See full documentation at https://aiohttp-client-cache.readthedocs.io
 
 <!--- [![Coverage Status](https://coveralls.io/repos/github/JWCook/aiohttp-client-cache/badge.svg?branch=master)](https://coveralls.io/github/JWCook/aiohttp-client-cache?branch=master) --->
 
-`aiohttp-client-cache` is an async persistent cache for [aiohttp](https://docs.aiohttp.org) 
+`aiohttp-client-cache` is an async persistent cache for [aiohttp](https://docs.aiohttp.org)
 requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 
 Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache), which is a cache
@@ -31,6 +31,8 @@ To set up for local development:
 $ git clone https://github.com/JWCook/aiohttp-client-cache
 $ cd aiohttp-client-cache
 $ pip install -Ue ".[dev]"
+$ # Optional but recommended:
+$ pre-commit install --config .github/pre-commit.yml
 ```
 
 ## Usage example
