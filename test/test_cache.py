@@ -1,13 +1,14 @@
-import os, sys
+import os
+import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-import time
 import json
+import time
 import unittest
-from unittest import mock
 from collections import defaultdict
 from datetime import datetime, timedelta
+from unittest import mock
 
 import requests
 from requests import Request

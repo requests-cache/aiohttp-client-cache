@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -10,7 +11,6 @@ from requests.sessions import Session as OriginalSession
 import aiohttp_client_cache
 from aiohttp_client_cache import CachedSession
 from aiohttp_client_cache.backends import BaseCache
-
 
 CACHE_NAME = 'requests_cache_test'
 CACHE_BACKEND = 'sqlite'

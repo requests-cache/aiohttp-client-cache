@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from itertools import chain
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 from aiohttp_client_cache import __version__
 
 extras_require = {
     # Packages used for CI jobs
-    "build": ["coveralls", "twine", "wheel"],
+    'build': ['coveralls', 'twine', 'wheel'],
     # Packages for all supported backends
     'backends': ['boto3', 'pymongo', 'redis'],
     # Packages used for documentation builds
@@ -20,6 +21,7 @@ extras_require = {
     'test': [
         'black==20.8b1',
         'flake8',
+        'isort',
         'mypy',
         'pytest>=5.0',
         'pytest-cov',
