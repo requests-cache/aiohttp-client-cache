@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
-from typing import Mapping, Any, Optional, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError

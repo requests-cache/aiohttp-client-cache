@@ -1,9 +1,10 @@
-import os, sys
+import os
+import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 import unittest
-
 from threading import Thread
+
 from aiohttp_client_cache import CachedSession
 
 CACHE_NAME = 'requests_cache_test'

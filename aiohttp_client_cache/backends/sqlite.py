@@ -1,8 +1,8 @@
-from collections.abc import MutableMapping
-from contextlib import contextmanager
 import pickle
 import sqlite3
 import threading
+from collections.abc import MutableMapping
+from contextlib import contextmanager
 
 from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
 
