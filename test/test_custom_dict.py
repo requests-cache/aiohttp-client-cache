@@ -1,7 +1,4 @@
 import os
-import sys
-
-sys.path.insert(0, os.path.abspath('..'))
 
 from aiohttp_client_cache.backends.storage.dbdict import DbDict, DbPickleDict
 
@@ -18,7 +15,7 @@ class BaseCustomDictTestCase(object):
         if self.dict_class is DbDict:
             try:
                 os.unlink(self.NAMESPACE)
-            except:
+            except Exception:
                 pass
             return
         for table in self.TABLES:
@@ -38,7 +35,7 @@ class BaseCustomDictTestCase(object):
         self.assertEqual(list(d3.keys()), [3])
 
         with self.assertRaises(KeyError):
-            a = d1[4]
+            d1[4]
 
     def test_str(self):
         d = self.dict_class(self.NAMESPACE)
@@ -84,7 +81,7 @@ class BaseCustomDictTestCase(object):
 
     def test_same_settings(self):
         d1 = self.dict_class(self.NAMESPACE)
-        d2 = self.dict_class(self.NAMESPACE, connection=d1.connection)
+        d2 = self.dict_class(self.NAMESPACE, connection=d1.get_connection)
         d1.clear()
         d2.clear()
         d1[1] = 1
