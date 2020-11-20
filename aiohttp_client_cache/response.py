@@ -83,8 +83,8 @@ class CachedResponse:
         response.request_info = RequestInfo.from_object(client_response.request_info)
         response.url = str(client_response.url)
         if client_response.history:
-            response.history = tuple(
-                await cls.from_client_response(r) for r in client_response.history
+            response.history = (
+                *[await cls.from_client_response(r) for r in client_response.history],
             )
         return response
 
