@@ -93,22 +93,11 @@ class DynamoDbCache(BaseCache):
         value_obj = (response_item or {}).get('value')
         return pickle.loads(value_obj.value) if value_obj else None
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
-        response = self._table.get_item(Key={'namespace': self.namespace, 'key': str(key)})
-        return self._unpickle_item(response.get('Item'))
-
-    async def read_all(self) -> Iterable[ResponseOrKey]:
+    async def clear(self):
         response = self._scan_table()
-        for item in response['Items']:
-            yield self._unpickle_item(item)
-
-    async def write(self, key: str, item: ResponseOrKey):
-        item = {
-            'namespace': self.namespace,
-            'key': str(key),
-            'value': pickle.dumps(item, protocol=-1),
-        }
-        self._table.put_item(Item=item)
+        for v in response['Items']:
+            composite_key = {'namespace': v['namespace'], 'key': v['key']}
+            self._table.delete_item(Key=composite_key)
 
     # TODO
     async def contains(self, key: str) -> bool:
@@ -120,11 +109,13 @@ class DynamoDbCache(BaseCache):
         if 'Attributes' not in response:
             raise KeyError
 
-    async def clear(self):
-        response = self._scan_table()
-        for v in response['Items']:
-            composite_key = {'namespace': v['namespace'], 'key': v['key']}
-            self._table.delete_item(Key=composite_key)
+    # TODO
+    async def keys(self) -> Iterable[str]:
+        raise NotImplementedError
+
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        response = self._table.get_item(Key={'namespace': self.namespace, 'key': str(key)})
+        return self._unpickle_item(response.get('Item'))
 
     async def size(self) -> int:
         expression_attribute_values = {':Namespace': self.namespace}
@@ -136,3 +127,15 @@ class DynamoDbCache(BaseCache):
             ExpressionAttributeNames=expression_attribute_names,
             KeyConditionExpression=key_condition_expression,
         )['Count']
+
+    async def values(self) -> Iterable[ResponseOrKey]:
+        response = self._scan_table()
+        return [self._unpickle_item(item) for item in response.get('Items', [])]
+
+    async def write(self, key: str, item: ResponseOrKey):
+        item_meta = {
+            'namespace': self.namespace,
+            'key': str(key),
+            'value': pickle.dumps(item, protocol=-1),
+        }
+        self._table.put_item(Item=item_meta)

@@ -33,35 +33,35 @@ class GridFSCache(BaseCache):
         self.db = self.connection[db_name]
         self.fs = GridFS(self.db)
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
-        result = self.fs.find_one({'_id': key})
-        if result is None:
-            raise KeyError
-        return pickle.loads(bytes(result.read()))
-
-    # TODO
-    async def read_all(self) -> Iterable[ResponseOrKey]:
-        raise NotImplementedError
-
-    async def keys(self) -> Iterable[str]:
-        return [d._id for d in self.fs.find()]
-
-    async def write(self, key: str, item: ResponseOrKey):
-        await self.delete(key)
-        self.fs.put(pickle.dumps(item, protocol=-1), **{'_id': key})
-
     # TODO
     async def contains(self, key: str) -> bool:
         raise NotImplementedError
+
+    async def clear(self):
+        self.db['fs.files'].drop()
+        self.db['fs.chunks'].drop()
 
     async def delete(self, key: str):
         res = self.fs.find_one({'_id': key})
         if res is not None:
             self.fs.delete(res._id)
 
-    async def clear(self):
-        self.db['fs.files'].drop()
-        self.db['fs.chunks'].drop()
+    async def keys(self) -> Iterable[str]:
+        return [d._id for d in self.fs.find()]
+
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        result = self.fs.find_one({'_id': key})
+        if result is None:
+            raise KeyError
+        return pickle.loads(bytes(result.read()))
 
     async def size(self) -> int:
         return self.db['fs.files'].count()
+
+    # TODO
+    async def values(self) -> Iterable[ResponseOrKey]:
+        raise NotImplementedError
+
+    async def write(self, key: str, item: ResponseOrKey):
+        await self.delete(key)
+        self.fs.put(pickle.dumps(item, protocol=-1), **{'_id': key})

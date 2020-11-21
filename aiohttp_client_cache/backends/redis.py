@@ -38,16 +38,28 @@ class RedisCache(BaseCache):
     def _unpickle_result(result):
         return pickle.loads(bytes(result)) if result else None
 
+    async def clear(self):
+        self.connection.delete(self._self_key)
+
+    async def contains(self, key: str) -> bool:
+        return bool(self.connection.exists(key))
+
+    async def delete(self, key: str):
+        self.connection.hdel(self._self_key, pickle.dumps(key, protocol=-1))
+
+    async def keys(self) -> Iterable[str]:
+        return [self._unpickle_result(r) for r in self.connection.hkeys(self._self_key)]
+
     async def read(self, key: str) -> Optional[ResponseOrKey]:
         result = self.connection.hget(self._self_key, pickle.dumps(key, protocol=-1))
         return self._unpickle_result(result)
 
-    # TODO
-    async def read_all(self) -> Iterable[ResponseOrKey]:
-        raise NotImplementedError
+    async def size(self) -> int:
+        return self.connection.hlen(self._self_key)
 
-    async def keys(self) -> Iterable[str]:
-        return [self._unpickle_result(r) for r in self.connection.hkeys(self._self_key)]
+    # TODO
+    async def values(self) -> Iterable[ResponseOrKey]:
+        raise NotImplementedError
 
     async def write(self, key: str, item: ResponseOrKey):
         self.connection.hset(
@@ -55,15 +67,3 @@ class RedisCache(BaseCache):
             pickle.dumps(key, protocol=-1),
             pickle.dumps(item, protocol=-1),
         )
-
-    async def contains(self, key: str) -> bool:
-        return self.connection.exists(key)
-
-    async def delete(self, key: str):
-        self.connection.hdel(self._self_key, pickle.dumps(key, protocol=-1))
-
-    async def clear(self):
-        self.connection.delete(self._self_key)
-
-    async def size(self) -> int:
-        return self.connection.hlen(self._self_key)
