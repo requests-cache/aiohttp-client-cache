@@ -9,14 +9,13 @@ from aiohttp_client_cache.backends.base import (  # noqa
     ResponseOrKey,
 )
 
-PICKLE_PROTOCOL = 4
 BACKEND_QUALNAMES = {
-    'dynamodb': 'aiohttp_client_cache.backends.dynamodb.DynamoDbCache',
-    'gridfs': 'aiohttp_client_cache.backends.gridfs.GridFSCache',
-    'memory': 'aiohttp_client_cache.backends.base.BaseCache',
-    'mongodb': 'aiohttp_client_cache.backends.mongo.MongoCache',
-    'redis': 'aiohttp_client_cache.backends.redis.RedisCache',
-    'sqlite': 'aiohttp_client_cache.backends.sqlite.DbCache',
+    'dynamodb': 'aiohttp_client_cache.backends.dynamodb.DynamoDbController',
+    'gridfs': 'aiohttp_client_cache.backends.gridfs.GridFSController',
+    'memory': 'aiohttp_client_cache.backends.base.CacheController',
+    'mongodb': 'aiohttp_client_cache.backends.mongo.MongoDBController',
+    'redis': 'aiohttp_client_cache.backends.redis.RedisController',
+    'sqlite': 'aiohttp_client_cache.backends.sqlite.SQLiteController',
 }
 logger = getLogger(__name__)
 
