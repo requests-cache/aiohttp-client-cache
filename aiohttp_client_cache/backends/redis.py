@@ -1,63 +1,71 @@
 import pickle
-from collections.abc import MutableMapping
+from typing import Iterable, Optional
 
-from redis import StrictRedis
+from redis import Redis, StrictRedis
 
-from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
+from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
 
 
-class RedisCache(BaseCache):
+class RedisController(CacheController):
     """Redis cache backend"""
 
-    def __init__(self, cache_name: str, *args, connection: StrictRedis = None, **kwargs):
+    def __init__(self, cache_name: str, *args, **kwargs):
         super().__init__(cache_name, *args, **kwargs)
-        self.responses = RedisDict(cache_name, 'responses', connection)
-        self.keys_map = RedisDict(cache_name, 'urls', self.responses.connection)
+        self.responses = RedisCache(cache_name, 'responses', **kwargs)
+        self.redirects = RedisCache(cache_name, 'urls', connection=self.responses.connection)
 
 
-class RedisDict(MutableMapping):
-    """A dictionary-like interface for ``redis`` key-stores"""
+# TODO: Incomplete/untested
+# TODO: Original implementation pickled keys as well as values. Is there a reason keys need to be pickled?
+class RedisCache(BaseCache):
+    """An async-compatible interface for caching objects in a Redis instance"""
 
-    def __init__(self, namespace: str, collection_name: str, connection: StrictRedis = None):
+    def __init__(self, namespace: str, collection_name: str, connection: Redis = None, **kwargs):
         """
-        The actual key name on the redis server will be ``namespace``:``collection_name``
+        The actual key name on the redis server will be ``namespace:collection_name``
 
         In order to deal with how redis stores data/keys, everything must be pickled.
 
         Args:
             namespace: namespace to use
             collection_name: name of the hash map stored in redis
-            connection: Redis instance to use instead of creating a new one
+            connection: An existing connection object to reuse instead of creating a new one
+            kwargs: Additional keyword arguments for :py:class:`redis.Redis`
+
         """
-        self.connection = connection or StrictRedis()
+        self.connection = connection or StrictRedis(**kwargs)
         self._self_key = ':'.join([namespace, collection_name])
 
-    def __getitem__(self, key):
-        result = self.connection.hget(self._self_key, pickle.dumps(key, protocol=PICKLE_PROTOCOL))
-        if result is None:
-            raise KeyError
-        return pickle.loads(bytes(result))
+    @staticmethod
+    def _unpickle_result(result):
+        return pickle.loads(bytes(result)) if result else None
 
-    def __setitem__(self, key, item):
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        result = self.connection.hget(self._self_key, pickle.dumps(key, protocol=-1))
+        return self._unpickle_result(result)
+
+    # TODO
+    async def read_all(self) -> Iterable[ResponseOrKey]:
+        raise NotImplementedError
+
+    async def keys(self) -> Iterable[str]:
+        return [self._unpickle_result(r) for r in self.connection.hkeys(self._self_key)]
+
+    async def write(self, key: str, item: ResponseOrKey):
         self.connection.hset(
             self._self_key,
-            pickle.dumps(key, protocol=PICKLE_PROTOCOL),
-            pickle.dumps(item, protocol=PICKLE_PROTOCOL),
+            pickle.dumps(key, protocol=-1),
+            pickle.dumps(item, protocol=-1),
         )
 
-    def __delitem__(self, key):
-        if not self.connection.hdel(self._self_key, pickle.dumps(key, protocol=PICKLE_PROTOCOL)):
-            raise KeyError
+    async def contains(self, key: str) -> bool:
+        return self.connection.exists(key)
 
-    def __len__(self):
-        return self.connection.hlen(self._self_key)
+    async def delete(self, key: str):
+        self.connection.hdel(self._self_key, pickle.dumps(key, protocol=-1))
 
-    def __iter__(self):
-        for v in self.connection.hkeys(self._self_key):
-            yield pickle.loads(bytes(v))
-
-    def clear(self):
+    async def clear(self):
         self.connection.delete(self._self_key)
 
-    def __str__(self):
-        return str(dict(self.items()))
+    async def size(self) -> int:
+        return self.connection.hlen(self._self_key)
