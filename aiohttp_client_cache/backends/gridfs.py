@@ -1,70 +1,67 @@
 import pickle
-from collections.abc import MutableMapping
+from typing import Iterable, Optional
 
 from gridfs import GridFS
 from pymongo import MongoClient
 
-from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
-from aiohttp_client_cache.backends.mongo import MongoDict
+from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends.mongo import MongoDBCache
 
 
-class GridFSCache(BaseCache):
-    """GridFS cache backend.
-    Use MongoDB GridFS to support documents greater than 16MB.
-
-    Example:
-
-        >>> aiohttp_client_cache.install_cache(backend='gridfs')
-        >>> # Or:
-        >>> from pymongo import MongoClient
-        >>> aiohttp_client_cache.install_cache(backend='gridfs', connection=MongoClient('another-host.local'))
-
+class GridFSController(CacheController):
+    """An async-compatible interface for caching objects in MongoDB GridFS.
+    Use this if you need to support documents greater than 16MB.
     """
 
     def __init__(self, cache_name: str, *args, connection: MongoClient = None, **kwargs):
         super().__init__(cache_name, *args, **kwargs)
-        self.responses = GridFSPickleDict(cache_name, connection)
-        self.keys_map = MongoDict(cache_name, 'http_redirects', self.responses.connection)
+        self.responses = GridFSCache(cache_name, connection)
+        self.keys_map = MongoDBCache(cache_name, 'http_redirects', self.responses.connection)
 
 
-class GridFSPickleDict(MutableMapping):
-    """A dictionary-like interface for MongoDB GridFS"""
+# TODO: Incomplete/untested
+class GridFSCache(BaseCache):
+    """A dictionary-like interface for MongoDB GridFS
+
+    Args:
+        db_name: database name (be careful with production databases)
+        connection: MongoDB connection instance to use instead of creating a new one
+    """
 
     def __init__(self, db_name, connection: MongoClient = None):
-        """
-        Args:
-            db_name: database name (be careful with production databases)
-            connection: MongoDB connection instance to use instead of creating a new one
-        """
         self.connection = connection or MongoClient()
         self.db = self.connection[db_name]
         self.fs = GridFS(self.db)
 
-    def __getitem__(self, key):
+    # TODO
+    async def contains(self, key: str) -> bool:
+        raise NotImplementedError
+
+    async def clear(self):
+        self.db['fs.files'].drop()
+        self.db['fs.chunks'].drop()
+
+    async def delete(self, key: str):
+        res = self.fs.find_one({'_id': key})
+        if res is not None:
+            self.fs.delete(res._id)
+
+    async def keys(self) -> Iterable[str]:
+        return [d._id for d in self.fs.find()]
+
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
         result = self.fs.find_one({'_id': key})
         if result is None:
             raise KeyError
         return pickle.loads(bytes(result.read()))
 
-    def __setitem__(self, key, item):
-        self.__delitem__(key)
-        self.fs.put(pickle.dumps(item, protocol=PICKLE_PROTOCOL), **{'_id': key})
-
-    def __delitem__(self, key):
-        res = self.fs.find_one({'_id': key})
-        if res is not None:
-            self.fs.delete(res._id)
-
-    def __len__(self):
+    async def size(self) -> int:
         return self.db['fs.files'].count()
 
-    def __iter__(self):
-        for d in self.fs.find():
-            yield d._id
+    # TODO
+    async def values(self) -> Iterable[ResponseOrKey]:
+        raise NotImplementedError
 
-    def clear(self):
-        self.db['fs.files'].drop()
-        self.db['fs.chunks'].drop()
-
-    def __str__(self):
-        return str(dict(self.items()))
+    async def write(self, key: str, item: ResponseOrKey):
+        await self.delete(key)
+        self.fs.put(pickle.dumps(item, protocol=-1), **{'_id': key})

@@ -1,55 +1,58 @@
 import pickle
-from collections.abc import MutableMapping
+from typing import Dict, Iterable, Optional
 
 import boto3
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 
-from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
+from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
 
 
-class DynamoDbCache(BaseCache):
-    """DynamoDB cache backend"""
+class DynamoDbController(CacheController):
+    """DynamoDB cache backend.
+    See :py:class:`.DynamoDbCache` for backend-specific options
+    See `DynamoDB Service Resource
+    <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
+    for more usage details.
+    """
 
     def __init__(self, cache_name: str, *args, **kwargs):
-        """See :py:class:`.DynamoDbDict` for backend-specific options"""
         super().__init__(cache_name, *args, **kwargs)
-        self.responses = DynamoDbDict(cache_name, 'responses', **kwargs)
-        self.keys_map = DynamoDbDict(cache_name, 'urls', self.responses.connection)
+        self.responses = DynamoDbCache(cache_name, 'responses', **kwargs)
+        self.redirects = DynamoDbCache(cache_name, 'urls', connection=self.responses.connection)
 
 
-class DynamoDbDict(MutableMapping):
-    """A dictionary-like interface for a DynamoDB key-store"""
+# TODO: Incomplete/untested
+class DynamoDbCache(BaseCache):
+    """An async-compatible interface for caching objects in a DynamoDB key-store
+
+    The actual key name on the dynamodb server will be ``namespace:table_name``.
+    In order to deal with how dynamodb stores data/keys, all values must be pickled.
+
+    Args:
+        table_name: Table name to use
+        namespace: Name of the hash map stored in dynamodb
+        connection: An existing resource object to reuse instead of creating a new one
+        region_name: AWS region of DynamoDB database
+        kwargs: Additional keyword arguments for DynamoDB :py:class:`.ServiceResource`
+    """
 
     def __init__(
         self,
         table_name: str,
         namespace: str = 'dynamodb_dict_data',
         connection: ServiceResource = None,
-        endpoint_url: str = None,
         region_name: str = 'us-east-1',
         read_capacity_units: int = 1,
         write_capacity_units: int = 1,
         **kwargs,
     ):
+        self.namespace = namespace
+        self.connection = connection or boto3.resource(
+            'dynamodb', region_name=region_name, **kwargs
+        )
 
-        """
-        The actual key name on the dynamodb server will be ``namespace``:``namespace_name``.
-        In order to deal with how dynamodb stores data/keys, everything must be pickled.
-
-        Args:
-            table_name: Table name to use
-            namespace_name: Name of the hash map stored in dynamodb
-            connection: boto3 resource instance to use instead of creating a new one
-            endpoint_url: url of dynamodb server
-        """
-        self._self_key = namespace
-        if connection is not None:
-            self.connection = connection
-        else:
-            self.connection = boto3.resource(
-                'dynamodb', endpoint_url=endpoint_url, region_name=region_name
-            )
+        # Create the table if it doesn't already exist
         try:
             self.connection.create_table(
                 AttributeDefinitions=[
@@ -74,59 +77,48 @@ class DynamoDbDict(MutableMapping):
             )
         except ClientError:
             pass
+
         self._table = self.connection.Table(table_name)
         self._table.wait_until_exists()
 
-    def __getitem__(self, key):
-        composite_key = {'namespace': self._self_key, 'key': str(key)}
-        result = self._table.get_item(Key=composite_key)
-        if 'Item' not in result:
-            raise KeyError
-        return pickle.loads(result['Item']['value'].value)
+    def _scan_table(self) -> Dict:
+        return self._table.query(
+            ExpressionAttributeValues={':Namespace': self.namespace},
+            ExpressionAttributeNames={'#N': 'namespace'},
+            KeyConditionExpression='#N = :Namespace',
+        )
 
-    def __setitem__(self, key, item):
-        item = {
-            'namespace': self._self_key,
-            'key': str(key),
-            'value': pickle.dumps(item, protocol=PICKLE_PROTOCOL),
-        }
-        self._table.put_item(Item=item)
+    @staticmethod
+    def _unpickle_item(response_item: Dict) -> Optional[ResponseOrKey]:
+        value_obj = (response_item or {}).get('value')
+        return pickle.loads(value_obj.value) if value_obj else None
 
-    def __delitem__(self, key):
-        composite_key = {'namespace': self._self_key, 'key': str(key)}
-        response = self._table.delete_item(Key=composite_key, ReturnValues='ALL_OLD')
-        if 'Attributes' not in response:
-            raise KeyError
-
-    def __len__(self):
-        return self.__count_table()
-
-    def __iter__(self):
-        response = self.__scan_table()
-        for v in response['Items']:
-            yield pickle.loads(v['value'].value)
-
-    def clear(self):
-        response = self.__scan_table()
+    async def clear(self):
+        response = self._scan_table()
         for v in response['Items']:
             composite_key = {'namespace': v['namespace'], 'key': v['key']}
             self._table.delete_item(Key=composite_key)
 
-    def __str__(self):
-        return str(dict(self.items()))
+    # TODO
+    async def contains(self, key: str) -> bool:
+        raise NotImplementedError
 
-    def __scan_table(self):
-        expression_attribute_values = {':Namespace': self._self_key}
-        expression_attribute_names = {'#N': 'namespace'}
-        key_condition_expression = '#N = :Namespace'
-        return self._table.query(
-            ExpressionAttributeValues=expression_attribute_values,
-            ExpressionAttributeNames=expression_attribute_names,
-            KeyConditionExpression=key_condition_expression,
-        )
+    async def delete(self, key: str):
+        composite_key = {'namespace': self.namespace, 'key': str(key)}
+        response = self._table.delete_item(Key=composite_key, ReturnValues='ALL_OLD')
+        if 'Attributes' not in response:
+            raise KeyError
 
-    def __count_table(self):
-        expression_attribute_values = {':Namespace': self._self_key}
+    # TODO
+    async def keys(self) -> Iterable[str]:
+        raise NotImplementedError
+
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        response = self._table.get_item(Key={'namespace': self.namespace, 'key': str(key)})
+        return self._unpickle_item(response.get('Item'))
+
+    async def size(self) -> int:
+        expression_attribute_values = {':Namespace': self.namespace}
         expression_attribute_names = {'#N': 'namespace'}
         key_condition_expression = '#N = :Namespace'
         return self._table.query(
@@ -135,3 +127,15 @@ class DynamoDbDict(MutableMapping):
             ExpressionAttributeNames=expression_attribute_names,
             KeyConditionExpression=key_condition_expression,
         )['Count']
+
+    async def values(self) -> Iterable[ResponseOrKey]:
+        response = self._scan_table()
+        return [self._unpickle_item(item) for item in response.get('Items', [])]
+
+    async def write(self, key: str, item: ResponseOrKey):
+        item_meta = {
+            'namespace': self.namespace,
+            'key': str(key),
+            'value': pickle.dumps(item, protocol=-1),
+        }
+        self._table.put_item(Item=item_meta)

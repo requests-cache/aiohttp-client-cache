@@ -1,108 +1,113 @@
+import asyncio
 import pickle
 import sqlite3
-import threading
-from collections.abc import MutableMapping
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Iterable, Optional
 
-from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
+import aiosqlite
+
+from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
 
 
-class DbCache(BaseCache):
+class SQLiteController(CacheController):
     """SQLite cache backend.
 
     Reading is fast, saving is a bit slower. It can store a large amount of data
     with low memory usage.
+
+    Args:
+        cache_name: database filename prefix
+        extension: Database file extension
     """
 
-    def __init__(
-        self, cache_name: str, *args, fast_save: bool = False, extension: str = '.sqlite', **kwargs
-    ):
-        """
-        Args:
-            cache_name: database filename prefix
-            fast_save: Speedup cache saving up to 50 times but with possibility of data loss.
-                See :py:class:`.backends.DbDict` for more info
-            extension: Database file extension
-        """
+    def __init__(self, cache_name: str, *args, extension: str = '.sqlite', **kwargs):
         super().__init__(cache_name, *args, **kwargs)
-        self.responses = DbPickleDict(cache_name + extension, 'responses', fast_save=fast_save)
-        self.keys_map = DbDict(cache_name + extension, 'urls')
+        self.redirects = SQLiteCache(cache_name + extension, 'urls')
+        self.responses = SQLitePickleCache(cache_name + extension, 'responses')
 
 
-class DbDict(MutableMapping):
-    """A dictionary-like object for saving large datasets to `sqlite` database
+class SQLiteCache(BaseCache):
+    """An async interface for caching objects in a SQLite database
 
-    It's possible to create multiply DbDict instances, which will be stored as separate
-    tables in one database::
+    It's possible to create multiple SqliteCache instances, which will be stored as separate
+    tables in one database.
 
-        d1 = DbDict('test', 'table1')
-        d2 = DbDict('test', 'table2')
-        d3 = DbDict('test', 'table3')
+    Example:
 
-    all data will be stored in ``test.sqlite`` database into
-    correspondent tables: ``table1``, ``table2`` and ``table3``
+        >>> # Store data in two tables under the 'testdb' database
+        >>> d1 = SQLiteCache('testdb', 'table1')
+        >>> d2 = SQLiteCache('testdb', 'table2')
+
+    Args:
+        filename: filename for database (without extension)
+        table_name: table name
     """
 
-    def __init__(self, filename, table_name: str, fast_save=False):
-        """
-        Args:
-            filename: filename for database (without extension)
-            table_name: table name
-            fast_save: If it's True, then sqlite will be configured with
-                          `'PRAGMA synchronous = 0;' <http://www.sqlite.org/pragma.html#pragma_synchronous>`_
-                          to speedup cache saving, but be careful, it's dangerous.
-                          Tests showed that insertion order of records can be wrong with this option.
-        """
+    def __init__(self, filename: str, table_name: str):
         self.filename = filename
         self.table_name = table_name
-        self.fast_save = fast_save
-
-        #: Transactions can be committed if this property is set to `True`
-        self.can_commit = True
+        self.can_commit = True  # Transactions can be committed if this is set to `True`
 
         self._bulk_commit = False
+        self._initialized = False
         self._pending_connection = None
-        self._lock = threading.RLock()
-        with self.connection() as con:
-            con.execute(f'create table if not exists `{self.table_name}` (key PRIMARY KEY, value)')
+        self._lock = asyncio.Lock()
 
-    @contextmanager
-    def connection(self, commit_on_success=False):
-        with self._lock:
+    async def _get_pending_connection(self):
+        """Use/create pending connection if doing a bulk commit"""
+        if not self._pending_connection:
+            self._pending_connection = await aiosqlite.connect(self.filename)
+        return self._pending_connection
+
+    async def _close_pending_connection(self):
+        if self._pending_connection:
+            await self._pending_connection.close()
+            self._pending_connection = None
+
+    async def _init_connection(self, db: aiosqlite.Connection):
+        """Create table if this is the first connection opened, and set fast save if specified"""
+        await db.execute('PRAGMA synchronous = 0;')
+        if not self._initialized:
+            await db.execute(
+                f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
+            )
+            self._initialized = True
+        return db
+
+    @asynccontextmanager
+    async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
+        async with self._lock:
             if self._bulk_commit:
-                if self._pending_connection is None:
-                    self._pending_connection = sqlite3.connect(self.filename)
-                con = self._pending_connection
+                db = await self._get_pending_connection()
             else:
-                con = sqlite3.connect(self.filename)
+                db = await aiosqlite.connect(self.filename)
             try:
-                if self.fast_save:
-                    con.execute('PRAGMA synchronous = 0;')
-                yield con
-                if commit_on_success and self.can_commit:
-                    con.commit()
+                yield await self._init_connection(db)
+                if autocommit and self.can_commit:
+                    await db.commit()
             finally:
                 if not self._bulk_commit:
-                    con.close()
+                    await db.close()
 
-    def commit(self, force=False):
+    async def commit(self, force: bool = False):
         """
         Commits pending transaction if :attr:`can_commit` or `force` is `True`
 
-        :param force: force commit, ignore :attr:`can_commit`
+        Args:
+            force: force commit, ignore :attr:`can_commit`
         """
-        if force or self.can_commit:
-            if self._pending_connection is not None:
-                self._pending_connection.commit()
+        if (force or self.can_commit) and self._pending_connection:
+            await self._pending_connection.commit()
 
-    @contextmanager
-    def bulk_commit(self):
+    @asynccontextmanager
+    async def bulk_commit(self):
         """
         Context manager used to speedup insertion of big number of records
-        ::
 
-            >>> d1 = DbDict('test')
-            >>> with d1.bulk_commit():
+        Example:
+
+            >>> d1 = SQLiteCache('test')
+            >>> async with d1.bulk_commit():
             ...     for i in range(1000):
             ...         d1[i] = i * 2
 
@@ -111,64 +116,70 @@ class DbDict(MutableMapping):
         self.can_commit = False
         try:
             yield
-            self.commit(True)
+            await self.commit(force=True)
         finally:
             self._bulk_commit = False
             self.can_commit = True
-            if self._pending_connection is not None:
-                self._pending_connection.close()
-                self._pending_connection = None
+            await self._close_pending_connection()
 
-    def get_all(self):
-        with self.connection() as con:
-            return con.execute(f'select value from `{self.table_name}`').fetchall()
+    async def clear(self):
+        async with self.get_connection(autocommit=True) as db:
+            await db.execute(f'DROP TABLE `{self.table_name}`')
+            await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
+            await db.execute('VACUUM')
 
-    def __getitem__(self, key):
-        with self.connection() as con:
-            row = con.execute(
-                f'select value from `{self.table_name}` where key=?', (key,)
-            ).fetchone()
-            if not row:
-                raise KeyError
-            return row[0]
+    async def contains(self, key: str) -> bool:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT COUNT(*) FROM `{self.table_name}` WHERE key=?', (key,))
+            row = await cur.fetchone()
+            return bool(row[0]) if row else False
 
-    def __setitem__(self, key, item):
-        with self.connection(True) as con:
-            con.execute(
-                f'insert or replace into `{self.table_name}` (key,value) values (?,?)',
+    async def delete(self, key: str):
+        async with self.get_connection(autocommit=True) as db:
+            await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))
+
+    async def keys(self) -> Iterable[str]:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT key FROM `{self.table_name}`')
+            return [row[0] for row in await cur.fetchall()]
+
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
+            row = await cur.fetchone()
+            return row[0] if row else None
+
+    async def size(self) -> int:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT COUNT(key) FROM `{self.table_name}`')
+            row = await cur.fetchone()
+            return row[0] if row else 0
+
+    async def values(self) -> Iterable[ResponseOrKey]:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT value FROM `{self.table_name}`')
+            return [row[0] for row in await cur.fetchall()]
+
+    async def write(self, key: str, item: ResponseOrKey):
+        async with self.get_connection(autocommit=True) as db:
+            await db.execute(
+                f'INSERT OR REPLACE INTO `{self.table_name}` (key,value) VALUES (?,?)',
                 (key, item),
             )
 
-    def __delitem__(self, key):
-        with self.connection(True) as con:
-            cur = con.execute(f'delete from `{self.table_name}` where key=?', (key,))
-            if not cur.rowcount:
-                raise KeyError
 
-    def __iter__(self):
-        with self.connection() as con:
-            for row in con.execute(f'select key from `{self.table_name}`'):
-                yield row[0]
+class SQLitePickleCache(SQLiteCache):
+    """ Same as :py:class:`SqliteCache`, but pickles values before saving """
 
-    def __len__(self):
-        with self.connection() as con:
-            return con.execute(f'select count(key) from `{self.table_name}`').fetchone()[0]
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        item = await super().read(key)
+        return pickle.loads(bytes(item)) if item else None  # type: ignore
 
-    def clear(self):
-        with self.connection(True) as con:
-            con.execute(f'drop table `{self.table_name}`')
-            con.execute(f'create table `{self.table_name}` (key PRIMARY KEY, value)')
-            con.execute('vacuum')
+    async def values(self) -> Iterable[ResponseOrKey]:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'select value from `{self.table_name}`')
+            return [row[0] for row in await cur.fetchall()]
 
-    def __str__(self):
-        return str(dict(self.items()))
-
-
-class DbPickleDict(DbDict):
-    """ Same as :class:`DbDict`, but pickles values before saving """
-
-    def __setitem__(self, key, item):
-        super().__setitem__(key, sqlite3.Binary(pickle.dumps(item, protocol=PICKLE_PROTOCOL)))
-
-    def __getitem__(self, key):
-        return pickle.loads(bytes(super().__getitem__(key)))
+    async def write(self, key, item):
+        binary_item = sqlite3.Binary(pickle.dumps(item, protocol=-1))
+        await super().write(key, binary_item)
