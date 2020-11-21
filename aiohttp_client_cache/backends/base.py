@@ -11,7 +11,7 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
-ResponseOrKey = Union[CachedResponse, bytes, str]
+ResponseOrKey = Union[CachedResponse, None, bytes, str]
 logger = getLogger(__name__)
 
 
@@ -51,8 +51,10 @@ class CacheController:
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
 
-    def is_cacheable(self, response: Union[ClientResponse, CachedResponse]) -> bool:
+    def is_cacheable(self, response: Union[ClientResponse, CachedResponse, None]) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
+        if not response:
+            return False
         return all(
             [
                 not self.disabled,
@@ -69,23 +71,6 @@ class CacheController:
         if not created_at or not self.expire_after:
             return False
         return datetime.utcnow() - created_at >= self.expire_after
-
-    async def save_response(self, key: str, response: ClientResponse):
-        """Save response to cache
-
-        Args:
-            key: Key for this response
-            response: Response to save
-        """
-        if not self.is_cacheable(response):
-            return
-
-        response = await CachedResponse.from_client_response(response)
-        await self.responses.write(key, response)
-
-        # Alias any redirect requests to the same cache key
-        for r in response.history:
-            await self.redirects.write(self.create_key(r.method, r.url), key)
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -105,9 +90,29 @@ class CacheController:
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
             await self.delete(key)
-            response.is_expired = True
+            try:
+                response.is_expired = True
+            except AttributeError:
+                pass
 
         return response
+
+    async def save_response(self, key: str, response: ClientResponse):
+        """Save response to cache
+
+        Args:
+            key: Key for this response
+            response: Response to save
+        """
+        if not self.is_cacheable(response):
+            return
+
+        response = await CachedResponse.from_client_response(response)
+        await self.responses.write(key, response)
+
+        # Alias any redirect requests to the same cache key
+        for r in response.history:
+            await self.redirects.write(self.create_key(r.method, r.url), key)
 
     async def clear(self):
         """Clear cache"""
@@ -140,8 +145,7 @@ class CacheController:
         """
         keys_to_delete = set()
 
-        # TODO: BaseCache is not currently iterable
-        for key in self.responses:
+        for key in await self.responses.keys():
             response = await self.get_response(key)
             if response and response.is_expired:
                 keys_to_delete.add(key)
@@ -207,32 +211,36 @@ class BaseCache(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
-        """Read a single item from the cache. Returns ``None`` if the item is missing."""
-
-    @abstractmethod
-    async def read_all(self) -> Iterable[ResponseOrKey]:
-        """Read all items from the cache"""
-
-    @abstractmethod
-    async def write(self, key: str, item: ResponseOrKey):
-        """Write an item to the cache"""
-
-    @abstractmethod
     async def contains(self, key: str) -> bool:
         """Check if a key is stored in the cache"""
-
-    @abstractmethod
-    async def delete(self, key: str):
-        """Delete a single item from the cache. Does not raise an error if the item is missing."""
 
     @abstractmethod
     async def clear(self):
         """Delete all items from the cache"""
 
     @abstractmethod
+    async def delete(self, key: str):
+        """Delete a single item from the cache. Does not raise an error if the item is missing."""
+
+    @abstractmethod
+    async def keys(self) -> Iterable[str]:
+        """Get all keys stored in the cache"""
+
+    @abstractmethod
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        """Read a single item from the cache. Returns ``None`` if the item is missing."""
+
+    @abstractmethod
     async def size(self) -> int:
         """Get the number of items in the cache"""
+
+    @abstractmethod
+    async def values(self) -> Iterable[ResponseOrKey]:
+        """Get all values stored in the cache"""
+
+    @abstractmethod
+    async def write(self, key: str, item: ResponseOrKey):
+        """Write an item to the cache"""
 
     async def pop(self, key: str) -> Optional[ResponseOrKey]:
         """Delete an item from the cache, and return the deleted item"""
@@ -244,26 +252,29 @@ class BaseCache(metaclass=ABCMeta):
 class DictCache(UserDict, BaseCache):
     """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
 
-    async def read(self, key: str) -> Union[CachedResponse, str]:
-        return self.data[key]
-
-    async def read_all(self) -> Iterable[ResponseOrKey]:
-        return self.data.values()
-
-    async def write(self, key: str, item: ResponseOrKey):
-        self.data[key] = item
-
-    async def contains(self, key: str) -> bool:
-        return key in self.data
-
     async def delete(self, key: str):
         del self.data[key]
 
     async def clear(self):
         self.data.clear()
 
+    async def contains(self, key: str) -> bool:
+        return key in self.data
+
+    async def keys(self) -> Iterable[str]:  # type: ignore
+        return self.data.keys()
+
+    async def read(self, key: str) -> Union[CachedResponse, str]:
+        return self.data[key]
+
     async def size(self) -> int:
         return len(self.data)
+
+    async def values(self) -> Iterable[ResponseOrKey]:  # type: ignore
+        return self.data.values()
+
+    async def write(self, key: str, item: ResponseOrKey):
+        self.data[key] = item
 
 
 def _encode_dict(d):
