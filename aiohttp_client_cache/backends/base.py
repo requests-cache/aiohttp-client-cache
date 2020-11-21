@@ -1,7 +1,9 @@
 import hashlib
+from abc import ABCMeta, abstractmethod
+from collections import UserDict
 from datetime import datetime, timedelta
 from logging import getLogger
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
@@ -9,14 +11,16 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
+ResponseOrKey = Union[CachedResponse, str]
 logger = getLogger(__name__)
 
 
 class BaseCache:
-    """Base class for cache implementations, can be used as in-memory cache.
+    """Base class for cache implementations. Handles cache expiration and generating cache keys.
+    Storage operations are handled by :py:class:`.BaseStorage`.
 
-    To extend it you can provide dictionary-like objects for
-    :attr:`keys_map` and :attr:`responses` or override public methods.
+    To extend this with your own custom backend, implement a subclass of :py:class:`.BaseStorage`
+    to use as :py:attr:`responses` and :py:attr:`response_aliases`.
     """
 
     def __init__(
@@ -38,9 +42,11 @@ class BaseCache:
         self.allowable_methods = allowable_methods
         self.filter_fn = filter_fn
         self.disabled = False
+        self.responses = DictStorage()
 
-        self.keys_map = {}  # `key` -> `key_in_responses` mapping
-        self.responses = {}  # `key_in_cache` -> `response` mapping
+        # Allows multiple redirects or other aliased URLs to point to the same cached response
+        self.response_aliases = DictStorage()
+
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
 
@@ -90,7 +96,7 @@ class BaseCache:
         # Attempt to fetch response from the cache
         try:
             if key not in self.responses:
-                key = self.keys_map[key]
+                key = self.response_aliases[key]
             response = self.responses[key]
         except (KeyError, TypeError):
             return None
@@ -111,12 +117,12 @@ class BaseCache:
             new_key: new key (e.g. url from redirect)
             key_to_response: key which can be found in :attr:`responses`
         """
-        self.keys_map[new_key] = key_to_response
+        self.response_aliases[new_key] = key_to_response
 
     def clear(self):
         """Clear cache"""
         self.responses.clear()
-        self.keys_map.clear()
+        self.response_aliases.clear()
 
     def delete(self, key: str):
         """ Delete `key` from cache. Also deletes all responses from response history """
@@ -125,10 +131,10 @@ class BaseCache:
                 response = self.responses[key]
                 del self.responses[key]
             else:
-                response = self.responses[self.keys_map[key]]
-                del self.keys_map[key]
+                response = self.responses[self.response_aliases[key]]
+                del self.response_aliases[key]
             for r in response.history:
-                del self.keys_map[self.create_key(r.method, r.url)]
+                del self.response_aliases[self.create_key(r.method, r.url)]
         # We don't care if the key is already missing from the cache
         except KeyError:
             pass
@@ -153,12 +159,12 @@ class BaseCache:
 
         logger.info(f'Deleting {len(keys_to_delete)} expired cache entries')
         for key in keys_to_delete:
-            self.delete(key)
+            await self.delete(key)
 
     def has_url(self, url: str) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
-        return key in self.responses or key in self.keys_map
+        return key in self.responses or key in self.response_aliases
 
     def create_key(
         self,
@@ -201,7 +207,70 @@ class BaseCache:
         return url, params, data
 
     def __str__(self):
-        return f'keys: {list(self.keys_map.keys())}\nresponses: {list(self.responses.keys())}'
+        return (
+            f'keys: {list(self.response_aliases.keys())}\nresponses: {list(self.responses.keys())}'
+        )
+
+
+# TODO: Support yarl.URL like aiohttp does?
+# TODO: Is there an existing ABC for async collections? Can't seem to find any.
+class BaseStorage(ABCMeta):
+    """A wrapper for the actual storage operations. This is separate from :py:class:`.BaseCache`
+    to simplify writing to multiple tables/prefixes.
+
+    This is no longer using a dict-like interface due to lack of python syntax support for async
+    dict operations.
+    """
+
+    @abstractmethod
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        """Read a single item from the cache. Returns ``None`` if the item is missing."""
+
+    @abstractmethod
+    async def read_all(self) -> Iterable[ResponseOrKey]:
+        """Read all items from the cache"""
+
+    @abstractmethod
+    async def write(self, key: str, item: ResponseOrKey):
+        """Write an item to the cache"""
+
+    @abstractmethod
+    async def contains(self, key: str) -> bool:
+        """Check if a key is stored in the cache"""
+
+    @abstractmethod
+    async def delete(self, key: str):
+        """Delete a single item from the cache. Does not raise an error if the item is missing."""
+
+    @abstractmethod
+    async def clear(self):
+        """Delete all items from the cache"""
+
+    @abstractmethod
+    async def size(self) -> int:
+        """Get the number of items in the cache"""
+
+
+class DictStorage(UserDict, BaseStorage):
+    """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
+
+    async def read(self, key: str) -> Union[CachedResponse, str]:
+        return self.data[key]
+
+    async def read_all(self) -> Iterable[ResponseOrKey]:
+        return self.data.values()
+
+    async def write(self, key: str, item: ResponseOrKey):
+        self.data[key] = item
+
+    async def delete(self, key: str):
+        del self.data[key]
+
+    async def clear(self):
+        self.data.clear()
+
+    async def size(self):
+        return len(self.data)
 
 
 def _encode_dict(d):
