@@ -1,7 +1,9 @@
 import hashlib
+from abc import ABCMeta, abstractmethod
+from collections import UserDict
 from datetime import datetime, timedelta
 from logging import getLogger
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
@@ -9,20 +11,23 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
+ResponseOrKey = Union[CachedResponse, None, bytes, str]
 logger = getLogger(__name__)
 
 
-class BaseCache:
-    """Base class for cache implementations, can be used as in-memory cache.
+class CacheController:
+    """Class to manage higher-level cache operations.
+    Handles cache expiration, and generating cache keys, and managing redirect history.
 
-    To extend it you can provide dictionary-like objects for
-    :attr:`keys_map` and :attr:`responses` or override public methods.
+    Basic storage operations are handled by :py:class:`.BaseCache`.
+    To extend this with your own custom backend, implement a subclass of :py:class:`.BaseCache`
+    to use as :py:attr:`CacheController.responses` and :py:attr:`CacheController.response_aliases`.
     """
 
     def __init__(
         self,
         cache_name,
-        expire_after,
+        expire_after=None,
         filter_fn=None,
         allowable_codes=None,
         allowable_methods=None,
@@ -39,13 +44,17 @@ class BaseCache:
         self.filter_fn = filter_fn
         self.disabled = False
 
-        self.keys_map = {}  # `key` -> `key_in_responses` mapping
-        self.responses = {}  # `key_in_cache` -> `response` mapping
+        # Allows multiple redirects or other aliased URLs to point to the same cached response
+        self.redirects = DictCache()
+        self.responses = DictCache()
+
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
 
-    def is_cacheable(self, response: Union[ClientResponse, CachedResponse]) -> bool:
+    def is_cacheable(self, response: Union[ClientResponse, CachedResponse, None]) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
+        if not response:
+            return False
         return all(
             [
                 not self.disabled,
@@ -57,11 +66,36 @@ class BaseCache:
         )
 
     def is_expired(self, response: AnyResponse) -> bool:
-        """Determine if a given timestamp is expired"""
+        """Determine if a given response is expired"""
         created_at = getattr(response, 'created_at', None)
         if not created_at or not self.expire_after:
             return False
         return datetime.utcnow() - created_at >= self.expire_after
+
+    async def get_response(self, key: str) -> Optional[CachedResponse]:
+        """Retrieve response and timestamp for `key` if it's stored in cache,
+        otherwise returns ``None```
+
+        Args:
+            key: key of resource
+        """
+        # Attempt to fetch response from the cache
+        try:
+            if not await self.responses.contains(key):
+                key = await self.redirects.read(key)
+            response = await self.responses.read(key)
+        except (KeyError, TypeError):
+            return None
+
+        # If the item is expired or filtered out, delete it from the cache
+        if not self.is_cacheable(response):
+            await self.delete(key)
+            try:
+                response.is_expired = True
+            except AttributeError:
+                pass
+
+        return response
 
     async def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
@@ -74,70 +108,35 @@ class BaseCache:
             return
 
         response = await CachedResponse.from_client_response(response)
-        self.responses[key] = response
+        await self.responses.write(key, response)
 
         # Alias any redirect requests to the same cache key
         for r in response.history:
-            self.add_key_mapping(self.create_key(r.method, r.url), key)
+            await self.redirects.write(self.create_key(r.method, r.url), key)
 
-    async def get_response(self, key: str) -> Optional[CachedResponse]:
-        """Retrieve response and timestamp for `key` if it's stored in cache,
-        otherwise returns ``None```
-
-        Args:
-            key: key of resource
-        """
-        # Attempt to fetch response from the cache
-        try:
-            if key not in self.responses:
-                key = self.keys_map[key]
-            response = self.responses[key]
-        except (KeyError, TypeError):
-            return None
-
-        # If the item is expired or filtered out, delete it from the cache
-        if not self.is_cacheable(response):
-            self.delete(key)
-            response.is_expired = True
-
-        return response
-
-    def add_key_mapping(self, new_key: str, key_to_response: str):
-        """
-        Adds mapping of `new_key` to `key_to_response` to make it possible to
-        associate many keys with single response
-
-        Args:
-            new_key: new key (e.g. url from redirect)
-            key_to_response: key which can be found in :attr:`responses`
-        """
-        self.keys_map[new_key] = key_to_response
-
-    def clear(self):
+    async def clear(self):
         """Clear cache"""
-        self.responses.clear()
-        self.keys_map.clear()
+        await self.responses.clear()
+        await self.redirects.clear()
 
-    def delete(self, key: str):
-        """ Delete `key` from cache. Also deletes all responses from response history """
-        try:
-            if key in self.responses:
-                response = self.responses[key]
-                del self.responses[key]
-            else:
-                response = self.responses[self.keys_map[key]]
-                del self.keys_map[key]
+    async def delete(self, key: str):
+        """Delete a response from the cache, along with its history (if applicable)"""
+
+        async def delete_history(response):
+            if not response:
+                return
             for r in response.history:
-                del self.keys_map[self.create_key(r.method, r.url)]
-        # We don't care if the key is already missing from the cache
-        except KeyError:
-            pass
+                await self.redirects.delete(self.create_key(r.method, r.url))
 
-    def delete_url(self, url: str):
-        """Delete response associated with `url` from cache.
-        Also deletes all responses from response history. Works only for GET requests
+        redirect_key = await self.redirects.pop(key)
+        await delete_history(await self.responses.pop(key))
+        await delete_history(await self.responses.pop(redirect_key))
+
+    async def delete_url(self, url: str):
+        """Delete cached response associated with `url`, along with its history (if applicable).
+        Works only for GET requests.
         """
-        self.delete(self.create_key('GET', url))
+        await self.delete(self.create_key('GET', url))
 
     async def delete_expired_responses(self):
         """Deletes entries from cache with creation time older than ``expire_after``.
@@ -146,19 +145,19 @@ class BaseCache:
         """
         keys_to_delete = set()
 
-        for key in self.responses:
+        for key in await self.responses.keys():
             response = await self.get_response(key)
             if response and response.is_expired:
                 keys_to_delete.add(key)
 
         logger.info(f'Deleting {len(keys_to_delete)} expired cache entries')
         for key in keys_to_delete:
-            self.delete(key)
+            await self.delete(key)
 
-    def has_url(self, url: str) -> bool:
+    async def has_url(self, url: str) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
-        return key in self.responses or key in self.keys_map
+        return await self.responses.contains(key) or await self.redirects.contains(key)
 
     def create_key(
         self,
@@ -200,8 +199,82 @@ class BaseCache:
         data = filter_ignored_params(data)
         return url, params, data
 
-    def __str__(self):
-        return f'keys: {list(self.keys_map.keys())}\nresponses: {list(self.responses.keys())}'
+
+# TODO: Support yarl.URL like aiohttp does?
+# TODO: Is there an existing ABC for async collections? Can't seem to find any.
+class BaseCache(metaclass=ABCMeta):
+    """A wrapper for the actual storage operations. This is separate from
+    :py:class:`.CacheController` to simplify writing to multiple tables/prefixes.
+
+    This is no longer using a dict-like interface due to lack of python syntax support for async
+    dict operations.
+    """
+
+    @abstractmethod
+    async def contains(self, key: str) -> bool:
+        """Check if a key is stored in the cache"""
+
+    @abstractmethod
+    async def clear(self):
+        """Delete all items from the cache"""
+
+    @abstractmethod
+    async def delete(self, key: str):
+        """Delete a single item from the cache. Does not raise an error if the item is missing."""
+
+    @abstractmethod
+    async def keys(self) -> Iterable[str]:
+        """Get all keys stored in the cache"""
+
+    @abstractmethod
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        """Read a single item from the cache. Returns ``None`` if the item is missing."""
+
+    @abstractmethod
+    async def size(self) -> int:
+        """Get the number of items in the cache"""
+
+    @abstractmethod
+    async def values(self) -> Iterable[ResponseOrKey]:
+        """Get all values stored in the cache"""
+
+    @abstractmethod
+    async def write(self, key: str, item: ResponseOrKey):
+        """Write an item to the cache"""
+
+    async def pop(self, key: str) -> Optional[ResponseOrKey]:
+        """Delete an item from the cache, and return the deleted item"""
+        item = await self.read(key)
+        await self.delete(key)
+        return item
+
+
+class DictCache(UserDict, BaseCache):
+    """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
+
+    async def delete(self, key: str):
+        del self.data[key]
+
+    async def clear(self):
+        self.data.clear()
+
+    async def contains(self, key: str) -> bool:
+        return key in self.data
+
+    async def keys(self) -> Iterable[str]:  # type: ignore
+        return self.data.keys()
+
+    async def read(self, key: str) -> Union[CachedResponse, str]:
+        return self.data[key]
+
+    async def size(self) -> int:
+        return len(self.data)
+
+    async def values(self) -> Iterable[ResponseOrKey]:  # type: ignore
+        return self.data.values()
+
+    async def write(self, key: str, item: ResponseOrKey):
+        self.data[key] = item
 
 
 def _encode_dict(d):
