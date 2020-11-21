@@ -2,7 +2,7 @@ import asyncio
 import pickle
 import sqlite3
 from contextlib import asynccontextmanager
-from typing import Iterable, Optional
+from typing import AsyncIterator, Iterable, Optional
 
 import aiosqlite
 
@@ -75,7 +75,7 @@ class SQLiteCache(BaseCache):
         return db
 
     @asynccontextmanager
-    async def get_connection(self, autocommit: bool = False) -> aiosqlite.Connection:
+    async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
         async with self._lock:
             if self._bulk_commit:
                 db = await self._get_pending_connection()
@@ -122,20 +122,42 @@ class SQLiteCache(BaseCache):
             self.can_commit = True
             await self._close_pending_connection()
 
+    async def clear(self):
+        async with self.get_connection(autocommit=True) as db:
+            await db.execute(f'DROP TABLE `{self.table_name}`')
+            await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
+            await db.execute('VACUUM')
+
+    async def contains(self, key: str) -> bool:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT COUNT(*) FROM `{self.table_name}` WHERE key=?', (key,))
+            row = await cur.fetchone()
+            return bool(row[0]) if row else False
+
+    async def delete(self, key: str):
+        async with self.get_connection(autocommit=True) as db:
+            await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))
+
+    async def keys(self) -> Iterable[str]:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT key FROM `{self.table_name}`')
+            return [row[0] for row in await cur.fetchall()]
+
     async def read(self, key: str) -> Optional[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
             row = await cur.fetchone()
             return row[0] if row else None
 
-    async def read_all(self) -> Iterable[ResponseOrKey]:
+    async def size(self) -> int:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT COUNT(key) FROM `{self.table_name}`')
+            row = await cur.fetchone()
+            return row[0] if row else 0
+
+    async def values(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'SELECT value FROM `{self.table_name}`')
-            return [row[0] for row in await cur.fetchall()]
-
-    async def keys(self) -> Iterable[ResponseOrKey]:
-        async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT key FROM `{self.table_name}`')
             return [row[0] for row in await cur.fetchall()]
 
     async def write(self, key: str, item: ResponseOrKey):
@@ -145,37 +167,15 @@ class SQLiteCache(BaseCache):
                 (key, item),
             )
 
-    async def contains(self, key: str) -> bool:
-        async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT COUNT(*) FROM `{self.table_name}` WHERE key=?', (key,))
-            return bool((await cur.fetchone())[0])
-
-    async def delete(self, key: str):
-        async with self.get_connection(autocommit=True) as db:
-            cur = await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))
-            if not cur.rowcount:
-                raise KeyError
-
-    async def clear(self):
-        async with self.get_connection(autocommit=True) as db:
-            await db.execute(f'DROP TABLE `{self.table_name}`')
-            await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
-            await db.execute('VACUUM')
-
-    async def size(self) -> int:
-        with self.get_connection() as db:
-            cur = await db.execute(f'SELECT COUNT(key) FROM `{self.table_name}`')
-            return await cur.fetchone()[0]
-
 
 class SQLitePickleCache(SQLiteCache):
     """ Same as :py:class:`SqliteCache`, but pickles values before saving """
 
     async def read(self, key: str) -> Optional[ResponseOrKey]:
-        binary_item = bytes(await super().read(key))
-        return pickle.loads(binary_item)
+        item = await super().read(key)
+        return pickle.loads(bytes(item)) if item else None  # type: ignore
 
-    async def read_all(self) -> Iterable[ResponseOrKey]:
+    async def values(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'select value from `{self.table_name}`')
             return [row[0] for row in await cur.fetchall()]

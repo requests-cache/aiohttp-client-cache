@@ -30,19 +30,12 @@ class MongoDBCache(BaseCache):
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
-        result = self.collection.find_one({'_id': key})
-        return result['data'] if result else None
+    async def clear(self):
+        self.collection.drop()
 
     # TODO
-    async def read_all(self) -> Iterable[ResponseOrKey]:
+    async def contains(self, key: str) -> bool:
         raise NotImplementedError
-
-    async def keys(self) -> Iterable[str]:
-        return [d['_id'] for d in self.collection.find({}, {'_id': True})]
-
-    async def write(self, key: str, item: ResponseOrKey):
-        self.collection.save({'_id': key, 'data': item})
 
     async def delete(self, key: str):
         spec = {'_id': key}
@@ -51,15 +44,22 @@ class MongoDBCache(BaseCache):
         else:
             self.collection.find_and_modify(spec, remove=True, fields={'_id': True})
 
-    # TODO
-    async def contains(self, key: str) -> bool:
-        raise NotImplementedError
+    async def keys(self) -> Iterable[str]:
+        return [d['_id'] for d in self.collection.find({}, {'_id': True})]
+
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        result = self.collection.find_one({'_id': key})
+        return result['data'] if result else None
 
     async def size(self) -> int:
         return self.collection.count()
 
-    async def clear(self):
-        self.collection.drop()
+    # TODO
+    async def values(self) -> Iterable[ResponseOrKey]:
+        raise NotImplementedError
+
+    async def write(self, key: str, item: ResponseOrKey):
+        self.collection.save({'_id': key, 'data': item})
 
 
 class MongoDBPickleCache(MongoDBCache):
