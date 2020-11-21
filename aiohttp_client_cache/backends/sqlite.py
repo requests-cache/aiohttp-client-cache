@@ -14,14 +14,13 @@ class SQLiteController(CacheController):
 
     Reading is fast, saving is a bit slower. It can store a large amount of data
     with low memory usage.
+
+    Args:
+        cache_name: database filename prefix
+        extension: Database file extension
     """
 
     def __init__(self, cache_name: str, *args, extension: str = '.sqlite', **kwargs):
-        """
-        Args:
-            cache_name: database filename prefix
-            extension: Database file extension
-        """
         super().__init__(cache_name, *args, **kwargs)
         self.redirects = SQLiteCache(cache_name + extension, 'urls')
         self.responses = SQLitePickleCache(cache_name + extension, 'responses')
@@ -39,19 +38,15 @@ class SQLiteCache(BaseCache):
         >>> d1 = SQLiteCache('testdb', 'table1')
         >>> d2 = SQLiteCache('testdb', 'table2')
 
+    Args:
+        filename: filename for database (without extension)
+        table_name: table name
     """
 
     def __init__(self, filename: str, table_name: str):
-        """
-        Args:
-            filename: filename for database (without extension)
-            table_name: table name
-        """
         self.filename = filename
         self.table_name = table_name
-
-        #: Transactions can be committed if this property is set to `True`
-        self.can_commit = True
+        self.can_commit = True  # Transactions can be committed if this is set to `True`
 
         self._bulk_commit = False
         self._initialized = False

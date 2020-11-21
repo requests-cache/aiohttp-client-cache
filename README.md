@@ -59,11 +59,11 @@ for i in range(10):
 Several backends are available.
 The default backend is `sqlite`, if installed; otherwise it falls back to `memory`.
 
-* `sqlite`: SQLite database (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
-* `redis`: Stores all data in a redis cache (requires [redis-py](https://github.com/andymccurdy/redis-py))
-* `mongodb`: MongoDB database (requires [pymongo](https://pymongo.readthedocs.io/en/stable/)))
-    * `gridfs`: MongoDB GridFS enables storage of documents greater than 16MB (requires pymongo)
-* `memory`: Not persistent, simply stores all data in memory (**default**, if no backend dependencies are installed)
+* `sqlite` : SQLite database (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
+* `redis` : Stores all data in a redis cache (requires [redis-py](https://github.com/andymccurdy/redis-py))
+* `mongodb` : MongoDB database (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
+    * `gridfs` : MongoDB GridFS enables storage of documents greater than 16MB (requires pymongo)
+* `memory` : Not persistent, simply stores all data in memory
 
 You can also provide your own backend by subclassing `aiohttp_client_cache.backends.BaseCache`.
 
