@@ -15,7 +15,11 @@ requests, based on [requests-cache](https://github.com/reclosedev/requests-cache
 Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache), which is a cache
 for the aiohttp web server. This package is, as you might guess, specifically for the aiohttp client.
 
+## Development Status
 **This is an early work in progress and not yet fully functional!**
+
+The current state is a mostly working drop-in replacement for `aiohttp.ClientSession`.
+However, the cache operations are still synchronous, with minimal testing and likely lots of bugs.
 
 ## Installation
 Requires python 3.7+
@@ -71,3 +75,12 @@ the same request is made. If you want to manually purge all expired items, you c
 session = CachedSession(expire_after=1)
 await session.remove_expired_responses()
 ```
+
+## Credits
+Thanks to [Roman Haritonov](https://github.com/reclosedev) and
+[contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.rst)
+for the original `requests-cache`!
+
+This project is licensed under the MIT license, with the exception of portions reused from requests-cache
+(primarily its [storage backends](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)),
+which is licensed under the BSD license (copy included).
