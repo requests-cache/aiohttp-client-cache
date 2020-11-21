@@ -37,6 +37,11 @@ extensions = [
 # Enable automatic links to other projects' Sphinx docs
 intersphinx_mapping = {
     'aiohttp': ('https://docs.aiohttp.org/en/stable/', None),
+    'aiosqlite': ('https://aiosqlite.omnilib.dev/en/latest/', None),
+    'boto3': ('http://boto3.readthedocs.io/en/latest/', None),
+    'botocore': ('http://botocore.readthedocs.io/en/latest/', None),
+    'pymongo': ('https://pymongo.readthedocs.io/en/stable/', None),
+    'redis': ('https://redis-py.readthedocs.io/en/stable/', None),
 }
 
 # Enable Google-style docstrings
