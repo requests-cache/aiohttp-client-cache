@@ -2,7 +2,7 @@ from importlib import import_module
 from logging import getLogger
 from typing import Optional, Type
 
-from aiohttp_client_cache.backends.base import BaseCache
+from aiohttp_client_cache.backends.base import BaseCache, BaseStorage, DictStorage  # noqa
 
 PICKLE_PROTOCOL = 4
 BACKEND_QUALNAMES = {
