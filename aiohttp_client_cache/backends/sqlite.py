@@ -2,13 +2,14 @@ import asyncio
 import pickle
 import sqlite3
 from contextlib import asynccontextmanager
+from typing import Iterable, Optional
 
 import aiosqlite
 
-from aiohttp_client_cache.backends import PICKLE_PROTOCOL, BaseCache
+from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
 
 
-class DbCache(BaseCache):
+class SQLiteController(CacheController):
     """SQLite cache backend.
 
     Reading is fast, saving is a bit slower. It can store a large amount of data
@@ -22,22 +23,22 @@ class DbCache(BaseCache):
             extension: Database file extension
         """
         super().__init__(cache_name, *args, **kwargs)
-        self.responses = DbPickleDict(cache_name + extension, 'responses')
-        self.keys_map = DbDict(cache_name + extension, 'urls')
+        self.redirects = SQLiteCache(cache_name + extension, 'urls')
+        self.responses = SQLitePickleCache(cache_name + extension, 'responses')
 
 
-class DbDict:
-    """A dictionary-like object for saving large datasets to `sqlite` database
+class SQLiteCache(BaseCache):
+    """An async interface for caching objects in a SQLite database
 
-    It's possible to create multiply DbDict instances, which will be stored as separate
-    tables in one database::
+    It's possible to create multiple SqliteCache instances, which will be stored as separate
+    tables in one database.
 
-        d1 = DbDict('test', 'table1')
-        d2 = DbDict('test', 'table2')
-        d3 = DbDict('test', 'table3')
+    Example:
 
-    all data will be stored in ``test.sqlite`` database into
-    correspondent tables: ``table1``, ``table2`` and ``table3``
+        >>> # Store data in two tables under the 'testdb' database
+        >>> d1 = SQLiteCache('testdb', 'table1')
+        >>> d2 = SQLiteCache('testdb', 'table2')
+
     """
 
     def __init__(self, filename: str, table_name: str):
@@ -73,7 +74,7 @@ class DbDict:
         await db.execute('PRAGMA synchronous = 0;')
         if not self._initialized:
             await db.execute(
-                f'create table if not exists `{self.table_name}` (key PRIMARY KEY, value)'
+                f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
             )
             self._initialized = True
         return db
@@ -110,7 +111,7 @@ class DbDict:
 
         Example:
 
-            >>> d1 = DbDict('test')
+            >>> d1 = SQLiteCache('test')
             >>> async with d1.bulk_commit():
             ...     for i in range(1000):
             ...         d1[i] = i * 2
@@ -126,63 +127,64 @@ class DbDict:
             self.can_commit = True
             await self._close_pending_connection()
 
-    async def read(self, key: str):
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
         async with self.get_connection() as db:
-            cur = await db.execute(f'select value from `{self.table_name}` where key=?', (key,))
+            cur = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
             row = await cur.fetchone()
-            return row[0]
+            return row[0] if row else None
 
-    async def read_all(self):
+    async def read_all(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
-            cur = await db.execute(f'select value from `{self.table_name}`')
-            return await cur.fetchall()
+            cur = await db.execute(f'SELECT value FROM `{self.table_name}`')
+            return [row[0] for row in await cur.fetchall()]
 
-    async def write(self, key, item):
+    async def keys(self) -> Iterable[ResponseOrKey]:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT key FROM `{self.table_name}`')
+            return [row[0] for row in await cur.fetchall()]
+
+    async def write(self, key: str, item: ResponseOrKey):
         async with self.get_connection(autocommit=True) as db:
             await db.execute(
-                f'insert or replace into `{self.table_name}` (key,value) values (?,?)',
+                f'INSERT OR REPLACE INTO `{self.table_name}` (key,value) VALUES (?,?)',
                 (key, item),
             )
 
-    async def delete(self, key):
+    async def contains(self, key: str) -> bool:
+        async with self.get_connection() as db:
+            cur = await db.execute(f'SELECT COUNT(*) FROM `{self.table_name}` WHERE key=?', (key,))
+            return bool((await cur.fetchone())[0])
+
+    async def delete(self, key: str):
         async with self.get_connection(autocommit=True) as db:
-            cur = await db.execute(f'delete from `{self.table_name}` where key=?', (key,))
+            cur = await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))
             if not cur.rowcount:
                 raise KeyError
 
-    async def size(self):
-        with self.get_connection() as db:
-            cur = await db.execute(f'select count(key) from `{self.table_name}`')
-            return await cur.fetchone()[0]
-
     async def clear(self):
         async with self.get_connection(autocommit=True) as db:
-            await db.execute(f'drop table `{self.table_name}`')
-            await db.execute(f'create table `{self.table_name}` (key PRIMARY KEY, value)')
-            await db.execute('vacuum')
+            await db.execute(f'DROP TABLE `{self.table_name}`')
+            await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
+            await db.execute('VACUUM')
 
-    async def __aiter__(self):
-        async with self.get_connection() as db:
-            cur = await db.execute(f'select key from `{self.table_name}`')
-            for row in await cur.fetchall():
-                yield row[0]
-
-    async def __anext__(self):
-        pass
+    async def size(self) -> int:
+        with self.get_connection() as db:
+            cur = await db.execute(f'SELECT COUNT(key) FROM `{self.table_name}`')
+            return await cur.fetchone()[0]
 
 
-class DbPickleDict(DbDict):
-    """ Same as :class:`DbDict`, but pickles values before saving """
+class SQLitePickleCache(SQLiteCache):
+    """ Same as :py:class:`SqliteCache`, but pickles values before saving """
 
-    async def set(self, key, item):
-        binary_item = sqlite3.Binary(pickle.dumps(item, protocol=PICKLE_PROTOCOL))
-        await super().set(key, binary_item)
-
-    async def get(self, key):
-        binary_item = bytes(await super().get(key))
+    async def read(self, key: str) -> Optional[ResponseOrKey]:
+        binary_item = bytes(await super().read(key))
         return pickle.loads(binary_item)
 
-    async def get_all(self):
+    async def read_all(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'select value from `{self.table_name}`')
-            return await cur.fetchall()
+            return [row[0] for row in await cur.fetchall()]
+
+    async def write(self, key, item):
+        binary_item = sqlite3.Binary(pickle.dumps(item, protocol=-1))
+        await super().write(key, binary_item)
