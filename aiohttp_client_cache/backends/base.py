@@ -11,7 +11,7 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
-ResponseOrKey = Union[CachedResponse, str]
+ResponseOrKey = Union[CachedResponse, bytes, str]
 logger = getLogger(__name__)
 
 
