@@ -73,11 +73,19 @@ class CachedResponse:
         # Set some remaining attributes individually
         response._body = client_response._body
         response.headers = dict(client_response.headers)
-        response.encoding = client_response.get_encoding()
+
+        # The encoding may be unset even if the response has been read
+        try:
+            response.encoding = client_response.get_encoding()
+        except RuntimeError:
+            pass
+
         response.request_info = RequestInfo.from_object(client_response.request_info)
         response.url = str(client_response.url)
         if client_response.history:
-            response.history = (cls.from_client_response(r) for r in client_response.history)
+            response.history = (
+                *[await cls.from_client_response(r) for r in client_response.history],
+            )
         return response
 
     @property
