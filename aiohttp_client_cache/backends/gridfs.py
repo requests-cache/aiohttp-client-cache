@@ -9,8 +9,8 @@ from aiohttp_client_cache.backends.mongo import MongoDBCache
 
 
 class GridFSController(CacheController):
-    """GridFS cache backend.
-    Use MongoDB GridFS to support documents greater than 16MB.
+    """An async-compatible interface for caching objects in MongoDB GridFS.
+    Use this if you need to support documents greater than 16MB.
     """
 
     def __init__(self, cache_name: str, *args, connection: MongoClient = None, **kwargs):
@@ -21,14 +21,14 @@ class GridFSController(CacheController):
 
 # TODO: Incomplete/untested
 class GridFSCache(BaseCache):
-    """A dictionary-like interface for MongoDB GridFS"""
+    """A dictionary-like interface for MongoDB GridFS
+
+    Args:
+        db_name: database name (be careful with production databases)
+        connection: MongoDB connection instance to use instead of creating a new one
+    """
 
     def __init__(self, db_name, connection: MongoClient = None):
-        """
-        Args:
-            db_name: database name (be careful with production databases)
-            connection: MongoDB connection instance to use instead of creating a new one
-        """
         self.connection = connection or MongoClient()
         self.db = self.connection[db_name]
         self.fs = GridFS(self.db)

@@ -9,19 +9,33 @@ from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOr
 
 
 class DynamoDbController(CacheController):
-    """DynamoDB cache backend"""
+    """DynamoDB cache backend.
+    See :py:class:`.DynamoDbCache` for backend-specific options
+    See `DynamoDB Service Resource
+    <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
+    for more usage details.
+    """
 
     def __init__(self, cache_name: str, *args, **kwargs):
-        """See :py:class:`.DynamoDbCache` for backend-specific options"""
         super().__init__(cache_name, *args, **kwargs)
         self.responses = DynamoDbCache(cache_name, 'responses', **kwargs)
         self.redirects = DynamoDbCache(cache_name, 'urls', connection=self.responses.connection)
 
 
 # TODO: Incomplete/untested
-# TODO: Use intersphinx to shorten refs to AWS docs
 class DynamoDbCache(BaseCache):
-    """An async-compatible interface for caching objects in a DynamoDB key-store"""
+    """An async-compatible interface for caching objects in a DynamoDB key-store
+
+    The actual key name on the dynamodb server will be ``namespace:table_name``.
+    In order to deal with how dynamodb stores data/keys, all values must be pickled.
+
+    Args:
+        table_name: Table name to use
+        namespace: Name of the hash map stored in dynamodb
+        connection: An existing resource object to reuse instead of creating a new one
+        region_name: AWS region of DynamoDB database
+        kwargs: Additional keyword arguments for DynamoDB :py:class:`.ServiceResource`
+    """
 
     def __init__(
         self,
@@ -33,19 +47,6 @@ class DynamoDbCache(BaseCache):
         write_capacity_units: int = 1,
         **kwargs,
     ):
-
-        """
-        The actual key name on the dynamodb server will be ``namespace``:``namespace_name``.
-        In order to deal with how dynamodb stores data/keys, everything must be pickled.
-
-        Args:
-            table_name: Table name to use
-            namespace: Name of the hash map stored in dynamodb
-            connection: An existing resource object to reuse instead of creating a new one
-            region_name: AWS region of DynamoDB database
-            kwargs: Additional keyword arguments for DynamoDB
-                `Service Resource <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`)
-        """
         self.namespace = namespace
         self.connection = connection or boto3.resource(
             'dynamodb', region_name=region_name, **kwargs

@@ -18,21 +18,19 @@ class RedisController(CacheController):
 # TODO: Incomplete/untested
 # TODO: Original implementation pickled keys as well as values. Is there a reason keys need to be pickled?
 class RedisCache(BaseCache):
-    """An async-compatible interface for caching objects in a Redis instance"""
+    """An async-compatible interface for caching objects in Redis.
+    The actual key name on the redis server will be ``namespace:collection_name``.
+    In order to deal with how redis stores data/keys, everything must be pickled.
+
+    Args:
+        namespace: namespace to use
+        collection_name: name of the hash map stored in redis
+        connection: An existing connection object to reuse instead of creating a new one
+        kwargs: Additional keyword arguments for :py:class:`redis.Redis`
+
+    """
 
     def __init__(self, namespace: str, collection_name: str, connection: Redis = None, **kwargs):
-        """
-        The actual key name on the redis server will be ``namespace:collection_name``
-
-        In order to deal with how redis stores data/keys, everything must be pickled.
-
-        Args:
-            namespace: namespace to use
-            collection_name: name of the hash map stored in redis
-            connection: An existing connection object to reuse instead of creating a new one
-            kwargs: Additional keyword arguments for :py:class:`redis.Redis`
-
-        """
         self.connection = connection or StrictRedis(**kwargs)
         self._self_key = ':'.join([namespace, collection_name])
 
