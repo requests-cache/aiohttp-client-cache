@@ -15,18 +15,19 @@ ResponseOrKey = Union[CachedResponse, str]
 logger = getLogger(__name__)
 
 
-class BaseCache:
-    """Base class for cache implementations. Handles cache expiration and generating cache keys.
-    Storage operations are handled by :py:class:`.BaseStorage`.
+class CacheController:
+    """Class to manage higher-level cache operations.
+    Handles cache expiration, and generating cache keys, and managing redirect history.
 
-    To extend this with your own custom backend, implement a subclass of :py:class:`.BaseStorage`
-    to use as :py:attr:`responses` and :py:attr:`response_aliases`.
+    Basic storage operations are handled by :py:class:`.BaseCache`.
+    To extend this with your own custom backend, implement a subclass of :py:class:`.BaseCache`
+    to use as :py:attr:`CacheController.responses` and :py:attr:`CacheController.response_aliases`.
     """
 
     def __init__(
         self,
         cache_name,
-        expire_after,
+        expire_after=None,
         filter_fn=None,
         allowable_codes=None,
         allowable_methods=None,
@@ -44,8 +45,8 @@ class BaseCache:
         self.disabled = False
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
-        self.redirects = DictStorage()
-        self.responses = DictStorage()
+        self.redirects = DictCache()
+        self.responses = DictCache()
 
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
@@ -95,7 +96,7 @@ class BaseCache:
         """
         # Attempt to fetch response from the cache
         try:
-            if key not in self.responses:
+            if not await self.responses.contains(key):
                 key = await self.redirects.read(key)
             response = await self.responses.read(key)
         except (KeyError, TypeError):
@@ -139,6 +140,7 @@ class BaseCache:
         """
         keys_to_delete = set()
 
+        # TODO: BaseCache is not currently iterable
         for key in self.responses:
             response = await self.get_response(key)
             if response and response.is_expired:
@@ -148,10 +150,10 @@ class BaseCache:
         for key in keys_to_delete:
             await self.delete(key)
 
-    def has_url(self, url: str) -> bool:
+    async def has_url(self, url: str) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
-        return key in self.responses or key in self.redirects
+        return await self.responses.contains(key) or await self.redirects.contains(key)
 
     def create_key(
         self,
@@ -196,9 +198,9 @@ class BaseCache:
 
 # TODO: Support yarl.URL like aiohttp does?
 # TODO: Is there an existing ABC for async collections? Can't seem to find any.
-class BaseStorage(ABCMeta):
-    """A wrapper for the actual storage operations. This is separate from :py:class:`.BaseCache`
-    to simplify writing to multiple tables/prefixes.
+class BaseCache(metaclass=ABCMeta):
+    """A wrapper for the actual storage operations. This is separate from
+    :py:class:`.CacheController` to simplify writing to multiple tables/prefixes.
 
     This is no longer using a dict-like interface due to lack of python syntax support for async
     dict operations.
@@ -239,7 +241,7 @@ class BaseStorage(ABCMeta):
         return item
 
 
-class DictStorage(UserDict, BaseStorage):
+class DictCache(UserDict, BaseCache):
     """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
 
     async def read(self, key: str) -> Union[CachedResponse, str]:
@@ -251,13 +253,16 @@ class DictStorage(UserDict, BaseStorage):
     async def write(self, key: str, item: ResponseOrKey):
         self.data[key] = item
 
+    async def contains(self, key: str) -> bool:
+        return key in self.data
+
     async def delete(self, key: str):
         del self.data[key]
 
     async def clear(self):
         self.data.clear()
 
-    async def size(self):
+    async def size(self) -> int:
         return len(self.data)
 
 
