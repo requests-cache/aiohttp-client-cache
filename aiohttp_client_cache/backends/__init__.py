@@ -2,16 +2,20 @@ from importlib import import_module
 from logging import getLogger
 from typing import Optional, Type
 
-from aiohttp_client_cache.backends.base import BaseCache
+from aiohttp_client_cache.backends.base import (  # noqa
+    BaseCache,
+    CacheController,
+    DictCache,
+    ResponseOrKey,
+)
 
-PICKLE_PROTOCOL = 4
 BACKEND_QUALNAMES = {
-    'dynamodb': 'aiohttp_client_cache.backends.dynamodb.DynamoDbCache',
-    'gridfs': 'aiohttp_client_cache.backends.gridfs.GridFSCache',
-    'memory': 'aiohttp_client_cache.backends.base.BaseCache',
-    'mongodb': 'aiohttp_client_cache.backends.mongo.MongoCache',
-    'redis': 'aiohttp_client_cache.backends.redis.RedisCache',
-    'sqlite': 'aiohttp_client_cache.backends.sqlite.DbCache',
+    'dynamodb': 'aiohttp_client_cache.backends.dynamodb.DynamoDbController',
+    'gridfs': 'aiohttp_client_cache.backends.gridfs.GridFSController',
+    'memory': 'aiohttp_client_cache.backends.base.CacheController',
+    'mongodb': 'aiohttp_client_cache.backends.mongo.MongoDBController',
+    'redis': 'aiohttp_client_cache.backends.redis.RedisController',
+    'sqlite': 'aiohttp_client_cache.backends.sqlite.SQLiteController',
 }
 logger = getLogger(__name__)
 
@@ -30,20 +34,20 @@ def import_member(qualname: str) -> Optional[Type]:
 BACKEND_CLASSES = {name: import_member(qualname) for name, qualname in BACKEND_QUALNAMES.items()}
 
 
-def create_backend(backend_name: Optional[str], *args, **kwargs) -> BaseCache:
-    """Initialize a backend by name"""
-    logger.info(f'Initializing backend: {backend_name}')
-    if isinstance(backend_name, BaseCache):
-        return backend_name
-    if not backend_name:
-        backend_name = 'sqlite' if BACKEND_CLASSES['sqlite'] else 'memory'
-    backend_name = backend_name.lower()
+def create_backend(backend: Optional[str], *args, **kwargs) -> CacheController:
+    """Initialize a backend by name; defaults to ``sqlite`` if installed, otherwise ``memory``"""
+    logger.info(f'Initializing backend: {backend}')
+    if isinstance(backend, CacheController):
+        return backend
+    if not backend:
+        backend = 'sqlite' if 'sqlite' in BACKEND_CLASSES else 'memory'
+    backend = backend.lower()
 
-    if backend_name not in BACKEND_CLASSES:
-        raise ValueError(f'Invalid backend: {backend_name}')
-    backend_class = BACKEND_CLASSES.get(backend_name)
+    if backend not in BACKEND_CLASSES:
+        raise ValueError(f'Invalid backend: {backend}')
+    backend_class = BACKEND_CLASSES.get(backend)
     if not backend_class:
-        raise ImportError(f'Dependencies not installed for backend {backend_name}')
+        raise ImportError(f'Dependencies not installed for backend {backend}')
 
     logger.info(f'Found backend type: {backend_class}')
     return backend_class(*args, **kwargs)
