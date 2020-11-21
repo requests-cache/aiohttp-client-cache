@@ -17,15 +17,15 @@ class MongoDBController(CacheController):
 
 # TODO: Incomplete/untested
 class MongoDBCache(BaseCache):
-    """A dictionary-like interface for ``mongo`` database"""
+    """An async-compatible interface for caching objects in MongoDB
+
+    Args:
+        db_name: database name (be careful with production databases)
+        collection_name: collection name
+        connection: MongoDB connection instance to use instead of creating a new one
+    """
 
     def __init__(self, db_name, collection_name: str, connection: MongoClient = None):
-        """
-        Args:
-            db_name: database name (be careful with production databases)
-            collection_name: collection name
-            connection: MongoDB connection instance to use instead of creating a new one
-        """
         self.connection = connection or MongoClient()
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
