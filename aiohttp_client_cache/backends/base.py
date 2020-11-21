@@ -42,10 +42,10 @@ class BaseCache:
         self.allowable_methods = allowable_methods
         self.filter_fn = filter_fn
         self.disabled = False
-        self.responses = DictStorage()
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
-        self.response_aliases = DictStorage()
+        self.redirects = DictStorage()
+        self.responses = DictStorage()
 
         self._include_get_headers = include_get_headers
         self._ignored_parameters = set(ignored_parameters or [])
@@ -63,7 +63,7 @@ class BaseCache:
         )
 
     def is_expired(self, response: AnyResponse) -> bool:
-        """Determine if a given timestamp is expired"""
+        """Determine if a given response is expired"""
         created_at = getattr(response, 'created_at', None)
         if not created_at or not self.expire_after:
             return False
@@ -80,11 +80,11 @@ class BaseCache:
             return
 
         response = await CachedResponse.from_client_response(response)
-        self.responses[key] = response
+        await self.responses.write(key, response)
 
         # Alias any redirect requests to the same cache key
         for r in response.history:
-            self.add_key_mapping(self.create_key(r.method, r.url), key)
+            await self.redirects.write(self.create_key(r.method, r.url), key)
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -96,54 +96,41 @@ class BaseCache:
         # Attempt to fetch response from the cache
         try:
             if key not in self.responses:
-                key = self.response_aliases[key]
-            response = self.responses[key]
+                key = await self.redirects.read(key)
+            response = await self.responses.read(key)
         except (KeyError, TypeError):
             return None
 
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
-            self.delete(key)
+            await self.delete(key)
             response.is_expired = True
 
         return response
 
-    def add_key_mapping(self, new_key: str, key_to_response: str):
-        """
-        Adds mapping of `new_key` to `key_to_response` to make it possible to
-        associate many keys with single response
-
-        Args:
-            new_key: new key (e.g. url from redirect)
-            key_to_response: key which can be found in :attr:`responses`
-        """
-        self.response_aliases[new_key] = key_to_response
-
-    def clear(self):
+    async def clear(self):
         """Clear cache"""
-        self.responses.clear()
-        self.response_aliases.clear()
+        await self.responses.clear()
+        await self.redirects.clear()
 
-    def delete(self, key: str):
-        """ Delete `key` from cache. Also deletes all responses from response history """
-        try:
-            if key in self.responses:
-                response = self.responses[key]
-                del self.responses[key]
-            else:
-                response = self.responses[self.response_aliases[key]]
-                del self.response_aliases[key]
+    async def delete(self, key: str):
+        """Delete a response from the cache, along with its history (if applicable)"""
+
+        async def delete_history(response):
+            if not response:
+                return
             for r in response.history:
-                del self.response_aliases[self.create_key(r.method, r.url)]
-        # We don't care if the key is already missing from the cache
-        except KeyError:
-            pass
+                await self.redirects.delete(self.create_key(r.method, r.url))
 
-    def delete_url(self, url: str):
-        """Delete response associated with `url` from cache.
-        Also deletes all responses from response history. Works only for GET requests
+        redirect_key = await self.redirects.pop(key)
+        await delete_history(await self.responses.pop(key))
+        await delete_history(await self.responses.pop(redirect_key))
+
+    async def delete_url(self, url: str):
+        """Delete cached response associated with `url`, along with its history (if applicable).
+        Works only for GET requests.
         """
-        self.delete(self.create_key('GET', url))
+        await self.delete(self.create_key('GET', url))
 
     async def delete_expired_responses(self):
         """Deletes entries from cache with creation time older than ``expire_after``.
@@ -164,7 +151,7 @@ class BaseCache:
     def has_url(self, url: str) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
-        return key in self.responses or key in self.response_aliases
+        return key in self.responses or key in self.redirects
 
     def create_key(
         self,
@@ -206,11 +193,6 @@ class BaseCache:
         data = filter_ignored_params(data)
         return url, params, data
 
-    def __str__(self):
-        return (
-            f'keys: {list(self.response_aliases.keys())}\nresponses: {list(self.responses.keys())}'
-        )
-
 
 # TODO: Support yarl.URL like aiohttp does?
 # TODO: Is there an existing ABC for async collections? Can't seem to find any.
@@ -249,6 +231,12 @@ class BaseStorage(ABCMeta):
     @abstractmethod
     async def size(self) -> int:
         """Get the number of items in the cache"""
+
+    async def pop(self, key: str) -> Optional[ResponseOrKey]:
+        """Delete an item from the cache, and return the deleted item"""
+        item = await self.read(key)
+        await self.delete(key)
+        return item
 
 
 class DictStorage(UserDict, BaseStorage):
