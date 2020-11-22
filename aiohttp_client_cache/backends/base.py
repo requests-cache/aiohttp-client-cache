@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from datetime import datetime, timedelta
 from logging import getLogger
-from typing import Iterable, Optional, Union
+from typing import Callable, Iterable, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
@@ -15,6 +15,8 @@ ResponseOrKey = Union[CachedResponse, None, bytes, str]
 logger = getLogger(__name__)
 
 
+# TODO: Could/should this + init_backend() be merged into CachedSession?
+#   It would at least remove one layer of parameter passing.
 class CacheController:
     """Class to manage higher-level cache operations.
     Handles cache expiration, and generating cache keys, and managing redirect history.
@@ -26,30 +28,30 @@ class CacheController:
 
     def __init__(
         self,
-        cache_name,
-        expire_after=None,
-        filter_fn=None,
-        allowable_codes=None,
-        allowable_methods=None,
-        include_get_headers=False,
-        ignored_parameters=None,
+        cache_name: str = 'http-cache',
+        expire_after: Union[int, timedelta] = None,
+        allowed_codes: tuple = (200,),
+        allowed_methods: tuple = ('GET', 'HEAD'),
+        filter_fn: Callable = lambda r: True,
+        include_headers: bool = False,
+        ignored_params: Iterable = None,
         **kwargs,
     ):
         self.name = cache_name
         if expire_after is not None and not isinstance(expire_after, timedelta):
             expire_after = timedelta(seconds=expire_after)
         self.expire_after = expire_after
-        self.allowable_codes = allowable_codes
-        self.allowable_methods = allowable_methods
+        self.allowed_codes = allowed_codes
+        self.allowed_methods = allowed_methods
         self.filter_fn = filter_fn
         self.disabled = False
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
-        self.redirects = DictCache()
-        self.responses = DictCache()
+        self.redirects = DictCache()  # type: BaseCache
+        self.responses = DictCache()  # type: BaseCache
 
-        self._include_get_headers = include_get_headers
-        self._ignored_parameters = set(ignored_parameters or [])
+        self.include_headers = include_headers
+        self.ignored_params = set(ignored_params or [])
 
     def is_cacheable(self, response: Union[ClientResponse, CachedResponse, None]) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
@@ -59,8 +61,8 @@ class CacheController:
             [
                 not self.disabled,
                 not self.is_expired(response),
-                response.status in self.allowable_codes,
-                response.method in self.allowable_methods,
+                response.status in self.allowed_codes,
+                response.method in self.allowed_methods,
                 self.filter_fn(response),
             ]
         )
@@ -82,18 +84,17 @@ class CacheController:
         # Attempt to fetch response from the cache
         try:
             if not await self.responses.contains(key):
-                key = await self.redirects.read(key)
+                key = str(await self.redirects.read(key))
             response = await self.responses.read(key)
         except (KeyError, TypeError):
+            return None
+        if not isinstance(response, CachedResponse):
             return None
 
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
             await self.delete(key)
-            try:
-                response.is_expired = True
-            except AttributeError:
-                pass
+            response.is_expired = True
 
         return response
 
@@ -107,8 +108,8 @@ class CacheController:
         if not self.is_cacheable(response):
             return
 
-        response = await CachedResponse.from_client_response(response)
-        await self.responses.write(key, response)
+        cached_response = await CachedResponse.from_client_response(response)
+        await self.responses.write(key, cached_response)
 
         # Alias any redirect requests to the same cache key
         for r in response.history:
@@ -128,7 +129,7 @@ class CacheController:
             for r in response.history:
                 await self.redirects.delete(self.create_key(r.method, r.url))
 
-        redirect_key = await self.redirects.pop(key)
+        redirect_key = str(await self.redirects.pop(key))
         await delete_history(await self.responses.pop(key))
         await delete_history(await self.responses.pop(redirect_key))
 
@@ -169,7 +170,7 @@ class CacheController:
         **kwargs,
     ) -> str:
         """Create a unique cache key based on request details"""
-        if self._ignored_parameters:
+        if self.ignored_params:
             url, params, body = self._remove_ignored_parameters(url, params, data)
 
         key = hashlib.sha256()
@@ -178,7 +179,11 @@ class CacheController:
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
 
-        if self._include_get_headers and headers and headers != ClientRequest.DEFAULT_HEADERS:
+        if (
+            self.include_headers
+            and headers is not None
+            and headers != ClientRequest.DEFAULT_HEADERS
+        ):
             for name, value in sorted(headers.items()):
                 key.update(name.encode())
                 key.update(value.encode())
@@ -186,7 +191,7 @@ class CacheController:
 
     def _remove_ignored_parameters(self, url, params, data):
         def filter_ignored_params(d):
-            return {k: v for k, v in d.items() if k not in self._ignored_parameters}
+            return {k: v for k, v in d.items() if k not in self.ignored_params}
 
         # Strip off any request params manually added to URL and add to `params`
         u = urlparse(url)
