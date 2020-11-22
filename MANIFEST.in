@@ -1,2 +1,2 @@
 include README.md HISTORY.md
-include LICENSE LICENSE_requests_cache
+include LICENSE requests_cache.md

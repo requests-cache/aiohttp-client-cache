@@ -10,7 +10,7 @@ directory = 'test-reports'
 
 [tool.coverage.run]
 branch = true
-source = ['pyinaturalist']
+source = ['aiohttp_client_cache']
 
 [tool.isort]
 profile = "black"
