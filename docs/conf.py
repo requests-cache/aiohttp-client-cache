@@ -52,10 +52,11 @@ numpydoc_show_class_members = False
 
 # Use apidoc to auto-generate rst sources
 # Added here instead of instead of in Makefile so it will be used by ReadTheDocs
-apidoc_module_dir = PACKAGE_DIR
-apidoc_output_dir = 'modules'
 apidoc_excluded_paths = ['api_docs.py']
+apidoc_extra_args = ['--private']
+apidoc_module_dir = PACKAGE_DIR
 apidoc_module_first = True
+apidoc_output_dir = 'modules'
 apidoc_separate_modules = True
 apidoc_toc_file = False
 
