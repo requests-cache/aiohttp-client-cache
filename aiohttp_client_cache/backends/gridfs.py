@@ -20,6 +20,8 @@ class GridFSController(CacheController):
 
 
 # TODO: Incomplete/untested
+# TODO: Fully async implementation. Current implementation uses blocking operations.
+#   Methods are currently defined as async only for compatibility with BaseCache API.
 class GridFSCache(BaseCache):
     """A dictionary-like interface for MongoDB GridFS
 

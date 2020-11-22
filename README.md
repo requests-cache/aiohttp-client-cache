@@ -19,7 +19,7 @@ for the aiohttp web server. This package is, as you might guess, specifically fo
 **This is an early work in progress and not yet fully functional!**
 
 The current state is a mostly working drop-in replacement for `aiohttp.ClientSession`.
-However, the cache operations are still synchronous, with minimal testing and likely lots of bugs.
+However, most cache operations are still synchronous, have had minimal testing, and likely have lots of bugs.
 
 ## Installation
 Requires python 3.7+
@@ -27,6 +27,14 @@ Requires python 3.7+
 Install the latest stable version with pip:
 ```bash
 pip install aiohttp-client-cache
+```
+
+**Note:** You will need additional dependencies depending on which backend you want to use; See
+[Cache Backends](#cache-backends) section below for details.
+
+To install with extra dependencies for all supported backends:
+```bash
+pip install aiohttp-client-cache[backends]
 ```
 
 To set up for local development:
