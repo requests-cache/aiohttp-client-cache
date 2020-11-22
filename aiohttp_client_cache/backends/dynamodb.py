@@ -23,6 +23,8 @@ class DynamoDbController(CacheController):
 
 
 # TODO: Incomplete/untested
+# TODO: Fully async implementation. Current implementation with boto3 uses blocking operations.
+#   Methods are currently defined as async only for compatibility with BaseCache API.
 class DynamoDbCache(BaseCache):
     """An async-compatible interface for caching objects in a DynamoDB key-store
 
