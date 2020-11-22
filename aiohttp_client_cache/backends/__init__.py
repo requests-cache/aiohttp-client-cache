@@ -34,7 +34,7 @@ def import_member(qualname: str) -> Optional[Type]:
 BACKEND_CLASSES = {name: import_member(qualname) for name, qualname in BACKEND_QUALNAMES.items()}
 
 
-def create_backend(backend: Optional[str], *args, **kwargs) -> CacheController:
+def init_backend(backend: Optional[str], *args, **kwargs) -> CacheController:
     """Initialize a backend by name; defaults to ``sqlite`` if installed, otherwise ``memory``"""
     logger.info(f'Initializing backend: {backend}')
     if isinstance(backend, CacheController):
@@ -43,7 +43,7 @@ def create_backend(backend: Optional[str], *args, **kwargs) -> CacheController:
         backend = 'sqlite' if 'sqlite' in BACKEND_CLASSES else 'memory'
     backend = backend.lower()
 
-    if backend not in BACKEND_CLASSES:
+    if backend not in BACKEND_QUALNAMES:
         raise ValueError(f'Invalid backend: {backend}')
     backend_class = BACKEND_CLASSES.get(backend)
     if not backend_class:
