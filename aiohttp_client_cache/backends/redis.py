@@ -17,6 +17,8 @@ class RedisController(CacheController):
 
 # TODO: Incomplete/untested
 # TODO: Original implementation pickled keys as well as values. Is there a reason keys need to be pickled?
+# TODO: Fully async implementation. Current implementation with redis-py uses blocking operations.
+#   Methods are currently defined as async only for compatibility with BaseCache API.
 class RedisCache(BaseCache):
     """An async-compatible interface for caching objects in Redis.
     The actual key name on the redis server will be ``namespace:collection_name``.
