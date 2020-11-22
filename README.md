@@ -1,19 +1,19 @@
 # aiohttp-client-cache
-See full documentation at https://aiohttp-client-cache.readthedocs.io
 
 [![Build status](https://github.com/JWCook/aiohttp-client-cache/workflows/Build/badge.svg)](https://github.com/JWCook/aiohttp-client-cache/actions)
 [![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/stable?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 [![PyPI - Python Versions](https://img.shields.io/pypi/pyversions/aiohttp-client-cache)](https://pypi.org/project/aiohttp-client-cache)
 [![PyPI - Format](https://img.shields.io/pypi/format/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
-
 <!--- [![Coverage Status](https://coveralls.io/repos/github/JWCook/aiohttp-client-cache/badge.svg?branch=master)](https://coveralls.io/github/JWCook/aiohttp-client-cache?branch=master) --->
 
-`aiohttp-client-cache` is an async persistent cache for [aiohttp](https://docs.aiohttp.org)
+See full documentation at https://aiohttp-client-cache.readthedocs.io
+
+**aiohttp-client-cache** is an async persistent cache for [aiohttp](https://docs.aiohttp.org)
 requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 
 Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache), which is a cache
-for the aiohttp web server. This package is, as you might guess, specifically for the aiohttp client.
+for the aiohttp web server. This package is, as you might guess, specifically for the **aiohttp client**.
 
 ## Development Status
 **This is an early work in progress and not yet fully functional!**
@@ -31,7 +31,6 @@ pip install aiohttp-client-cache
 
 **Note:** You will need additional dependencies depending on which backend you want to use; See
 [Cache Backends](#cache-backends) section below for details.
-
 To install with extra dependencies for all supported backends:
 ```bash
 pip install aiohttp-client-cache[backends]
@@ -90,6 +89,7 @@ Thanks to [Roman Haritonov](https://github.com/reclosedev) and
 [contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.rst)
 for the original `requests-cache`!
 
-This project is licensed under the MIT license, with the exception of portions reused from requests-cache
-(primarily its [storage backends](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)),
-which is licensed under the BSD license (copy included).
+This project is licensed under the MIT license, with the exception of
+[storage backend code](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)
+adapted from `requests-cache`, which is licensed under the BSD license
+([copy included](https://github.com/JWCook/aiohttp-client-cache/blob/master/requests_cache.md)).

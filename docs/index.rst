@@ -1,8 +1,12 @@
-aiohttp-client-cache
-====================
+.. _index-page:
+
+.. Omit README link to ReadTheDocs, since we're already on ReadTheDocs!
+.. mdinclude:: ../README.md
+    :end-line: 9
 
 .. mdinclude:: ../README.md
-    :start-line: 2
+    :start-line: 11
+
 
 Contents
 ========
