@@ -12,7 +12,7 @@ from aiohttp_client_cache.response import AnyResponse
 
 
 class CachedSession(ClientSession):
-    """ :py:class:`.aiohttp.ClientSession` with caching support."""
+    """A drop-in replacement for :py:class:`aiohttp.ClientSession` with caching support"""
 
     def __init__(
         self,
@@ -99,5 +99,5 @@ class CachedSession(ClientSession):
         self.cache.disabled = False
 
     async def delete_expired_responses(self):
-        """Remove expired responses from storage"""
+        """Remove all expired responses from the cache"""
         await self.cache.delete_expired_responses()
