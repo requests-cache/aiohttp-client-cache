@@ -60,9 +60,9 @@ class CacheController:
         return all(
             [
                 not self.disabled,
-                not self.is_expired(response),
                 response.status in self.allowed_codes,
                 response.method in self.allowed_methods,
+                not self.is_expired(response),
                 self.filter_fn(response),
             ]
         )
