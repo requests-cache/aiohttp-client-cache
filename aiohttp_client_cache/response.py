@@ -97,6 +97,17 @@ class CachedResponse:
         except ClientResponseError:
             return False
 
+    def get_encoding(self):
+        return self.encoding
+
+    async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
+        """Read and decode JSON response"""
+
+        stripped = self._body.strip()
+        if not stripped:
+            return None
+        return json.loads(stripped.decode(encoding or self.encoding))
+
     def raise_for_status(self) -> None:
         if self.status >= 400:
             raise ClientResponseError(
@@ -107,26 +118,15 @@ class CachedResponse:
                 headers=self.headers,
             )
 
-    def get_encoding(self):
-        return self.encoding
-
-    async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
-        """Read response payload and decode"""
-        return self._body.decode(encoding or self.encoding, errors=errors)
-
-    async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
-        """Read and decode JSON response"""
-
-        stripped = self._body.strip()
-        if not stripped:
-            return None
-        return json.loads(stripped.decode(encoding or self.encoding))
-
     def read(self):
         """No-op function for compatibility with ClientResponse"""
 
     def release(self):
         """No-op function for compatibility with ClientResponse"""
+
+    async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
+        """Read response payload and decode"""
+        return self._body.decode(encoding or self.encoding, errors=errors)
 
 
 AnyResponse = Union[ClientResponse, CachedResponse]

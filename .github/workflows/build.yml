@@ -33,8 +33,7 @@ jobs:
       - name: Install dependencies
         run: pip install ".[dev]"
       - name: Run unit tests
-        run: echo 'Hey you should write some unit tests for this thing'
-#        run: pytest
+        run: pytest
 
   analyze:
     runs-on: ubuntu-18.04
