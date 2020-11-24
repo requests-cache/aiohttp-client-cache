@@ -2,7 +2,7 @@ import asyncio
 import pickle
 import sqlite3
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Iterable, Optional
+from typing import AsyncIterator, Iterable, Optional, Union
 
 import aiosqlite
 
@@ -160,7 +160,7 @@ class SQLiteCache(BaseCache):
             cur = await db.execute(f'SELECT value FROM `{self.table_name}`')
             return [row[0] for row in await cur.fetchall()]
 
-    async def write(self, key: str, item: ResponseOrKey):
+    async def write(self, key: str, item: Union[ResponseOrKey, sqlite3.Binary]):
         async with self.get_connection(autocommit=True) as db:
             await db.execute(
                 f'INSERT OR REPLACE INTO `{self.table_name}` (key,value) VALUES (?,?)',
