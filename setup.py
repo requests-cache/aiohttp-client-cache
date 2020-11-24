@@ -25,6 +25,8 @@ extras_require = {
         'mypy',
         'pre-commit',
         'pytest>=5.0',
+        'pytest-aiohttp',
+        'pytest-asyncio',
         'pytest-cov',
     ],
 }
