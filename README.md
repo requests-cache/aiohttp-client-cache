@@ -47,19 +47,18 @@ $ pre-commit install --config .github/pre-commit.yml
 ```
 
 ## Usage example
+See the [examples](https://github.com/JWCook/aiohttp-client-cache/blob/master/examples)
+folder for more detailed usage examples.
+
+Here is a simple example using an endpoint that takes 1 second to fetch.
+After the first request, subsequent requests to the same URL will return near-instantly; so,
+fetching it 10 times will only take ~1 second instead of 10.
 ```python
 from aiohttp_client_cache import CachedSession
-session = CachedSession('demo_cache', backend='sqlite')
-response = await session.get('http://httpbin.org/get')
-```
 
-Afterward, all responses with headers and cookies will be transparently cached to
-a database named `demo_cache.sqlite`. For example, following code will take only
-1-2 seconds instead of 10, and will run instantly on next launch:
-
-```python
-for i in range(10):
-    await session.get('http://httpbin.org/delay/1')
+async with CachedSession(backend='sqlite') as session:
+    for i in range(10):
+        await session.get('http://httpbin.org/delay/1')
 ```
 
 ## Cache Backends

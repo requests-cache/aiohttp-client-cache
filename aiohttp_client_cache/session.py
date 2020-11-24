@@ -77,10 +77,10 @@ class CachedSession(ClientSession):
         if cached_response and not getattr(cached_response, 'is_expired', False):
             return cached_response
         else:
-            client_response = await super()._request(method, str_or_url, **kwargs)
-            await client_response.read()
-            await self.cache.save_response(cache_key, client_response)
-            return client_response
+            new_response = await super()._request(method, str_or_url, **kwargs)
+            await new_response.read()
+            await self.cache.save_response(cache_key, new_response)
+            return new_response
 
     @contextmanager
     def disable_cache(self):
