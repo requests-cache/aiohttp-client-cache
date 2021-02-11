@@ -15,8 +15,6 @@ ResponseOrKey = Union[CachedResponse, None, bytes, str]
 logger = getLogger(__name__)
 
 
-# TODO: Could/should this + init_backend() be merged into CachedSession?
-#   It would at least remove one layer of parameter passing.
 class CacheController:
     """Class to manage higher-level cache operations.
     Handles cache expiration, and generating cache keys, and managing redirect history.
@@ -206,7 +204,6 @@ class CacheController:
 
 
 # TODO: Support yarl.URL like aiohttp does?
-# TODO: Is there an existing ABC for async collections? Can't seem to find any.
 class BaseCache(metaclass=ABCMeta):
     """A wrapper for the actual storage operations. This is separate from
     :py:class:`.CacheController` to simplify writing to multiple tables/prefixes.
@@ -247,14 +244,17 @@ class BaseCache(metaclass=ABCMeta):
     async def write(self, key: str, item: ResponseOrKey):
         """Write an item to the cache"""
 
-    async def pop(self, key: str) -> Optional[ResponseOrKey]:
+    async def pop(self, key: str, default=None) -> Optional[ResponseOrKey]:
         """Delete an item from the cache, and return the deleted item"""
-        item = await self.read(key)
-        await self.delete(key)
-        return item
+        try:
+            item = await self.read(key)
+            await self.delete(key)
+            return item
+        except KeyError:
+            return default
 
 
-class DictCache(UserDict, BaseCache):
+class DictCache(BaseCache, UserDict):
     """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
 
     async def delete(self, key: str):
