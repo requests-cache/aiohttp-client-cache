@@ -22,7 +22,7 @@ JsonResponse = Optional[Dict[str, Any]]
 
 @attr.s(auto_attribs=True, slots=True)
 class RequestInfo:
-    """A picklable version of from aiohttp.client_reqrep.RequestInfo"""
+    """A picklable version of aiohttp.client_reqrep.RequestInfo"""
 
     url: str
     method: str
