@@ -2,35 +2,38 @@ import asyncio
 import pickle
 import sqlite3
 from contextlib import asynccontextmanager
+from os.path import splitext
 from typing import AsyncIterator, Iterable, Optional, Union
 
 import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.forge_utils import extend_signature
 
 
 class SQLiteBackend(CacheBackend):
-    """SQLite cache backend.
-
+    """An async SQLite cache backend.
     Reading is fast, saving is a bit slower. It can store a large amount of data
     with low memory usage.
+    The path to the database file will be ``<cache_name>.sqlite``, or just ``<cache_name>`` if a
+    a different file extension is specified.
 
     Args:
-        cache_name: database filename prefix
-        extension: Database file extension
+        cache_name: Database filename
     """
 
-    def __init__(self, cache_name: str, *args, extension: str = '.sqlite', **kwargs):
-        super().__init__(cache_name, *args, **kwargs)
-        self.redirects = SQLiteCache(cache_name + extension, 'urls')
-        self.responses = SQLitePickleCache(cache_name + extension, 'responses')
+    @extend_signature(CacheBackend.__init__)
+    def __init__(self, cache_name: str = 'http-cache', **kwargs):
+        super().__init__(cache_name=cache_name, **kwargs)
+        path, ext = splitext(cache_name)
+        cache_path = f'{path}.{ext or "sqlite"}'
+
+        self.redirects = SQLiteCache(cache_path, 'urls')
+        self.responses = SQLitePickleCache(cache_path, 'responses')
 
 
 class SQLiteCache(BaseCache):
-    """An async interface for caching objects in a SQLite database
-
-    It's possible to create multiple SqliteCache instances, which will be stored as separate
-    tables in one database.
+    """An async interface for caching objects in a SQLite database.
 
     Example:
 
