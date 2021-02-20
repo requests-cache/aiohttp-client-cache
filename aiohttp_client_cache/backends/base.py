@@ -15,13 +15,39 @@ ResponseOrKey = Union[CachedResponse, None, bytes, str]
 logger = getLogger(__name__)
 
 
-class CacheController:
-    """Class to manage higher-level cache operations.
-    Handles cache expiration, and generating cache keys, and managing redirect history.
+class CacheBackend:
+    """Base class for cache backends. This manages higher-level cache operations,
+     including cache expiration, generating cache keys, and managing redirect history.
 
-    Basic storage operations are handled by :py:class:`.BaseCache`.
-    To extend this with your own custom backend, implement a subclass of :py:class:`.BaseCache`
-    to use as :py:attr:`CacheController.responses` and :py:attr:`CacheController.response_aliases`.
+    If instantiated directly, ``CacheBackend`` will use a non-persistent in-memory cache.
+
+    Lower-level storage operations are handled by :py:class:`.BaseCache`.
+    To extend this with your own custom backend, implement one or more subclasses of
+    :py:class:`.BaseCache` to use as :py:attr:`CacheBackend.responses` and
+    :py:attr:`CacheBackend.response_aliases`.
+
+    Args:
+        cache_name: Cache prefix or namespace, depending on backend; see notes below
+        expire_after: Number of hours after which a cache entry will expire; se ``None`` to
+            never expire
+        allowed_codes: Limit caching only for response with this codes
+        allowed_methods: Cache only requests of this methods
+        include_headers: Make request headers part of the cache key
+        ignored_params: List of request parameters to be excluded from the cache key.
+        filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
+            returns a boolean indicating whether or not that response should be cached. Will be
+            applied to both new and previously cached responses
+
+    The ``cache_name`` parameter will be used as follows depending on the backend:
+
+        * ``sqlite``: Cache filename prefix, e.g ``my_cache.sqlite``
+        * ``mongodb``: Database name
+        * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
+
+    Note on cache key parameters: Set ``include_get_headers=True`` if you want responses to be
+    cached under different keys if they only differ by headers. You may also provide
+    ``ignored_parameters`` to ignore specific request params. This is useful, for example, when
+    requesting the same resource with different credentials or access tokens.
     """
 
     def __init__(
@@ -30,10 +56,9 @@ class CacheController:
         expire_after: Union[int, timedelta] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
-        filter_fn: Callable = lambda r: True,
         include_headers: bool = False,
         ignored_params: Iterable = None,
-        **kwargs,
+        filter_fn: Callable = lambda r: True,
     ):
         self.name = cache_name
         if expire_after is not None and not isinstance(expire_after, timedelta):
@@ -205,8 +230,8 @@ class CacheController:
 
 # TODO: Support yarl.URL like aiohttp does?
 class BaseCache(metaclass=ABCMeta):
-    """A wrapper for the actual storage operations. This is separate from
-    :py:class:`.CacheController` to simplify writing to multiple tables/prefixes.
+    """A wrapper for lower-level cache storage operations. This is separate from
+    :py:class:`.CacheBackend` to allow a single backend to contain multiple cache objects.
 
     This is no longer using a dict-like interface due to lack of python syntax support for async
     dict operations.

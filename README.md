@@ -16,10 +16,11 @@ Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache),
 for the aiohttp web server. This package is, as you might guess, specifically for the **aiohttp client**.
 
 ## Development Status
-**This is an early work in progress and not yet fully functional!**
+**This is an early work in progress!**
 
 The current state is a mostly working drop-in replacement for `aiohttp.ClientSession`.
 However, most cache operations are still synchronous, have had minimal testing, and likely have lots of bugs.
+Breaking changes should be expected until a `1.0` release.
 
 ## Installation
 Requires python 3.7+
@@ -54,34 +55,60 @@ Here is a simple example using an endpoint that takes 1 second to fetch.
 After the first request, subsequent requests to the same URL will return near-instantly; so,
 fetching it 10 times will only take ~1 second instead of 10.
 ```python
-from aiohttp_client_cache import CachedSession
+from aiohttp_client_cache import CachedSession, SQLiteBackend
 
-async with CachedSession(backend='sqlite') as session:
+async with CachedSession(cache=SQLiteBackend()) as session:
     for i in range(10):
         await session.get('http://httpbin.org/delay/1')
 ```
 
-## Cache Backends
-Several backends are available.
-The default backend is `sqlite`, if installed; otherwise it falls back to `memory`.
+`aiohttp-client-cache` can also be used as a mixin, if you happen have other mixin classes that you
+want to combine with it:
+```python
+from aiohttp import ClientSession
+from aiohttp_client_cache import CacheMixin
 
-* `sqlite` : SQLite database (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
-* `redis` : Stores all data in a redis cache (requires [redis-py](https://github.com/andymccurdy/redis-py))
-* `mongodb` : MongoDB database (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
-    * `gridfs` : MongoDB GridFS enables storage of documents greater than 16MB (requires pymongo)
-* `memory` : Not persistent, simply stores all data in memory
+class CustomSession(CacheMixin, CustomMixin, ClientSession):
+    pass
+```
+
+## Cache Backends
+Several backends are available. If one isn't specified, a simple in-memory cache will be used.
+
+* `SQLiteBackend`: Uses a [SQLite](https://www.sqlite.org) database
+  (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
+* `DynamoDBBackend`: Uses a [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) database
+  (requires [boto3](https://github.com/boto/boto3))
+* `RedisBackend`: Uses a [Redis](https://redis.io/) cache
+  (requires [redis-py](https://github.com/andymccurdy/redis-py))
+* `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
+  (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
+    * `GridFSBackend`: Uses a [MongoDB GridFS](https://docs.mongodb.com/manual/core/gridfs/) database,
+      which enables storage of documents greater than 16MB
+      (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
 
 You can also provide your own backend by subclassing `aiohttp_client_cache.backends.BaseCache`.
 
 ## Expiration
-If you are using the `expire_after` parameter , responses are removed from the storage the next time
-the same request is made. If you want to manually purge all expired items, you can use
+If you are using the `expire_after` parameter, expired responses are removed from the storage the
+next time the same request is made. If you want to manually purge all expired items, you can use
 `CachedSession.delete_expired_responses`. Example:
 
 ```python
-session = CachedSession(expire_after=1)
-await session.remove_expired_responses()
+session = CachedSession(expire_after=3)   # Cached responses expire after 3 hours
+await session.remove_expired_responses()  # Remove any responses over 3 hours old
 ```
+
+## Conditional Caching
+Caching behavior can be customized by defining various conditions:
+* Response status codes
+* Request HTTP methods
+* Request headers
+* Specific request parameters
+* Custom filter function
+
+See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html)
+docs for details.
 
 ## Credits
 Thanks to [Roman Haritonov](https://github.com/reclosedev) and
