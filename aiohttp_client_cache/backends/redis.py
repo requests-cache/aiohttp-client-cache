@@ -3,14 +3,16 @@ from typing import Iterable, Optional
 
 from redis import Redis, StrictRedis
 
-from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.forge_utils import extend_signature
 
 
-class RedisController(CacheController):
+class RedisBackend(CacheBackend):
     """Redis cache backend"""
 
-    def __init__(self, cache_name: str, *args, **kwargs):
-        super().__init__(cache_name, *args, **kwargs)
+    @extend_signature(CacheBackend.__init__)
+    def __init__(self, cache_name: str = 'http-cache', **kwargs):
+        super().__init__(cache_name=cache_name, **kwargs)
         self.responses = RedisCache(cache_name, 'responses', **kwargs)
         self.redirects = RedisCache(cache_name, 'urls', connection=self.responses.connection)
 
