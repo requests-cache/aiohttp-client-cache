@@ -11,8 +11,8 @@ from aiohttp_client_cache.backends import init_backend
 from aiohttp_client_cache.response import AnyResponse
 
 
-class CachedSession(ClientSession):
-    """A drop-in replacement for :py:class:`aiohttp.ClientSession` with caching support"""
+class CacheMixin:
+    """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
 
     def __init__(
         self,
@@ -77,7 +77,7 @@ class CachedSession(ClientSession):
         if cached_response and not getattr(cached_response, 'is_expired', False):
             return cached_response
         else:
-            new_response = await super()._request(method, str_or_url, **kwargs)
+            new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
             await new_response.read()
             await self.cache.save_response(cache_key, new_response)
             return new_response
@@ -101,3 +101,7 @@ class CachedSession(ClientSession):
     async def delete_expired_responses(self):
         """Remove all expired responses from the cache"""
         await self.cache.delete_expired_responses()
+
+
+class CachedSession(ClientSession, CacheMixin):
+    """A drop-in replacement for :py:class:`aiohttp.ClientSession` that adds caching support"""
