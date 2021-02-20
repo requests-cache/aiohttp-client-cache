@@ -5,10 +5,10 @@ import boto3
 from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 
-from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 
 
-class DynamoDbController(CacheController):
+class DynamoDBBackend(CacheBackend):
     """DynamoDB cache backend.
     See :py:class:`.DynamoDbCache` for backend-specific options
     See `DynamoDB Service Resource
