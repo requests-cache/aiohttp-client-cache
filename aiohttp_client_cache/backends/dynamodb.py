@@ -6,6 +6,7 @@ from boto3.resources.base import ServiceResource
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.forge_utils import extend_signature
 
 
 class DynamoDBBackend(CacheBackend):
@@ -16,8 +17,9 @@ class DynamoDBBackend(CacheBackend):
     for more usage details.
     """
 
-    def __init__(self, cache_name: str, *args, **kwargs):
-        super().__init__(cache_name, *args, **kwargs)
+    @extend_signature(CacheBackend.__init__)
+    def __init__(self, cache_name: str = 'http-cache', **kwargs):
+        super().__init__(cache_name=cache_name, **kwargs)
         self.responses = DynamoDbCache(cache_name, 'responses', **kwargs)
         self.redirects = DynamoDbCache(cache_name, 'urls', connection=self.responses.connection)
 

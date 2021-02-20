@@ -37,7 +37,6 @@ class CacheBackend:
         filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
             returns a boolean indicating whether or not that response should be cached. Will be
             applied to both new and previously cached responses
-        backend_options: Additional backend-specific options
 
     The ``cache_name`` parameter will be used as follows depending on the backend:
 
@@ -60,7 +59,6 @@ class CacheBackend:
         include_headers: bool = False,
         ignored_params: Iterable = None,
         filter_fn: Callable = lambda r: True,
-        **backend_options,
     ):
         self.name = cache_name
         if expire_after is not None and not isinstance(expire_after, timedelta):
