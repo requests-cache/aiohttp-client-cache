@@ -3,10 +3,10 @@ from typing import Iterable, Optional
 
 from redis import Redis, StrictRedis
 
-from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 
 
-class RedisController(CacheController):
+class RedisBackend(CacheBackend):
     """Redis cache backend"""
 
     def __init__(self, cache_name: str, *args, **kwargs):

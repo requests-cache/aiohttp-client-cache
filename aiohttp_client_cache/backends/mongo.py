@@ -3,10 +3,10 @@ from typing import Iterable, Optional
 
 from pymongo import MongoClient
 
-from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 
 
-class MongoDBController(CacheController):
+class MongoDBBackend(CacheBackend):
     """MongoDB cache backend"""
 
     def __init__(self, cache_name: str, *args, connection: MongoClient = None, **kwargs):
