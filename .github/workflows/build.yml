@@ -2,10 +2,10 @@ name: Build
 
 on:
   push:
-    branches: [master, dev]
+    branches: [main, dev]
     tags: ['v*']
   pull_request:
-    branches: [master, dev]
+    branches: [main, dev]
   workflow_dispatch:
 
 jobs:
@@ -59,8 +59,8 @@ jobs:
         run: mypy .
       - name: Run linter
         run: flake8 aiohttp_client_cache
-#      - name: Generate code coverage report
-#        run: pytest --cov --cov-report=term --cov-report=html
+      - name: Generate code coverage report
+        run: pytest --cov --cov-report=term --cov-report=html
 #      - name: Send code coverage report to Coveralls
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

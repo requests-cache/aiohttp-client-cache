@@ -8,7 +8,13 @@ from aiohttp_client_cache.forge_utils import extend_signature
 
 
 class MongoDBBackend(CacheBackend):
-    """MongoDB cache backend"""
+    """MongoDB cache backend
+
+    Args:
+        connection: Optional client object to use instead of creating a new one
+
+    See :py:class:`.CacheBackend` for additional args.
+    """
 
     @extend_signature(CacheBackend.__init__)
     def __init__(self, cache_name: str = 'http-cache', connection: MongoClient = None, **kwargs):

@@ -8,7 +8,10 @@ from aiohttp_client_cache.forge_utils import extend_signature
 
 
 class RedisBackend(CacheBackend):
-    """Redis cache backend"""
+    """Redis cache backend.
+
+    See :py:class:`.CacheBackend` for args.
+    """
 
     @extend_signature(CacheBackend.__init__)
     def __init__(self, cache_name: str = 'http-cache', **kwargs):
