@@ -17,7 +17,7 @@ logger = getLogger(__name__)
 
 class CacheBackend:
     """Base class for cache backends. This manages higher-level cache operations,
-     including cache expiration, generating cache keys, and managing redirect history.
+    including cache expiration, generating cache keys, and managing redirect history.
 
     If instantiated directly, ``CacheBackend`` will use a non-persistent in-memory cache.
 
