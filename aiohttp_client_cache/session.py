@@ -14,7 +14,8 @@ class CacheMixin:
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support
 
     Args:
-        cache: A cache backend object
+        cache: A cache backend object. See :py:module:`aiohttp_client_cache.backends` for
+            options. If not provided, an in-memory cache will be used.
     """
 
     def __init__(self, *, cache: CacheBackend = None, **kwargs):
