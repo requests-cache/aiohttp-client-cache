@@ -6,6 +6,7 @@ from pymongo import MongoClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 from aiohttp_client_cache.backends.mongo import MongoDBCache
+from aiohttp_client_cache.forge_utils import extend_signature
 
 
 class GridFSBackend(CacheBackend):
@@ -13,8 +14,9 @@ class GridFSBackend(CacheBackend):
     Use this if you need to support documents greater than 16MB.
     """
 
-    def __init__(self, cache_name: str, *args, connection: MongoClient = None, **kwargs):
-        super().__init__(cache_name, *args, **kwargs)
+    @extend_signature(CacheBackend.__init__)
+    def __init__(self, cache_name: str = 'http-cache', connection: MongoClient = None, **kwargs):
+        super().__init__(cache_name=cache_name, **kwargs)
         self.responses = GridFSCache(cache_name, connection)
         self.keys_map = MongoDBCache(cache_name, 'http_redirects', self.responses.connection)
 

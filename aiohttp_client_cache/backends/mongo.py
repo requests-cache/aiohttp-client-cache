@@ -4,13 +4,15 @@ from typing import Iterable, Optional
 from pymongo import MongoClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.forge_utils import extend_signature
 
 
 class MongoDBBackend(CacheBackend):
     """MongoDB cache backend"""
 
-    def __init__(self, cache_name: str, *args, connection: MongoClient = None, **kwargs):
-        super().__init__(cache_name, *args, **kwargs)
+    @extend_signature(CacheBackend.__init__)
+    def __init__(self, cache_name: str = 'http-cache', connection: MongoClient = None, **kwargs):
+        super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection)
         self.keys_map = MongoDBCache(cache_name, 'urls', self.responses.connection)
 
