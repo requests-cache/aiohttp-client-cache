@@ -1,35 +1,14 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from aiohttp_client_cache import CachedResponse
-from aiohttp_client_cache.backends import BACKEND_CLASSES, BACKEND_QUALNAMES, init_backend
-from aiohttp_client_cache.backends.base import BaseCache, CacheController, DictCache  # noqa
-from aiohttp_client_cache.backends.sqlite import SQLiteController
+from aiohttp_client_cache.backends.base import BaseCache, CacheBackend, DictCache  # noqa
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('backend', BACKEND_QUALNAMES.keys())
-@patch('gridfs.Database', MagicMock)
-def test_init_backend(backend):
-    cache = init_backend(backend, 'http-cache', connection=MagicMock())
-    assert isinstance(cache, BACKEND_CLASSES[backend])
-    assert cache.name == 'http-cache'
-
-
-def test_init_backend__default():
-    cache = init_backend()
-    assert isinstance(cache, SQLiteController)
-
-
-def test_init_backend__invalid():
-    with pytest.raises(ValueError):
-        init_backend('sybase')
-
-
-@pytest.mark.asyncio
-async def test_cache_controller__get_response__cache_hit():
+async def test_cache_backend__get_response__cache_hit():
     # Set up a cache with a couple cached items and a redirect
-    cache = CacheController()
+    cache = CacheBackend()
     mock_response_1 = MagicMock(spec=CachedResponse)
     mock_response_2 = MagicMock(spec=CachedResponse)
     await cache.responses.write('request-key-1', mock_response_1)
@@ -43,8 +22,8 @@ async def test_cache_controller__get_response__cache_hit():
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__get_response__cache_miss():
-    cache = CacheController()
+async def test_cache_backend__get_response__cache_miss():
+    cache = CacheBackend()
     await cache.responses.write('invalid-response-key', MagicMock())
 
     response = await cache.get_response('nonexistent-key')
@@ -57,50 +36,50 @@ async def test_cache_controller__get_response__cache_miss():
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__get_response__cache_expired():
+async def test_cache_backend__get_response__cache_expired():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__save_response():
+async def test_cache_backend__save_response():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__clear():
+async def test_cache_backend__clear():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__delete():
+async def test_cache_backend__delete():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__delete_url():
+async def test_cache_backend__delete_url():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__delete_expired_responses():
+async def test_cache_backend__delete_expired_responses():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__has_url():
+async def test_cache_backend__has_url():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__create_key():
+async def test_cache_backend__create_key():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__is_cacheable():
+async def test_cache_backend__is_cacheable():
     pass
 
 
 @pytest.mark.asyncio
-async def test_cache_controller__is_expired():
+async def test_cache_backend__is_expired():
     pass

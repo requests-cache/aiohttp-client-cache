@@ -6,10 +6,10 @@ from typing import AsyncIterator, Iterable, Optional, Union
 
 import aiosqlite
 
-from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 
 
-class SQLiteController(CacheController):
+class SQLiteBackend(CacheBackend):
     """SQLite cache backend.
 
     Reading is fast, saving is a bit slower. It can store a large amount of data

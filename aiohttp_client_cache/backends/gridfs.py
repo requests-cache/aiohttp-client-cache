@@ -4,11 +4,11 @@ from typing import Iterable, Optional
 from gridfs import GridFS
 from pymongo import MongoClient
 
-from aiohttp_client_cache.backends import BaseCache, CacheController, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 from aiohttp_client_cache.backends.mongo import MongoDBCache
 
 
-class GridFSController(CacheController):
+class GridFSBackend(CacheBackend):
     """An async-compatible interface for caching objects in MongoDB GridFS.
     Use this if you need to support documents greater than 16MB.
     """
