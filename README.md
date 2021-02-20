@@ -107,7 +107,7 @@ Caching behavior can be customized by defining various conditions:
 * Specific request parameters
 * Custom filter function
 
-See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html)
+See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
 docs for details.
 
 ## Credits

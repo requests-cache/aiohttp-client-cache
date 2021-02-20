@@ -20,6 +20,8 @@ class SQLiteBackend(CacheBackend):
 
     Args:
         cache_name: Database filename
+
+    See :py:class:`.CacheBackend` for additional args.
     """
 
     @extend_signature(CacheBackend.__init__)

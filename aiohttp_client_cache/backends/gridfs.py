@@ -12,6 +12,11 @@ from aiohttp_client_cache.forge_utils import extend_signature
 class GridFSBackend(CacheBackend):
     """An async-compatible interface for caching objects in MongoDB GridFS.
     Use this if you need to support documents greater than 16MB.
+
+    Args:
+        connection: Optional client object to use instead of creating a new one
+
+    See :py:class:`.CacheBackend` for additional args.
     """
 
     @extend_signature(CacheBackend.__init__)
