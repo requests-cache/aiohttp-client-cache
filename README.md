@@ -18,8 +18,10 @@ for the aiohttp web server. This package is, as you might guess, specifically fo
 ## Development Status
 **This is an early work in progress!**
 
-The current state is a mostly working drop-in replacement for `aiohttp.ClientSession`.
-However, most cache operations are still synchronous, have had minimal testing, and likely have lots of bugs.
+The current state is a working drop-in replacement (or mixin) for `aiohttp.ClientSession`, with a
+fully async SQLite backend.
+Additional backends are provided, but cache operations are still synchronous, and have had minimal testing.
+
 Breaking changes should be expected until a `1.0` release.
 
 ## Installation
