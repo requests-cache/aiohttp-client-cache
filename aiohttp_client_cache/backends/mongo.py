@@ -25,9 +25,6 @@ class MongoDBBackend(CacheBackend):
         self.keys_map = MongoDBCache(cache_name, 'urls', self.responses.connection)
 
 
-# TODO: Incomplete/untested
-# TODO: Fully async implementation. Current implementation uses blocking operations.
-#   Methods are currently defined as async only for compatibility with BaseCache API.
 class MongoDBCache(BaseCache):
     """An async-compatible interface for caching objects in MongoDB
 
