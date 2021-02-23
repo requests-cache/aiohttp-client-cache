@@ -1,5 +1,5 @@
 import pytest
-import sys
+from sys import version_info
 from unittest.mock import MagicMock, patch
 
 from aiohttp_client_cache.backends import CacheBackend
@@ -10,7 +10,7 @@ try:
     from unittest.mock import AsyncMock
 except ImportError:
     pass
-pytestmark = pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python 3.8 or higher")
+pytestmark = pytest.mark.skipif(version_info < (3, 8), reason="AsyncMock requires python 3.8+")
 
 
 @pytest.mark.asyncio
