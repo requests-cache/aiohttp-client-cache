@@ -43,9 +43,8 @@ class MongoDBCache(BaseCache):
     async def clear(self):
         self.collection.drop()
 
-    # TODO
     async def contains(self, key: str) -> bool:
-        raise NotImplementedError
+        return bool(self.collection.find_one({'_id': key}))
 
     async def delete(self, key: str):
         spec = {'_id': key}
