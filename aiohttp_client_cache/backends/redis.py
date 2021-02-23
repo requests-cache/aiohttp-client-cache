@@ -1,5 +1,5 @@
 import pickle
-from typing import Iterable, Optional
+from typing import Iterable
 
 from redis import Redis, StrictRedis
 
@@ -57,7 +57,7 @@ class RedisCache(BaseCache):
     async def keys(self) -> Iterable[str]:
         return [self._unpickle_result(r) for r in self.connection.hkeys(self._self_key)]
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         result = self.connection.hget(self._self_key, pickle.dumps(key, protocol=-1))
         return self._unpickle_result(result)
 

@@ -1,5 +1,5 @@
 import pickle
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable
 
 import boto3
 from boto3.resources.base import ServiceResource
@@ -95,7 +95,7 @@ class DynamoDbCache(BaseCache):
         )
 
     @staticmethod
-    def _unpickle_item(response_item: Dict) -> Optional[ResponseOrKey]:
+    def _unpickle_item(response_item: Dict) -> ResponseOrKey:
         value_obj = (response_item or {}).get('value')
         return pickle.loads(value_obj.value) if value_obj else None
 
@@ -119,7 +119,7 @@ class DynamoDbCache(BaseCache):
     async def keys(self) -> Iterable[str]:
         raise NotImplementedError
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         response = self._table.get_item(Key={'namespace': self.namespace, 'key': str(key)})
         return self._unpickle_item(response.get('Item'))
 
