@@ -1,7 +1,7 @@
 import pickle
 from typing import Iterable, Optional
 
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 from aiohttp_client_cache.forge_utils import extend_signature
@@ -17,7 +17,9 @@ class MongoDBBackend(CacheBackend):
     """
 
     @extend_signature(CacheBackend.__init__)
-    def __init__(self, cache_name: str = 'http-cache', connection: MongoClient = None, **kwargs):
+    def __init__(
+        self, cache_name: str = 'http-cache', connection: AsyncIOMotorClient = None, **kwargs
+    ):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection)
         self.keys_map = MongoDBCache(cache_name, 'urls', self.responses.connection)
@@ -35,42 +37,41 @@ class MongoDBCache(BaseCache):
         connection: MongoDB connection instance to use instead of creating a new one
     """
 
-    def __init__(self, db_name, collection_name: str, connection: MongoClient = None):
-        self.connection = connection or MongoClient()
+    def __init__(self, db_name, collection_name: str, connection: AsyncIOMotorClient = None):
+        self.connection = connection or AsyncIOMotorClient()
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
 
     async def clear(self):
-        self.collection.drop()
+        await self.collection.drop()
 
-    # TODO
     async def contains(self, key: str) -> bool:
-        raise NotImplementedError
+        return bool(await self.collection.find_one({'_id': key}))
 
     async def delete(self, key: str):
         spec = {'_id': key}
         if hasattr(self.collection, "find_one_and_delete"):
-            self.collection.find_one_and_delete(spec, {'_id': True})
+            await self.collection.find_one_and_delete(spec, {'_id': True})
         else:
-            self.collection.find_and_modify(spec, remove=True, fields={'_id': True})
+            await self.collection.find_and_modify(spec, remove=True, fields={'_id': True})
 
     async def keys(self) -> Iterable[str]:
-        return [d['_id'] for d in self.collection.find({}, {'_id': True})]
+        return [d['_id'] for d in await self.collection.find({}, {'_id': True}).to_list(None)]
 
     async def read(self, key: str) -> Optional[ResponseOrKey]:
-        result = self.collection.find_one({'_id': key})
+        result = await self.collection.find_one({'_id': key})
         return result['data'] if result else None
 
     async def size(self) -> int:
-        return self.collection.count()
+        return await self.collection.count_documents({})
 
-    # TODO
     async def values(self) -> Iterable[ResponseOrKey]:
-        raise NotImplementedError
+        results = await self.collection.find({'data': {'$exists': True}}).to_list(None)
+        return list(map(lambda x: x['data'], results))
 
     async def write(self, key: str, item: ResponseOrKey):
         doc = {'_id': key, 'data': item}
-        self.collection.replace_one({'_id': key}, doc, upsert=True)
+        await self.collection.replace_one({'_id': key}, doc, upsert=True)
 
 
 class MongoDBPickleCache(MongoDBCache):
