@@ -1,5 +1,5 @@
 import pickle
-from typing import Iterable, Optional
+from typing import Iterable
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -55,7 +55,7 @@ class MongoDBCache(BaseCache):
     async def keys(self) -> Iterable[str]:
         return [d['_id'] for d in await self.collection.find({}, {'_id': True}).to_list(None)]
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         result = await self.collection.find_one({'_id': key})
         return result['data'] if result else None
 
@@ -64,7 +64,7 @@ class MongoDBCache(BaseCache):
 
     async def values(self) -> Iterable[ResponseOrKey]:
         results = await self.collection.find({'data': {'$exists': True}}).to_list(None)
-        return list(map(lambda x: x['data'], results))
+        return [x['data'] for x in results]
 
     async def write(self, key: str, item: ResponseOrKey):
         doc = {'_id': key, 'data': item}
