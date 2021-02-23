@@ -69,7 +69,8 @@ class MongoDBCache(BaseCache):
         raise NotImplementedError
 
     async def write(self, key: str, item: ResponseOrKey):
-        self.collection.save({'_id': key, 'data': item})
+        doc = {'_id': key, 'data': item}
+        self.collection.replace_one({'_id': key}, doc, upsert=True)
 
 
 class MongoDBPickleCache(MongoDBCache):
