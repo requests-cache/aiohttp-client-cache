@@ -84,7 +84,7 @@ Several backends are available. If one isn't specified, a simple in-memory cache
 * `RedisBackend`: Uses a [Redis](https://redis.io/) cache
   (requires [redis-py](https://github.com/andymccurdy/redis-py))
 * `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
-  (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
+  (requires [motor](https://motor.readthedocs.io))
     * `GridFSBackend`: Uses a [MongoDB GridFS](https://docs.mongodb.com/manual/core/gridfs/) database,
       which enables storage of documents greater than 16MB
       (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))

@@ -1,5 +1,5 @@
 import pickle
-from typing import Iterable, Optional
+from typing import Iterable
 
 from gridfs import GridFS
 from pymongo import MongoClient
@@ -58,7 +58,7 @@ class GridFSCache(BaseCache):
     async def keys(self) -> Iterable[str]:
         return [d._id for d in self.fs.find()]
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         result = self.fs.find_one({'_id': key})
         if result is None:
             raise KeyError

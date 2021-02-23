@@ -254,7 +254,7 @@ class BaseCache(metaclass=ABCMeta):
         """Get all keys stored in the cache"""
 
     @abstractmethod
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         """Read a single item from the cache. Returns ``None`` if the item is missing."""
 
     @abstractmethod
@@ -269,7 +269,7 @@ class BaseCache(metaclass=ABCMeta):
     async def write(self, key: str, item: ResponseOrKey):
         """Write an item to the cache"""
 
-    async def pop(self, key: str, default=None) -> Optional[ResponseOrKey]:
+    async def pop(self, key: str, default=None) -> ResponseOrKey:
         """Delete an item from the cache, and return the deleted item"""
         try:
             item = await self.read(key)

@@ -3,7 +3,7 @@ import pickle
 import sqlite3
 from contextlib import asynccontextmanager
 from os.path import splitext
-from typing import AsyncIterator, Iterable, Optional, Union
+from typing import AsyncIterator, Iterable, Union
 
 import aiosqlite
 
@@ -148,7 +148,7 @@ class SQLiteCache(BaseCache):
             cur = await db.execute(f'SELECT key FROM `{self.table_name}`')
             return [row[0] for row in await cur.fetchall()]
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         async with self.get_connection() as db:
             cur = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
             row = await cur.fetchone()
@@ -176,7 +176,7 @@ class SQLiteCache(BaseCache):
 class SQLitePickleCache(SQLiteCache):
     """ Same as :py:class:`SqliteCache`, but pickles values before saving """
 
-    async def read(self, key: str) -> Optional[ResponseOrKey]:
+    async def read(self, key: str) -> ResponseOrKey:
         item = await super().read(key)
         return pickle.loads(bytes(item)) if item else None  # type: ignore
 
