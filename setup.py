@@ -8,7 +8,7 @@ extras_require = {
     # Packages used for CI jobs
     'build': ['coveralls', 'twine', 'wheel'],
     # Packages for all supported backends
-    'backends': ['aiosqlite', 'boto3', 'pymongo', 'redis'],
+    'backends': ['aiosqlite', 'boto3', 'motor', 'redis'],
     # Packages used for documentation builds
     'docs': [
         'm2r2',
