@@ -19,6 +19,7 @@ extras_require = {
     ],
     # Packages used for testing both locally and in CI jobs
     'test': [
+        'asyncmock; python_version=="3.7"',
         'black==20.8b1',
         'flake8',
         'isort',
