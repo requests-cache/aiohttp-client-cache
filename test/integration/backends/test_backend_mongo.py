@@ -2,21 +2,32 @@ import pytest
 
 from bson.objectid import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
 from aiohttp_client_cache.backends.mongo import MongoDBCache
 
-from . import backends_to_test
+
+def test_connection():
+    """Test if a MongoDB server is running locally on the default port"""
+    try:
+        client = MongoClient(serverSelectionTimeoutMS=200)
+        client.server_info()
+        return True
+    except ConnectionFailure:
+        return False
 
 
-@pytest.mark.skipif(
-    "mongo" not in backends_to_test(),
-    reason="MongoDB backend tests must be explicitly enabled; a local MongoDB server is required.",
+pytestmark = pytest.mark.skipif(
+    not test_connection(), reason='MongoDB server required for integration tests'
 )
+
+
 class TestMongoDBCache:
     pytestmark = pytest.mark.asyncio
 
-    db_name = "aiohttp_client_cache_pytest"
-    collection_name = "fake-collection"
+    db_name = 'aiohttp-cache'
+    collection_name = 'responses'
 
     def setup(self):
         self.connection = AsyncIOMotorClient()
