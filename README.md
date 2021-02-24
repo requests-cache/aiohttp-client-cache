@@ -39,15 +39,8 @@ To install with extra dependencies for all supported backends:
 pip install aiohttp-client-cache[backends]
 ```
 
-To set up for local development:
-
-```bash
-$ git clone https://github.com/JWCook/aiohttp-client-cache
-$ cd aiohttp-client-cache
-$ pip install -Ue ".[dev]"
-$ # Optional but recommended:
-$ pre-commit install --config .github/pre-commit.yml
-```
+See [Contributing](https://github.com/JWCook/aiohttp-client-cache/blob/main/README.md)
+for setup info for local development.
 
 ## Usage example
 See the [examples](https://github.com/JWCook/aiohttp-client-cache/blob/master/examples)
