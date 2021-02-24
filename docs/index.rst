@@ -16,6 +16,7 @@ Contents
 
    reference
    history
+   contributing
 
 
 Indices and tables

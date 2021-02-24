@@ -1,8 +1,10 @@
 *.py[cod]
-*.idea
 *.sqlite
 *.egg
 *.egg-info
+.idea/
+.vim/
+.vscode/
 build/
 dist/
 venv/
