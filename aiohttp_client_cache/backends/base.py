@@ -80,15 +80,15 @@ class CacheBackend:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
             return False
-        return all(
-            [
-                not self.disabled,
-                response.status in self.allowed_codes,
-                response.method in self.allowed_methods,
-                not self.is_expired(response),
-                self.filter_fn(response),
-            ]
-        )
+        cache_criteria = [
+            not self.disabled,
+            response.status in self.allowed_codes,
+            response.method in self.allowed_methods,
+            not self.is_expired(response),
+            self.filter_fn(response),
+        ]
+        logger.debug(f'is_cacheable checks for response from {response.url}: {cache_criteria}')  # type: ignore
+        return all(cache_criteria)
 
     def is_expired(self, response: AnyResponse) -> bool:
         """Determine if a given response is expired"""
@@ -105,17 +105,23 @@ class CacheBackend:
             key: key of resource
         """
         # Attempt to fetch response from the cache
+        logger.debug(f'Attempting to get cached response for key: {key}')
         try:
             if not await self.responses.contains(key):
                 key = str(await self.redirects.read(key))
             response = await self.responses.read(key)
         except (KeyError, TypeError):
+            logger.debug('No cached response found')
             return None
         if not isinstance(response, CachedResponse):
+            logger.debug('Cached response is invalid')
             return None
+
+        logger.info(f'Cached response found for key: {key}')
 
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
+            logger.info('Cached response expired; deleting')
             await self.delete(key)
             response.is_expired = True
 
@@ -130,6 +136,7 @@ class CacheBackend:
         """
         if not self.is_cacheable(response):
             return
+        logger.info(f'Saving response for key: {key}')
 
         cached_response = await CachedResponse.from_client_response(response)
         await self.responses.write(key, cached_response)
@@ -140,6 +147,7 @@ class CacheBackend:
 
     async def clear(self):
         """Clear cache"""
+        logger.info('Clearing cache')
         await self.responses.clear()
         await self.redirects.clear()
 
@@ -152,6 +160,7 @@ class CacheBackend:
             for r in response.history:
                 await self.redirects.delete(self.create_key(r.method, r.url))
 
+        logger.debug(f'Deleting cached responses for key: {key}')
         redirect_key = str(await self.redirects.pop(key))
         await delete_history(await self.responses.pop(key))
         await delete_history(await self.responses.pop(redirect_key))
@@ -167,6 +176,7 @@ class CacheBackend:
         **Note:** Also deletes any cache items that are filtered out according to ``filter_fn()``
         and filter parameters (``allowable_*``)
         """
+        logger.info(f'Deleting all responses more than {self.expire_after} hours old')
         keys_to_delete = set()
 
         for key in await self.responses.keys():
