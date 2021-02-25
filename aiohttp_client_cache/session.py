@@ -1,6 +1,7 @@
 """Core functions for cache configuration"""
 import warnings
 from contextlib import asynccontextmanager
+from logging import getLogger
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
@@ -8,6 +9,8 @@ from aiohttp.typedefs import StrOrURL
 from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.forge_utils import extend_signature, forge
 from aiohttp_client_cache.response import AnyResponse
+
+logger = getLogger(__name__)
 
 
 class CacheMixin:
@@ -33,6 +36,7 @@ class CacheMixin:
         if cached_response and not getattr(cached_response, 'is_expired', False):
             return cached_response
         else:
+            logger.info(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
             await new_response.read()
             await self.cache.save_response(cache_key, new_response)
