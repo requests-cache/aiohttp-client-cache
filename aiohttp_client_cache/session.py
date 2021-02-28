@@ -33,7 +33,7 @@ class CacheMixin:
 
         # Attempt to fetch cached response; if missing or expired, fetch new one
         cached_response = await self.cache.get_response(cache_key)
-        if cached_response and not getattr(cached_response, 'is_expired', False):
+        if cached_response:
             return cached_response
         else:
             logger.info(f'Cached response not found; making request to {str_or_url}')
