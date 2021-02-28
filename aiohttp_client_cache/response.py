@@ -42,8 +42,9 @@ class RequestInfo:
 
 @attr.s(slots=True)
 class CachedResponse:
-    """A dataclass containing cached response information. It will mostly behave the same as a
-    :py:class:`aiohttp.ClientResponse` that has been read, with some additional cache-related info.
+    """A dataclass containing cached response information, used for serialization.
+    It will mostly behave the same as a :py:class:`aiohttp.ClientResponse` that has been read,
+    with some additional cache-related info.
     """
 
     method: str = attr.ib()
