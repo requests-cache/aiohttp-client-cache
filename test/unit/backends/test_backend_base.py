@@ -5,8 +5,9 @@ from unittest.mock import MagicMock, patch
 from aiohttp_client_cache import CachedResponse
 from aiohttp_client_cache.backends.base import BaseCache, CacheBackend, DictCache  # noqa
 
+pytestmark = pytest.mark.asyncio
 
-@pytest.mark.asyncio
+
 async def test_cache_backend__get_response__cache_response_hit():
     cache = CacheBackend()
     mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
@@ -16,7 +17,6 @@ async def test_cache_backend__get_response__cache_response_hit():
     assert response == mock_response
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__get_response__cache_redirect_hit():
     # Set up a cache with a couple cached items and a redirect
     cache = CacheBackend()
@@ -28,7 +28,6 @@ async def test_cache_backend__get_response__cache_redirect_hit():
     assert response == mock_response
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__get_response__cache_miss():
     cache = CacheBackend()
     await cache.responses.write('invalid-response-key', MagicMock())
@@ -39,8 +38,6 @@ async def test_cache_backend__get_response__cache_miss():
     assert response is None
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason="AsyncMock requires python 3.8+")
-@pytest.mark.asyncio
 @patch.object(CacheBackend, 'delete', return_value=False)
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_cache_backend__get_response__cache_expired(mock_is_cacheable, mock_delete):
@@ -56,47 +53,34 @@ async def test_cache_backend__get_response__cache_expired(mock_is_cacheable, moc
 # TODO
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__save_response():
     cache = CacheBackend()
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__clear():
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__delete():
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__delete_url():
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__delete_expired_responses():
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__has_url():
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__create_key():
     pass
 
 
-@pytest.mark.asyncio
 async def test_cache_backend__is_cacheable():
-    pass
-
-
-@pytest.mark.asyncio
-async def test_cache_backend__is_expired():
     pass

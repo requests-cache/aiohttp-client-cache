@@ -5,15 +5,15 @@ from unittest.mock import MagicMock, patch
 from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.session import CachedSession, ClientSession
 
-# AsyncMock was added in python 3.8
+pytestmark = pytest.mark.asyncio
+
+# AsyncMock was added to the stdlib in python 3.8; for 3.7 use separate asyncmock package
 try:
     from unittest.mock import AsyncMock
 except ImportError:
-    pass
-pytestmark = pytest.mark.skipif(version_info < (3, 8), reason="AsyncMock requires python 3.8+")
+    from asyncmock import AsyncMock
 
 
-@pytest.mark.asyncio
 @patch.object(ClientSession, '_request')
 async def test_session__cache_hit(mock_request):
     cache = MagicMock(spec=CacheBackend)
@@ -24,7 +24,6 @@ async def test_session__cache_hit(mock_request):
     assert mock_request.called is False
 
 
-@pytest.mark.asyncio
 @patch.object(ClientSession, '_request')
 async def test_session__cache_expired_or_invalid(mock_request):
     cache = MagicMock(spec=CacheBackend)
@@ -35,7 +34,6 @@ async def test_session__cache_expired_or_invalid(mock_request):
     assert mock_request.called is True
 
 
-@pytest.mark.asyncio
 @patch.object(ClientSession, '_request')
 async def test_session__cache_miss(mock_request):
     cache = MagicMock(spec=CacheBackend)
