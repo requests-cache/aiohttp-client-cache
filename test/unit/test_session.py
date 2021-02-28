@@ -26,9 +26,9 @@ async def test_session__cache_hit(mock_request):
 
 @pytest.mark.asyncio
 @patch.object(ClientSession, '_request')
-async def test_session__cache_expired(mock_request):
+async def test_session__cache_expired_or_invalid(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.get_response.return_value = AsyncMock(is_expired=True)
+    cache.get_response.return_value = None
     session = CachedSession(cache=cache)
 
     await session.get('http://test.url')
