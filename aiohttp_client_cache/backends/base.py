@@ -81,8 +81,8 @@ class CacheBackend:
         if not response:
             return False
         cache_criteria = {
-            'allowed status': response.status in self.allowed_codes,
             'allowed method': response.method in self.allowed_methods,
+            'allowed status': response.status in self.allowed_codes,
             'not disabled': not self.disabled,
             'not expired': not getattr(response, 'is_expired', False),
             'not filtered': self.filter_fn(response),
