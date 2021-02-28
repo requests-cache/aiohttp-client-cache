@@ -1,7 +1,7 @@
 import hashlib
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from logging import getLogger
 from typing import Callable, Iterable, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlunparse
@@ -76,26 +76,19 @@ class CacheBackend:
         self.include_headers = include_headers
         self.ignored_params = set(ignored_params or [])
 
-    def is_cacheable(self, response: Union[ClientResponse, CachedResponse, None]) -> bool:
+    def is_cacheable(self, response: Union[AnyResponse, None]) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
             return False
-        cache_criteria = [
-            not self.disabled,
-            response.status in self.allowed_codes,
-            response.method in self.allowed_methods,
-            not self.is_expired(response),
-            self.filter_fn(response),
-        ]
+        cache_criteria = {
+            'allowed status': response.status in self.allowed_codes,
+            'allowed method': response.method in self.allowed_methods,
+            'not disabled': not self.disabled,
+            'not expired': not getattr(response, 'is_expired', False),
+            'not filtered': self.filter_fn(response),
+        }
         logger.debug(f'is_cacheable checks for response from {response.url}: {cache_criteria}')  # type: ignore
-        return all(cache_criteria)
-
-    def is_expired(self, response: AnyResponse) -> bool:
-        """Determine if a given response is expired"""
-        created_at = getattr(response, 'created_at', None)
-        if not created_at or not self.expire_after:
-            return False
-        return datetime.utcnow() - created_at >= self.expire_after
+        return all(cache_criteria.values())
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -116,15 +109,13 @@ class CacheBackend:
         if not isinstance(response, CachedResponse):
             logger.debug('Cached response is invalid')
             return None
-
-        logger.info(f'Cached response found for key: {key}')
-
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
             logger.info('Cached response expired; deleting')
             await self.delete(key)
-            response.is_expired = True
+            return None
 
+        logger.info(f'Cached response found for key: {key}')
         return response
 
     async def save_response(self, key: str, response: ClientResponse):
@@ -138,7 +129,7 @@ class CacheBackend:
             return
         logger.info(f'Saving response for key: {key}')
 
-        cached_response = await CachedResponse.from_client_response(response)
+        cached_response = await CachedResponse.from_client_response(response, self.expire_after)
         await self.responses.write(key, cached_response)
 
         # Alias any redirect requests to the same cache key
