@@ -1,5 +1,4 @@
 import pytest
-from sys import version_info
 from unittest.mock import MagicMock, patch
 
 from aiohttp_client_cache.backends import CacheBackend
