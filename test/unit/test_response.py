@@ -1,4 +1,6 @@
+import asyncio
 import pytest
+from datetime import timedelta
 
 from aiohttp import ClientResponseError, ClientSession, web
 
@@ -6,15 +8,16 @@ from aiohttp_client_cache.response import CachedResponse, RequestInfo
 
 
 async def get_real_response():
+    # Just for debugging purposes, not used by unit tests
     async with ClientSession() as session:
         return await session.get('http://httpbin.org/get')
 
 
-async def get_test_response(client_factory, url='/'):
+async def get_test_response(client_factory, url='/', **kwargs):
     app = web.Application()
     client = await client_factory(app)
     client_response = await client.get(url)
-    return await CachedResponse.from_client_response(client_response)
+    return await CachedResponse.from_client_response(client_response, **kwargs)
 
 
 async def test_response__basic_attrs(aiohttp_client):
@@ -28,6 +31,12 @@ async def test_response__basic_attrs(aiohttp_client):
     assert await response.text() == '404: Not Found'
     assert response.history == tuple()
     assert response.is_expired is False
+
+
+async def test_response__expiration(aiohttp_client):
+    response = await get_test_response(aiohttp_client, expire_after=timedelta(seconds=0.01))
+    await asyncio.sleep(0.01)
+    assert response.is_expired is True
 
 
 async def test_response__encoding(aiohttp_client):
