@@ -9,7 +9,7 @@ from aiohttp_client_cache.backends.base import BaseCache, CacheBackend, DictCach
 @pytest.mark.asyncio
 async def test_cache_backend__get_response__cache_response_hit():
     cache = CacheBackend()
-    mock_response = MagicMock(spec=CachedResponse)
+    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -20,7 +20,7 @@ async def test_cache_backend__get_response__cache_response_hit():
 async def test_cache_backend__get_response__cache_redirect_hit():
     # Set up a cache with a couple cached items and a redirect
     cache = CacheBackend()
-    mock_response = MagicMock(spec=CachedResponse)
+    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
     await cache.responses.write('request-key', mock_response)
     await cache.redirects.write('redirect-key', 'request-key')
 
@@ -45,10 +45,11 @@ async def test_cache_backend__get_response__cache_miss():
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_cache_backend__get_response__cache_expired(mock_is_cacheable, mock_delete):
     cache = CacheBackend()
-    await cache.responses.write('request-key', MagicMock(spec=CachedResponse))
+    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=True)
+    await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
-    assert response.is_expired is True
+    assert response is None
     mock_delete.assert_called_with('request-key')
 
 
