@@ -5,13 +5,13 @@ from unittest.mock import MagicMock, patch
 from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.session import CachedSession, ClientSession
 
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio]
 
-# AsyncMock was added to the stdlib in python 3.8; for 3.7 use separate asyncmock package
+# AsyncMock was added to the stdlib in python 3.8
 try:
     from unittest.mock import AsyncMock
 except ImportError:
-    from asyncmock import AsyncMock
+    pytestmark += [pytest.mark.skip(reason='Tests require AsyncMock from python 3.8+')]
 
 
 @patch.object(ClientSession, '_request')
