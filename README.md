@@ -18,9 +18,8 @@ for the aiohttp web server. This package is, as you might guess, specifically fo
 ## Development Status
 **This is an early work in progress!**
 
-The current state is a working drop-in replacement (or mixin) for `aiohttp.ClientSession`, with a
-fully async SQLite backend.
-Additional backends are provided, but cache operations are still synchronous, and have had minimal testing.
+The current state is a working drop-in replacement (or mixin) for `aiohttp.ClientSession`, with
+multiple asynchronous cache backends.
 
 Breaking changes should be expected until a `1.0` release.
 
@@ -68,19 +67,21 @@ class CustomSession(CacheMixin, CustomMixin, ClientSession):
 ```
 
 ## Cache Backends
-Several backends are available. If one isn't specified, a simple in-memory cache will be used.
+Several backends are available. If one isn't specified, a non-persistent in-memory cache will be used.
 
 * `SQLiteBackend`: Uses a [SQLite](https://www.sqlite.org) database
   (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
-* `DynamoDBBackend`: Uses a [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) database
-  (requires [boto3](https://github.com/boto/boto3))
 * `RedisBackend`: Uses a [Redis](https://redis.io/) cache
   (requires [redis-py](https://github.com/andymccurdy/redis-py))
 * `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
   (requires [motor](https://motor.readthedocs.io))
-    * `GridFSBackend`: Uses a [MongoDB GridFS](https://docs.mongodb.com/manual/core/gridfs/) database,
-      which enables storage of documents greater than 16MB
-      (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
+  
+**Incomplete:**
+* `DynamoDBBackend`: Uses a [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) database
+  (requires [boto3](https://github.com/boto/boto3))
+* `GridFSBackend`: Uses a [MongoDB GridFS](https://docs.mongodb.com/manual/core/gridfs/) database,
+  which enables storage of documents greater than 16MB
+  (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
 
 You can also provide your own backend by subclassing `aiohttp_client_cache.backends.BaseCache`.
 

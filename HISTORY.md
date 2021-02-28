@@ -1,8 +1,9 @@
 # History
 
 ## 0.2.0 (TBD)
-* Update SQLite backend to use `aiosqlite` for async cache operations
-* Update MongoDB backend to use `motor` for async cache operations
+* Refactor SQLite backend to use `aiosqlite` for async cache operations
+* Refactor MongoDB backend to use `motor` for async cache operations
+* Refactor Redis backend to use `aiosqlite` for async cache operations
 
 ## 0.1.0 (2020-11-14)
 * Initial PyPI release
