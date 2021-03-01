@@ -75,7 +75,7 @@ class MongoDBPickleCache(MongoDBCache):
     """Same as :py:class:`MongoDBCache`, but pickles values before saving"""
 
     async def read(self, key):
-        return pickle.loads(bytes(await super().read(key)))
+        return self.unpickle(bytes(await super().read(key)))
 
     async def write(self, key, item):
         await super().write(key, pickle.dumps(item, protocol=-1))

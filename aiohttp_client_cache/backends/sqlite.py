@@ -28,7 +28,7 @@ class SQLiteBackend(CacheBackend):
     def __init__(self, cache_name: str = 'aiohttp-cache', **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         path, ext = splitext(cache_name)
-        cache_path = f'{path}.{ext or "sqlite"}'
+        cache_path = f'{path}{ext or ".sqlite"}'
 
         self.responses = SQLitePickleCache(cache_path, 'responses')
         self.redirects = SQLiteCache(cache_path, 'redirects')
@@ -183,7 +183,7 @@ class SQLitePickleCache(SQLiteCache):
     async def values(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'select value from `{self.table_name}`')
-            return [row[0] for row in await cur.fetchall()]
+            return [self.unpickle(row[0]) for row in await cur.fetchall()]
 
     async def write(self, key, item):
         binary_item = sqlite3.Binary(pickle.dumps(item, protocol=-1))
