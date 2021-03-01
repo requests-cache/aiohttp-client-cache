@@ -25,13 +25,13 @@ class SQLiteBackend(CacheBackend):
     """
 
     @extend_signature(CacheBackend.__init__)
-    def __init__(self, cache_name: str = 'http-cache', **kwargs):
+    def __init__(self, cache_name: str = 'aiohttp-cache', **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         path, ext = splitext(cache_name)
         cache_path = f'{path}.{ext or "sqlite"}'
 
-        self.redirects = SQLiteCache(cache_path, 'urls')
         self.responses = SQLitePickleCache(cache_path, 'responses')
+        self.redirects = SQLiteCache(cache_path, 'redirects')
 
 
 class SQLiteCache(BaseCache):
