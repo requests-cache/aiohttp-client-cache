@@ -98,7 +98,7 @@ class DynamoDbCache(BaseCache):
 
     @staticmethod
     def unpickle(response_item: Dict) -> ResponseOrKey:
-        return super().unpickle((response_item or {}).get('value'))
+        return BaseCache.unpickle((response_item or {}).get('value'))
 
     async def clear(self):
         response = self._scan_table()
