@@ -65,10 +65,10 @@ jobs:
         run: flake8 aiohttp_client_cache
       - name: Generate code coverage report
         run: pytest --cov --cov-report=term --cov-report=html
-#      - name: Send code coverage report to Coveralls
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: coveralls
+      - name: Send code coverage report to Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: coveralls --service=github
       - name: Test Sphinx documentation build
         run: make -C docs all
       - name: Test package build
