@@ -20,10 +20,10 @@ class GridFSBackend(CacheBackend):
     """
 
     @extend_signature(CacheBackend.__init__)
-    def __init__(self, cache_name: str = 'http-cache', connection: MongoClient = None, **kwargs):
+    def __init__(self, cache_name: str = 'aiohttp-cache', connection: MongoClient = None, **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = GridFSCache(cache_name, connection)
-        self.keys_map = MongoDBCache(cache_name, 'http_redirects', self.responses.connection)
+        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection)
 
 
 # TODO: Incomplete/untested
