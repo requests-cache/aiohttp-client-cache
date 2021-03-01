@@ -36,6 +36,14 @@ async def test_write_read(cache_client):
         assert await cache_client.read(k) == v
 
 
+async def test_bulk_commit(cache_client):
+    async with cache_client.bulk_commit():
+        for i in range(1000):
+            await cache_client.write(f'key_{i}', str(i * 2))
+
+    assert await cache_client.size() == 1000
+
+
 async def test_delete(cache_client):
     for k, v in test_data.items():
         await cache_client.write(k, v)
