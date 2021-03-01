@@ -25,7 +25,7 @@ import urllib.parse
 from contextlib import contextmanager
 from os.path import getsize
 
-from aiohttp_client_cache import CachedSession
+from aiohttp_client_cache import CachedSession, SQLiteBackend
 
 CACHE_NAME = 'precache'
 DEFAULT_URL = 'https://www.nytimes.com'
@@ -34,7 +34,7 @@ HREF_PATTERN = re.compile(r'href="(.*?)"')
 
 async def precache_page_links(parent_url):
     """Fetch and cache the content of a given web page and all links found on that page"""
-    async with CachedSession(backend='sqlite', cache_name='precache') as session:
+    async with CachedSession(cache=SQLiteBackend()) as session:
         urls = await get_page_links(session, parent_url)
 
         tasks = [asyncio.create_task(cache_url(session, url)) for url in urls]

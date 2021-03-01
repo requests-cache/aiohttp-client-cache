@@ -1,76 +1,95 @@
 import pickle
 from typing import Iterable
 
-from redis import Redis, StrictRedis
+from aioredis import Redis, create_redis_pool
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
 from aiohttp_client_cache.forge_utils import extend_signature
 
+DEFAULT_ADDRESS = 'redis://localhost'
+
 
 class RedisBackend(CacheBackend):
-    """Redis cache backend.
-
-    See :py:class:`.CacheBackend` for args.
-    """
+    """Redis cache backend"""
 
     @extend_signature(CacheBackend.__init__)
-    def __init__(self, cache_name: str = 'http-cache', **kwargs):
+    def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
-        self.responses = RedisCache(cache_name, 'responses', **kwargs)
-        self.redirects = RedisCache(cache_name, 'urls', connection=self.responses.connection)
+        self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
+        self.redirects = RedisCache(cache_name, 'redirects', address=address, **kwargs)
 
 
-# TODO: Incomplete/untested
-# TODO: Original implementation pickled keys as well as values. Is there a reason keys need to be pickled?
-# TODO: Fully async implementation. Current implementation with redis-py uses blocking operations.
-#   Methods are currently defined as async only for compatibility with BaseCache API.
 class RedisCache(BaseCache):
     """An async-compatible interface for caching objects in Redis.
-    The actual key name on the redis server will be ``namespace:collection_name``.
-    In order to deal with how redis stores data/keys, everything must be pickled.
 
     Args:
         namespace: namespace to use
         collection_name: name of the hash map stored in redis
         connection: An existing connection object to reuse instead of creating a new one
+        address: Address of Redis server
         kwargs: Additional keyword arguments for :py:class:`redis.Redis`
 
+    Note: The hash key name on the redis server will be ``namespace:collection_name``.
     """
 
-    def __init__(self, namespace: str, collection_name: str, connection: Redis = None, **kwargs):
-        self.connection = connection or StrictRedis(**kwargs)
-        self._self_key = ':'.join([namespace, collection_name])
+    def __init__(
+        self,
+        namespace: str,
+        collection_name: str,
+        address: str = None,
+        connection: Redis = None,
+        **kwargs,
+    ):
+        self.address = address
+        self._connection = connection
+        self.connection_kwargs = kwargs
+        self.hash_key = f'{namespace}:{collection_name}'
 
     @staticmethod
     def _unpickle_result(result):
         return pickle.loads(bytes(result)) if result else None
 
+    async def get_connection(self):
+        """Lazy-initialize redis connection"""
+        if not self._connection:
+            self._connection = await create_redis_pool(self.address, **self.connection_kwargs)
+        return self._connection
+
     async def clear(self):
-        self.connection.delete(self._self_key)
+        connection = await self.get_connection()
+        keys = await self.keys()
+        if keys:
+            await connection.hdel(self.hash_key, *keys)
 
     async def contains(self, key: str) -> bool:
-        return bool(self.connection.exists(key))
+        connection = await self.get_connection()
+        return await connection.hexists(self.hash_key, key)
 
     async def delete(self, key: str):
-        self.connection.hdel(self._self_key, pickle.dumps(key, protocol=-1))
+        connection = await self.get_connection()
+        await connection.hdel(self.hash_key, key)
 
     async def keys(self) -> Iterable[str]:
-        return [self._unpickle_result(r) for r in self.connection.hkeys(self._self_key)]
+        connection = await self.get_connection()
+        return [k.decode() for k in await connection.hkeys(self.hash_key)]
 
     async def read(self, key: str) -> ResponseOrKey:
-        result = self.connection.hget(self._self_key, pickle.dumps(key, protocol=-1))
+        connection = await self.get_connection()
+        result = await connection.hget(self.hash_key, key)
         return self._unpickle_result(result)
 
     async def size(self) -> int:
-        return self.connection.hlen(self._self_key)
+        connection = await self.get_connection()
+        return await connection.hlen(self.hash_key)
 
-    # TODO
     async def values(self) -> Iterable[ResponseOrKey]:
-        raise NotImplementedError
+        connection = await self.get_connection()
+        return [self._unpickle_result(v) for v in await connection.hvals(self.hash_key)]
 
     async def write(self, key: str, item: ResponseOrKey):
-        self.connection.hset(
-            self._self_key,
-            pickle.dumps(key, protocol=-1),
+        connection = await self.get_connection()
+        await connection.hset(
+            self.hash_key,
+            key,
             pickle.dumps(item, protocol=-1),
         )
