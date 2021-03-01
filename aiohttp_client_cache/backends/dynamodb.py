@@ -97,9 +97,8 @@ class DynamoDbCache(BaseCache):
         )
 
     @staticmethod
-    def _unpickle_item(response_item: Dict) -> ResponseOrKey:
-        value_obj = (response_item or {}).get('value')
-        return pickle.loads(value_obj.value) if value_obj else None
+    def unpickle(response_item: Dict) -> ResponseOrKey:
+        return BaseCache.unpickle((response_item or {}).get('value'))
 
     async def clear(self):
         response = self._scan_table()
@@ -123,7 +122,7 @@ class DynamoDbCache(BaseCache):
 
     async def read(self, key: str) -> ResponseOrKey:
         response = self._table.get_item(Key={'namespace': self.namespace, 'key': str(key)})
-        return self._unpickle_item(response.get('Item'))
+        return self.unpickle(response.get('Item'))
 
     async def size(self) -> int:
         expression_attribute_values = {':Namespace': self.namespace}
@@ -138,7 +137,7 @@ class DynamoDbCache(BaseCache):
 
     async def values(self) -> Iterable[ResponseOrKey]:
         response = self._scan_table()
-        return [self._unpickle_item(item) for item in response.get('Items', [])]
+        return [self.unpickle(item) for item in response.get('Items', [])]
 
     async def write(self, key: str, item: ResponseOrKey):
         item_meta = {

@@ -62,7 +62,7 @@ class GridFSCache(BaseCache):
         result = self.fs.find_one({'_id': key})
         if result is None:
             raise KeyError
-        return pickle.loads(bytes(result.read()))
+        return self.unpickle(bytes(result.read()))
 
     async def size(self) -> int:
         return self.db['fs.files'].count()
