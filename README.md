@@ -2,10 +2,10 @@
 
 [![Build status](https://github.com/JWCook/aiohttp-client-cache/workflows/Build/badge.svg)](https://github.com/JWCook/aiohttp-client-cache/actions)
 [![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/stable?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/latest/)
+[![Coverage Status](https://coveralls.io/repos/github/JWCook/aiohttp-client-cache/badge.svg?branch=main)](https://coveralls.io/github/JWCook/aiohttp-client-cache?branch=main)
 [![PyPI](https://img.shields.io/pypi/v/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 [![PyPI - Python Versions](https://img.shields.io/pypi/pyversions/aiohttp-client-cache)](https://pypi.org/project/aiohttp-client-cache)
 [![PyPI - Format](https://img.shields.io/pypi/format/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
-<!--- [![Coverage Status](https://coveralls.io/repos/github/JWCook/aiohttp-client-cache/badge.svg?branch=master)](https://coveralls.io/github/JWCook/aiohttp-client-cache?branch=master) --->
 
 See full documentation at https://aiohttp-client-cache.readthedocs.io
 
@@ -42,7 +42,7 @@ See [Contributing](https://github.com/JWCook/aiohttp-client-cache/blob/main/READ
 for setup info for local development.
 
 ## Usage example
-See the [examples](https://github.com/JWCook/aiohttp-client-cache/blob/master/examples)
+See the [examples](https://github.com/JWCook/aiohttp-client-cache/blob/main/examples)
 folder for more detailed usage examples.
 
 Here is a simple example using an endpoint that takes 1 second to fetch.
@@ -114,4 +114,4 @@ for the original `requests-cache`!
 This project is licensed under the MIT license, with the exception of
 [storage backend code](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)
 adapted from `requests-cache`, which is licensed under the BSD license
-([copy included](https://github.com/JWCook/aiohttp-client-cache/blob/master/requests_cache.md)).
+([copy included](https://github.com/JWCook/aiohttp-client-cache/blob/main/requests_cache.md)).
