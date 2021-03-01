@@ -18,11 +18,11 @@ class MongoDBBackend(CacheBackend):
 
     @extend_signature(CacheBackend.__init__)
     def __init__(
-        self, cache_name: str = 'http-cache', connection: AsyncIOMotorClient = None, **kwargs
+        self, cache_name: str = 'aiohttp-cache', connection: AsyncIOMotorClient = None, **kwargs
     ):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection)
-        self.keys_map = MongoDBCache(cache_name, 'urls', self.responses.connection)
+        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection)
 
 
 class MongoDBCache(BaseCache):
