@@ -45,10 +45,6 @@ class RedisCache(BaseCache):
         self.connection_kwargs = kwargs
         self.hash_key = f'{namespace}:{collection_name}'
 
-    @staticmethod
-    def _unpickle_result(result):
-        return pickle.loads(bytes(result)) if result else None
-
     async def get_connection(self):
         """Lazy-initialize redis connection"""
         if not self._connection:
@@ -76,7 +72,7 @@ class RedisCache(BaseCache):
     async def read(self, key: str) -> ResponseOrKey:
         connection = await self.get_connection()
         result = await connection.hget(self.hash_key, key)
-        return self._unpickle_result(result)
+        return self.unpickle(result)
 
     async def size(self) -> int:
         connection = await self.get_connection()
@@ -84,7 +80,7 @@ class RedisCache(BaseCache):
 
     async def values(self) -> Iterable[ResponseOrKey]:
         connection = await self.get_connection()
-        return [self._unpickle_result(v) for v in await connection.hvals(self.hash_key)]
+        return [self.unpickle(v) for v in await connection.hvals(self.hash_key)]
 
     async def write(self, key: str, item: ResponseOrKey):
         connection = await self.get_connection()
