@@ -1,4 +1,5 @@
 import hashlib
+import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from datetime import timedelta
@@ -269,6 +270,10 @@ class BaseCache(metaclass=ABCMeta):
     @abstractmethod
     async def write(self, key: str, item: ResponseOrKey):
         """Write an item to the cache"""
+
+    @staticmethod
+    def unpickle(result):
+        return pickle.loads(bytes(result)) if result else None
 
     async def pop(self, key: str, default=None) -> ResponseOrKey:
         """Delete an item from the cache, and return the deleted item"""
