@@ -3,9 +3,29 @@ from sys import version_info
 from unittest.mock import MagicMock, patch
 
 from aiohttp_client_cache import CachedResponse
-from aiohttp_client_cache.backends.base import BaseCache, CacheBackend, DictCache  # noqa
+from aiohttp_client_cache.backends import (
+    BaseCache,
+    CacheBackend,
+    DictCache,
+    get_placeholder_backend,
+)
 
 pytestmark = pytest.mark.asyncio
+
+
+def test_get_placeholder_backend():
+    class TestBackend:
+        def __init__(self):
+            import nonexistent_module
+
+    try:
+        TestBackend()
+    except ImportError as e:
+        placeholder = get_placeholder_backend(e)
+
+    # Initializing the placeholder class should re-raise the original ImportError
+    with pytest.raises(ImportError):
+        placeholder()
 
 
 async def test_get_response__cache_response_hit():
