@@ -23,20 +23,14 @@ pytestmark = [
     pytest.mark.skipif(not is_db_running(), reason='MongoDB server required for integration tests'),
 ]
 
-db_name = 'aiohttp-cache'
-collection_name = 'responses'
-
 
 @pytest.fixture(autouse=True, scope='function')
-async def cache_client(event_loop):
-    # We need to recreate the Motor client for every test method,
-    # else it will be using a different event loop than pytest.
-    connection = AsyncIOMotorClient()
-    cache_client = MongoDBCache(db_name, collection_name, connection)
-
-    await connection.drop_database(db_name)
+async def cache_client():
+    """Fixture that creates a new db client for each test function"""
+    cache_client = MongoDBCache('aiohttp-cache', 'responses')
+    await cache_client.clear()
     yield cache_client
-    await connection.drop_database(db_name)
+    await cache_client.clear()
 
 
 async def test_clear(cache_client):
