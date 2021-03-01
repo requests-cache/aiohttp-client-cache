@@ -52,7 +52,7 @@ class CacheBackend:
 
     def __init__(
         self,
-        cache_name: str = 'http-cache',
+        cache_name: str = 'aiohttp-cache',
         expire_after: Union[int, timedelta] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),

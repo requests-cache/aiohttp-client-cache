@@ -20,10 +20,12 @@ class DynamoDBBackend(CacheBackend):
     """
 
     @extend_signature(CacheBackend.__init__)
-    def __init__(self, cache_name: str = 'http-cache', **kwargs):
+    def __init__(self, cache_name: str = 'aiohttp-cache', **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = DynamoDbCache(cache_name, 'responses', **kwargs)
-        self.redirects = DynamoDbCache(cache_name, 'urls', connection=self.responses.connection)
+        self.redirects = DynamoDbCache(
+            cache_name, 'redirects', connection=self.responses.connection
+        )
 
 
 # TODO: Incomplete/untested
