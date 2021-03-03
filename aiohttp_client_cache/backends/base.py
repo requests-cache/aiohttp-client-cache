@@ -29,10 +29,10 @@ class CacheBackend:
 
     Args:
         cache_name: Cache prefix or namespace, depending on backend; see notes below
-        expire_after: Number of hours after which a cache entry will expire; se ``None`` to
+        expire_after: Number of hours after which a cache entry will expire; set to ``None`` to
             never expire
-        allowed_codes: Limit caching only for response with this codes
-        allowed_methods: Cache only requests of this methods
+        allowed_codes: Only cache responses with one of these codes
+        allowed_methods: Cache only responses for one of these HTTP methods
         include_headers: Make request headers part of the cache key
         ignored_params: List of request parameters to be excluded from the cache key.
         filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
@@ -54,7 +54,7 @@ class CacheBackend:
     def __init__(
         self,
         cache_name: str = 'aiohttp-cache',
-        expire_after: Union[int, timedelta] = None,
+        expire_after: Union[int, float, timedelta] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
