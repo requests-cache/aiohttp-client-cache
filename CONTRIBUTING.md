@@ -48,8 +48,22 @@ $ open docs/_build/index.html
 $ xdg-open docs/_build/index.html
 ```
 
-Documentation is automatically built by ReadTheDocs whenever code is merged into the `main` branch.
+### Readthedocs
+Documentation is automatically built by Readthedocs whenever code is merged into the `main` branch.
 
+Sometimes, there are differences in the Readthedocs build environment that can cause builds to
+succeed locally but fail remotely. To help debug this, you can use the Readthedocs Docker container
+(`readthedocs/build`) to perform the build. Example:
+```bash
+docker pull readthedocs/build
+docker run --rm -ti \
+  -v (pwd):/home/docs/project \
+  readthedocs/build \
+  /bin/bash -c \
+  "cd /home/docs/project \
+    && pip3 install '.[dev]' \
+    && make -C docs html"
+```
 
 ## Releases
 Releases are built and published to pypi based on **git tags.**
