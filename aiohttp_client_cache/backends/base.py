@@ -2,7 +2,7 @@ import hashlib
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
-from datetime import timedelta
+from datetime import datetime, timedelta
 from logging import getLogger
 from typing import Callable, Iterable, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlunparse
@@ -115,6 +115,10 @@ class CacheBackend:
             logger.info('Cached response expired; deleting')
             await self.delete(key)
             return None
+
+        # Update last_used time
+        response.last_used = datetime.utcnow()
+        await self.responses.write(key, response)
 
         logger.info(f'Cached response found for key: {key}')
         return response
