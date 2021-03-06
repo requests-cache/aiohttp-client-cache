@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from aiohttp import ClientResponseError, ClientSession, web
 
@@ -34,7 +34,9 @@ async def test_response__basic_attrs(aiohttp_client):
 
 
 async def test_response__expiration(aiohttp_client):
-    response = await get_test_response(aiohttp_client, expire_after=timedelta(seconds=0.01))
+    response = await get_test_response(
+        aiohttp_client, expires=datetime.utcnow() + timedelta(seconds=0.01)
+    )
     await asyncio.sleep(0.01)
     assert response.is_expired is True
 

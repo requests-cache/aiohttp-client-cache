@@ -3,8 +3,9 @@ import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from datetime import datetime, timedelta
+from fnmatch import fnmatch as glob_match
 from logging import getLogger
-from typing import Callable, Iterable, Optional, Union
+from typing import Callable, Dict, Iterable, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
@@ -12,7 +13,9 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
-ResponseOrKey = Union[CachedResponse, None, bytes, str]
+ResponseOrKey = Union[CachedResponse, bytes, str, None]
+ExpirationPatterns = Dict[str, Optional[timedelta]]
+ExpirationTime = Union[int, float, timedelta, None]
 logger = getLogger(__name__)
 
 
@@ -54,7 +57,8 @@ class CacheBackend:
     def __init__(
         self,
         cache_name: str = 'aiohttp-cache',
-        expire_after: Union[int, float, timedelta] = None,
+        expire_after: ExpirationTime = None,
+        expire_after_urls: Dict[str, ExpirationTime] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
@@ -62,17 +66,18 @@ class CacheBackend:
         filter_fn: Callable = lambda r: True,
     ):
         self.name = cache_name
-        if expire_after is not None and not isinstance(expire_after, timedelta):
-            expire_after = timedelta(seconds=expire_after)
-        self.expire_after = expire_after
+        self.expire_after = _convert_timedelta(expire_after)
+        self.expire_after_urls: ExpirationPatterns = {
+            _format_pattern(k): _convert_timedelta(v) for k, v in (expire_after_urls or {}).items()
+        }
         self.allowed_codes = allowed_codes
         self.allowed_methods = allowed_methods
         self.filter_fn = filter_fn
         self.disabled = False
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
-        self.redirects = DictCache()  # type: BaseCache
-        self.responses = DictCache()  # type: BaseCache
+        self.redirects: BaseCache = DictCache()
+        self.responses: BaseCache = DictCache()
 
         self.include_headers = include_headers
         self.ignored_params = set(ignored_params or [])
@@ -90,6 +95,20 @@ class CacheBackend:
         }
         logger.debug(f'is_cacheable checks for response from {response.url}: {cache_criteria}')  # type: ignore
         return all(cache_criteria.values())
+
+    def get_expiration_date(self, response: ClientResponse) -> Optional[datetime]:
+        """Get the absolute expiration time for a response, applying URL patterns if available"""
+        expire_after = self._get_expiration_for_url(response) or self.expire_after
+        if expire_after is not None:
+            return datetime.utcnow() + expire_after
+        return None
+
+    def _get_expiration_for_url(self, response: ClientResponse) -> Optional[timedelta]:
+        """Get the relative expiration time matching the specified URL, if any"""
+        for pattern, expire_after in self.expire_after_urls.items():
+            if glob_match(str(response.url), pattern):
+                return expire_after
+        return None
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -134,7 +153,8 @@ class CacheBackend:
             return
         logger.info(f'Saving response for key: {key}')
 
-        cached_response = await CachedResponse.from_client_response(response, self.expire_after)
+        expires = self.get_expiration_date(response)
+        cached_response = await CachedResponse.from_client_response(response, expires)
         await self.responses.write(key, cached_response)
 
         # Alias any redirect requests to the same cache key
@@ -317,6 +337,17 @@ class DictCache(BaseCache, UserDict):
         self.data[key] = item
 
 
+def _convert_timedelta(expire_after: ExpirationTime = None) -> Optional[timedelta]:
+    if expire_after is not None and not isinstance(expire_after, timedelta):
+        expire_after = timedelta(seconds=expire_after)
+    return expire_after
+
+
 def _encode_dict(d):
     item_pairs = [f'{k}={v}' for k, v in sorted((d or {}).items())]
     return '&'.join(item_pairs).encode()
+
+
+def _format_pattern(pattern: str) -> str:
+    """Add recursive wildcard to a glob pattern, to ensure it matches base URLs"""
+    return pattern.rstrip('*') + '**'
