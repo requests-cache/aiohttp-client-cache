@@ -16,6 +16,7 @@ EXCLUDE_ATTRS = {
     'expires',
     'history',
     'is_expired',
+    'last_used',
     'request_info',
 }
 JsonResponse = Optional[Dict[str, Any]]
@@ -60,6 +61,7 @@ class CachedResponse:
     expires: datetime = attr.ib(default=None)
     headers: Mapping = attr.ib(factory=dict)
     history: Iterable = attr.ib(factory=tuple)
+    last_used: datetime = attr.ib(factory=datetime.utcnow)
     request_info: RequestInfo = attr.ib(default=None)
 
     @classmethod
