@@ -31,27 +31,63 @@ class CacheBackend:
     :py:attr:`CacheBackend.response_aliases`.
 
     Args:
-        cache_name: Cache prefix or namespace, depending on backend; see notes below
-        expire_after: Number of hours after which a cache entry will expire; set to ``None`` to
-            never expire
-        allowed_codes: Only cache responses with one of these codes
-        allowed_methods: Cache only responses for one of these HTTP methods
-        include_headers: Make request headers part of the cache key
-        ignored_params: List of request parameters to be excluded from the cache key.
+        cache_name: Cache prefix or namespace, depending on backend (see notes below)
+        expire_after: Expiration time, in hours, after which a cache entry will expire;
+            set to ``None`` to never expire
+        expire_after_urls: Expiration times to apply for different URL patterns (see notes below)
+        allowed_codes: Only cache responses with these status codes
+        allowed_methods: Only cache requests with these HTTP methods
+        include_headers: Make request headers part of the cache key (see notes below)
+        ignored_params: Request parameters to be excluded from the cache key (see notes below)
         filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
             returns a boolean indicating whether or not that response should be cached. Will be
             applied to both new and previously cached responses
 
+    **Cache Name:**
+
     The ``cache_name`` parameter will be used as follows depending on the backend:
 
-        * ``sqlite``: Cache filename prefix, e.g ``my_cache.sqlite``
-        * ``mongodb``: Database name
-        * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
+    * ``sqlite``: Cache filename prefix, e.g ``my_cache.sqlite``
+    * ``mongodb``: Database name
+    * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
 
-    Note on cache key parameters: Set ``include_get_headers=True`` if you want responses to be
-    cached under different keys if they only differ by headers. You may also provide
-    ``ignored_parameters`` to ignore specific request params. This is useful, for example, when
-    requesting the same resource with different credentials or access tokens.
+    **Cache Keys:**
+
+    The cache key is a hash created from request information, and is used as an index for cached
+    responses. There are a couple ways you can customize how the cache key is created:
+
+    * Use ``include_get_headers`` if you want headers to be included in the cache key. In other
+      words, this will create separate cache items for responses with different headers.
+    * Use ``ignored_parameters`` to exclude specific request params from the cache key. This is
+      useful, for example, if you request the same resource with different credentials or access
+      tokens.
+
+    **URL Patterns:**
+
+    The ``expire_after_urls`` parameter can be used to set different expiration times for different
+    requests, based on glob patterns. This allows you to customize caching based on what you
+    know about what you're requesting. For example, you might request one resource that gets updated
+    frequently, another that changes infrequently, and another that never changes.
+
+    Example::
+
+        expire_after_urls = {
+            '*.site_1.com': 24,
+            'site_2.com/resource_1': 24 * 2,
+            'site_2.com/resource_2': 24 * 7,
+            'site_2.com/static': None,
+        }
+
+    Notes:
+
+    * ``expire_after_urls`` should be a dict in the format ``{'pattern': expiration_time}``
+    * ``expiration_time`` may be either a number (in hours) or a ``timedelta``
+      (same as ``expire_after``)
+    * Patterns will match request **base URLs**, so the pattern ``site.com/base`` is equivalent to
+      ``https://site.com/base/**``
+    * If there is more than one match, the first match (in the order they are defined) will be used
+    * If no patterns match a request, ``expire_after`` will be used as a default.
+
     """
 
     def __init__(
