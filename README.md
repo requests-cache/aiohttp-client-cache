@@ -64,12 +64,10 @@ cache = SQLiteBackend(
     expire_after_urls={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
     ignored_params=['auth_token'],                 # Ignore this param when caching responses
 )
+
 async with CachedSession(cache=cache) as session:
-    await session.get('https://img.site.com/static/a27bf6.jpg')
-    await session.get('https://site.com/index.html')
-    a
-    for i in range(10):
-        await session.get('http://httpbin.org/delay/1')
+    await session.get('https://site.com/index.html')             # Expires in a day
+    await session.get('https://img.site.com/static/a27bf6.jpg')  # Expires in a week
 ```
 See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
 for more usage details.
