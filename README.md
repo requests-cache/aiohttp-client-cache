@@ -41,7 +41,7 @@ pip install aiohttp-client-cache[backends]
 See [Contributing](https://github.com/JWCook/aiohttp-client-cache/blob/main/README.md)
 for setup info for local development.
 
-## Usage example
+## Usage Examples
 See the [examples](https://github.com/JWCook/aiohttp-client-cache/blob/main/examples)
 folder for more detailed usage examples.
 
@@ -55,6 +55,24 @@ async with CachedSession(cache=SQLiteBackend()) as session:
     for i in range(10):
         await session.get('http://httpbin.org/delay/1')
 ```
+
+Here is an example with more customized behavior:
+```python
+cache = SQLiteBackend(
+    cache_name='~/.cache/aiohttp-requests.db',     # For SQLite, this will be used as the filename
+    expire_after=24,                               # By default, cached responses expire in a day
+    expire_after_urls={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
+    ignored_params=['auth_token'],                 # Ignore this param when caching responses
+)
+async with CachedSession(cache=cache) as session:
+    await session.get('https://img.site.com/static/a27bf6.jpg')
+    await session.get('https://site.com/index.html')
+    a
+    for i in range(10):
+        await session.get('http://httpbin.org/delay/1')
+```
+See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
+for more usage details.
 
 `aiohttp-client-cache` can also be used as a mixin, if you happen have other mixin classes that you
 want to combine with it:

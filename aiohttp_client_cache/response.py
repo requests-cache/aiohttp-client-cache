@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from http.cookies import SimpleCookie
 from typing import Any, Dict, Iterable, Mapping, Optional, Union
 
@@ -16,6 +16,7 @@ EXCLUDE_ATTRS = {
     'expires',
     'history',
     'is_expired',
+    'last_used',
     'request_info',
 }
 JsonResponse = Optional[Dict[str, Any]]
@@ -57,15 +58,14 @@ class CachedResponse:
     cookies: SimpleCookie = attr.ib(default=None)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
     encoding: str = attr.ib(default=None)
-    expires: datetime = attr.ib(default=None)
+    expires: Optional[datetime] = attr.ib(default=None)
     headers: Mapping = attr.ib(factory=dict)
     history: Iterable = attr.ib(factory=tuple)
+    last_used: datetime = attr.ib(factory=datetime.utcnow)
     request_info: RequestInfo = attr.ib(default=None)
 
     @classmethod
-    async def from_client_response(
-        cls, client_response: ClientResponse, expire_after: timedelta = None
-    ):
+    async def from_client_response(cls, client_response: ClientResponse, expires: datetime = None):
         """Convert a ClientResponse into a CachedReponse"""
         # Response may not have been read yet, if fetched by something other than CachedSession
         if not client_response._released:
@@ -77,11 +77,8 @@ class CachedResponse:
 
         # Set some remaining attributes individually
         response._body = client_response._body
+        response.expires = expires
         response.headers = dict(client_response.headers)
-
-        # Set expiration time
-        if expire_after:
-            response.expires = datetime.utcnow() + expire_after
 
         # The encoding may be unset even if the response has been read
         try:
@@ -112,7 +109,7 @@ class CachedResponse:
     @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
-        return bool(self.expires) and datetime.utcnow() > self.expires
+        return self.expires is not None and datetime.utcnow() > self.expires
 
     async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
         """Read and decode JSON response"""
