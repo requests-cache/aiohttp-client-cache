@@ -2,7 +2,7 @@ import asyncio
 import pickle
 import sqlite3
 from contextlib import asynccontextmanager
-from os.path import splitext
+from os.path import expanduser, splitext
 from typing import AsyncIterator, Iterable, Union
 
 import aiosqlite
@@ -28,7 +28,7 @@ class SQLiteBackend(CacheBackend):
     def __init__(self, cache_name: str = 'aiohttp-cache', **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         path, ext = splitext(cache_name)
-        cache_path = f'{path}{ext or ".sqlite"}'
+        cache_path = expanduser(f'{path}{ext or ".sqlite"}')
 
         self.responses = SQLitePickleCache(cache_path, 'responses')
         self.redirects = SQLiteCache(cache_path, 'redirects')

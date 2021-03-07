@@ -2,17 +2,20 @@ import hashlib
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
-from datetime import timedelta
+from datetime import datetime, timedelta
+from fnmatch import fnmatch as glob_match
 from logging import getLogger
-from typing import Callable, Iterable, Optional, Union
-from urllib.parse import parse_qsl, urlparse, urlunparse
+from typing import Callable, Dict, Iterable, Optional, Union
+from urllib.parse import parse_qsl, urlparse, urlsplit, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
-ResponseOrKey = Union[CachedResponse, None, bytes, str]
+ResponseOrKey = Union[CachedResponse, bytes, str, None]
+ExpirationPatterns = Dict[str, Optional[timedelta]]
+ExpirationTime = Union[int, float, timedelta, None]
 logger = getLogger(__name__)
 
 
@@ -28,33 +31,70 @@ class CacheBackend:
     :py:attr:`CacheBackend.response_aliases`.
 
     Args:
-        cache_name: Cache prefix or namespace, depending on backend; see notes below
-        expire_after: Number of hours after which a cache entry will expire; set to ``None`` to
-            never expire
-        allowed_codes: Only cache responses with one of these codes
-        allowed_methods: Cache only responses for one of these HTTP methods
-        include_headers: Make request headers part of the cache key
-        ignored_params: List of request parameters to be excluded from the cache key.
+        cache_name: Cache prefix or namespace, depending on backend (see notes below)
+        expire_after: Expiration time, in hours, after which a cache entry will expire;
+            set to ``None`` to never expire
+        expire_after_urls: Expiration times to apply for different URL patterns (see notes below)
+        allowed_codes: Only cache responses with these status codes
+        allowed_methods: Only cache requests with these HTTP methods
+        include_headers: Make request headers part of the cache key (see notes below)
+        ignored_params: Request parameters to be excluded from the cache key (see notes below)
         filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
             returns a boolean indicating whether or not that response should be cached. Will be
             applied to both new and previously cached responses
 
+    **Cache Name:**
+
     The ``cache_name`` parameter will be used as follows depending on the backend:
 
-        * ``sqlite``: Cache filename prefix, e.g ``my_cache.sqlite``
-        * ``mongodb``: Database name
-        * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
+    * ``sqlite``: Cache filename prefix, e.g ``my_cache.sqlite``
+    * ``mongodb``: Database name
+    * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
 
-    Note on cache key parameters: Set ``include_get_headers=True`` if you want responses to be
-    cached under different keys if they only differ by headers. You may also provide
-    ``ignored_parameters`` to ignore specific request params. This is useful, for example, when
-    requesting the same resource with different credentials or access tokens.
+    **Cache Keys:**
+
+    The cache key is a hash created from request information, and is used as an index for cached
+    responses. There are a couple ways you can customize how the cache key is created:
+
+    * Use ``include_get_headers`` if you want headers to be included in the cache key. In other
+      words, this will create separate cache items for responses with different headers.
+    * Use ``ignored_parameters`` to exclude specific request params from the cache key. This is
+      useful, for example, if you request the same resource with different credentials or access
+      tokens.
+
+    **URL Patterns:**
+
+    The ``expire_after_urls`` parameter can be used to set different expiration times for different
+    requests, based on glob patterns. This allows you to customize caching based on what you
+    know about what you're requesting. For example, you might request one resource that gets updated
+    frequently, another that changes infrequently, and another that never changes.
+
+    Example::
+
+        expire_after_urls = {
+            '*.site_1.com': 24,
+            'site_2.com/resource_1': 24 * 2,
+            'site_2.com/resource_2': 24 * 7,
+            'site_2.com/static': None,
+        }
+
+    Notes:
+
+    * ``expire_after_urls`` should be a dict in the format ``{'pattern': expiration_time}``
+    * ``expiration_time`` may be either a number (in hours) or a ``timedelta``
+      (same as ``expire_after``)
+    * Patterns will match request **base URLs**, so the pattern ``site.com/base`` is equivalent to
+      ``https://site.com/base/**``
+    * If there is more than one match, the first match (in the order they are defined) will be used
+    * If no patterns match a request, ``expire_after`` will be used as a default.
+
     """
 
     def __init__(
         self,
         cache_name: str = 'aiohttp-cache',
-        expire_after: Union[int, float, timedelta] = None,
+        expire_after: ExpirationTime = None,
+        expire_after_urls: Dict[str, ExpirationTime] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
@@ -62,17 +102,18 @@ class CacheBackend:
         filter_fn: Callable = lambda r: True,
     ):
         self.name = cache_name
-        if expire_after is not None and not isinstance(expire_after, timedelta):
-            expire_after = timedelta(seconds=expire_after)
-        self.expire_after = expire_after
+        self.expire_after = _convert_timedelta(expire_after)
+        self.expire_after_urls: ExpirationPatterns = {
+            _format_pattern(k): _convert_timedelta(v) for k, v in (expire_after_urls or {}).items()
+        }
         self.allowed_codes = allowed_codes
         self.allowed_methods = allowed_methods
         self.filter_fn = filter_fn
         self.disabled = False
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
-        self.redirects = DictCache()  # type: BaseCache
-        self.responses = DictCache()  # type: BaseCache
+        self.redirects: BaseCache = DictCache()
+        self.responses: BaseCache = DictCache()
 
         self.include_headers = include_headers
         self.ignored_params = set(ignored_params or [])
@@ -88,8 +129,27 @@ class CacheBackend:
             'not expired': not getattr(response, 'is_expired', False),
             'not filtered': self.filter_fn(response),
         }
-        logger.debug(f'is_cacheable checks for response from {response.url}: {cache_criteria}')  # type: ignore
+        logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')  # type: ignore
         return all(cache_criteria.values())
+
+    def get_expiration_date(self, response: ClientResponse) -> Optional[datetime]:
+        """Get the absolute expiration time for a response, applying URL patterns if available"""
+        try:
+            expire_after = self._get_expiration_for_url(response)
+        except Exception:
+            expire_after = self.expire_after
+        return None if expire_after is None else datetime.utcnow() + expire_after
+
+    def _get_expiration_for_url(self, response: ClientResponse) -> Optional[timedelta]:
+        """Get the relative expiration time matching the specified URL, if any. If there is no
+        match, raise a ``ValueError`` to differentiate beween this case and a matching pattern with
+        ``expire_after=None``
+        """
+        for pattern, expire_after in self.expire_after_urls.items():
+            if glob_match(_base_url(response.url), pattern):
+                logger.debug(f'URL {response.url} matched pattern "{pattern}": {expire_after}')
+                return expire_after
+        raise ValueError('No matching URL pattern')
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -116,6 +176,10 @@ class CacheBackend:
             await self.delete(key)
             return None
 
+        # Update last_used time
+        response.last_used = datetime.utcnow()
+        await self.responses.write(key, response)
+
         logger.info(f'Cached response found for key: {key}')
         return response
 
@@ -130,7 +194,8 @@ class CacheBackend:
             return
         logger.info(f'Saving response for key: {key}')
 
-        cached_response = await CachedResponse.from_client_response(response, self.expire_after)
+        expires = self.get_expiration_date(response)
+        cached_response = await CachedResponse.from_client_response(response, expires)
         await self.responses.write(key, cached_response)
 
         # Alias any redirect requests to the same cache key
@@ -157,7 +222,7 @@ class CacheBackend:
         await delete_history(await self.responses.pop(key))
         await delete_history(await self.responses.pop(redirect_key))
 
-    async def delete_url(self, url: str):
+    async def delete_url(self, url: StrOrURL):
         """Delete cached response associated with `url`, along with its history (if applicable).
         Works only for GET requests.
         """
@@ -180,10 +245,10 @@ class CacheBackend:
         for key in keys_to_delete:
             await self.delete(key)
 
-    async def has_url(self, url: str) -> bool:
+    async def has_url(self, url: StrOrURL) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
-        return await self.responses.contains(key) or await self.redirects.contains(key)
+        return await self.responses.contains(str(key)) or await self.redirects.contains(str(key))
 
     def create_key(
         self,
@@ -313,6 +378,22 @@ class DictCache(BaseCache, UserDict):
         self.data[key] = item
 
 
+def _base_url(url: StrOrURL) -> str:
+    url = str(url)
+    return url.replace(urlsplit(url).scheme + '://', '')
+
+
+def _convert_timedelta(expire_after: ExpirationTime = None) -> Optional[timedelta]:
+    if expire_after is not None and not isinstance(expire_after, timedelta):
+        expire_after = timedelta(hours=expire_after)
+    return expire_after
+
+
 def _encode_dict(d):
     item_pairs = [f'{k}={v}' for k, v in sorted((d or {}).items())]
     return '&'.join(item_pairs).encode()
+
+
+def _format_pattern(pattern: str) -> str:
+    """Add recursive wildcard to a glob pattern, to ensure it matches base URLs"""
+    return pattern.rstrip('*') + '**'

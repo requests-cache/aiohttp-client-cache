@@ -1,4 +1,5 @@
 import pytest
+from datetime import timedelta
 from sys import version_info
 from unittest.mock import MagicMock, patch
 
@@ -90,6 +91,43 @@ async def test_save_response__not_cacheable(mock_is_cacheable):
     cache = CacheBackend()
     await cache.save_response('key', MagicMock())
     assert 'key' not in cache.responses
+
+
+@pytest.mark.parametrize(
+    'url, expected_expiration_hours',
+    [
+        ('img.site_1.com', 24),
+        ('http://img.site.com/base/', 1),
+        ('https://img.site.com/base/img.jpg', 1),
+        ('site_2.com/resource_1', 24 * 2),
+        ('http://site_2.com/resource_1/index.html', 24 * 2),
+        ('http://site_2.com/resource_2/', 24 * 7),
+        ('http://site_2.com/static/', None),
+        ('http://site_2.com/static/img.jpg', None),
+        ('site_2.com', 1),
+        ('some_other_site.com', 1),
+    ],
+)
+@patch('aiohttp_client_cache.backends.base.datetime')
+def test_get_expiration_date(mock_datetime, url, expected_expiration_hours):
+    # Instead of returning utcnow() + expiration, return just expiration (plus empty timedelta)
+    mock_datetime.timedelta = timedelta
+    mock_datetime.utcnow.return_value = timedelta()
+
+    cache = CacheBackend(
+        expire_after=1,
+        expire_after_urls={
+            '*.site_1.com': 24,
+            'site_2.com/resource_1': 24 * 2,
+            'site_2.com/resource_2': 24 * 7,
+            'site_2.com/static': None,
+        },
+    )
+    expiration_date = cache.get_expiration_date(MagicMock(url=url))
+    if expected_expiration_hours is None:
+        assert expiration_date is None
+    else:
+        assert expiration_date == timedelta(hours=expected_expiration_hours)
 
 
 async def test_clear():
