@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from fnmatch import fnmatch as glob_match
 from logging import getLogger
 from typing import Callable, Dict, Iterable, Optional, Union
-from urllib.parse import parse_qsl, urlparse, urlunparse
+from urllib.parse import parse_qsl, urlparse, urlsplit, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -129,22 +129,27 @@ class CacheBackend:
             'not expired': not getattr(response, 'is_expired', False),
             'not filtered': self.filter_fn(response),
         }
-        logger.debug(f'is_cacheable checks for response from {response.url}: {cache_criteria}')  # type: ignore
+        logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')  # type: ignore
         return all(cache_criteria.values())
 
     def get_expiration_date(self, response: ClientResponse) -> Optional[datetime]:
         """Get the absolute expiration time for a response, applying URL patterns if available"""
-        expire_after = self._get_expiration_for_url(response) or self.expire_after
-        if expire_after is not None:
-            return datetime.utcnow() + expire_after
-        return None
+        try:
+            expire_after = self._get_expiration_for_url(response)
+        except Exception:
+            expire_after = self.expire_after
+        return None if expire_after is None else datetime.utcnow() + expire_after
 
     def _get_expiration_for_url(self, response: ClientResponse) -> Optional[timedelta]:
-        """Get the relative expiration time matching the specified URL, if any"""
+        """Get the relative expiration time matching the specified URL, if any. If there is no
+        match, raise a ``ValueError`` to differentiate beween this case and a matching pattern with
+        ``expire_after=None``
+        """
         for pattern, expire_after in self.expire_after_urls.items():
-            if glob_match(str(response.url), pattern):
+            if glob_match(_base_url(response.url), pattern):
+                logger.debug(f'URL {response.url} matched pattern "{pattern}": {expire_after}')
                 return expire_after
-        return None
+        raise ValueError('No matching URL pattern')
 
     async def get_response(self, key: str) -> Optional[CachedResponse]:
         """Retrieve response and timestamp for `key` if it's stored in cache,
@@ -217,7 +222,7 @@ class CacheBackend:
         await delete_history(await self.responses.pop(key))
         await delete_history(await self.responses.pop(redirect_key))
 
-    async def delete_url(self, url: str):
+    async def delete_url(self, url: StrOrURL):
         """Delete cached response associated with `url`, along with its history (if applicable).
         Works only for GET requests.
         """
@@ -240,10 +245,10 @@ class CacheBackend:
         for key in keys_to_delete:
             await self.delete(key)
 
-    async def has_url(self, url: str) -> bool:
+    async def has_url(self, url: StrOrURL) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
-        return await self.responses.contains(key) or await self.redirects.contains(key)
+        return await self.responses.contains(str(key)) or await self.redirects.contains(str(key))
 
     def create_key(
         self,
@@ -373,9 +378,14 @@ class DictCache(BaseCache, UserDict):
         self.data[key] = item
 
 
+def _base_url(url: StrOrURL) -> str:
+    url = str(url)
+    return url.replace(urlsplit(url).scheme + '://', '')
+
+
 def _convert_timedelta(expire_after: ExpirationTime = None) -> Optional[timedelta]:
     if expire_after is not None and not isinstance(expire_after, timedelta):
-        expire_after = timedelta(seconds=expire_after)
+        expire_after = timedelta(hours=expire_after)
     return expire_after
 
 
