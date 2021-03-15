@@ -1,6 +1,14 @@
 # History
 
+## 0.3.0 (TBD)
+[See all issues & PRs here](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
+
+* Add support for setting different expiration times based on URL patterns
+* Add case-insensitive response headers for compatibility with aiohttp.ClientResponse.headers
+
 ## 0.2.0 (2021-02-28)
+[See all issues & PRs here](https://github.com/JWCook/aiohttp-client-cache/milestone/1?closed=1)
+
 * Refactor SQLite backend to use `aiosqlite` for async cache operations
 * Refactor MongoDB backend to use `motor` for async cache operations
 * Refactor Redis backend to use `aiosqlite` for async cache operations
