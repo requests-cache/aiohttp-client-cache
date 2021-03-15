@@ -1,12 +1,13 @@
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
-from typing import Any, Dict, Iterable, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError
 from aiohttp.client_reqrep import ContentDisposition
-from aiohttp.typedefs import StrOrURL
+from aiohttp.typedefs import RawHeaders, StrOrURL
+from multidict import CIMultiDictProxy, MultiDict
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
@@ -28,17 +29,21 @@ class RequestInfo:
 
     url: str
     method: str
-    headers: dict
     real_url: str
+    raw_headers: RawHeaders
 
     @classmethod
     def from_object(cls, request_info):
         return cls(
             url=str(request_info.url),
             method=request_info.method,
-            headers=dict(request_info.headers),
+            raw_headers=(request_info.raw_headers.items()),
             real_url=str(request_info.real_url),
         )
+
+    @property
+    def headers(self) -> CIMultiDictProxy:
+        return decode_headers(self.raw_headers)
 
 
 @attr.s(slots=True)
@@ -59,7 +64,7 @@ class CachedResponse:
     created_at: datetime = attr.ib(factory=datetime.utcnow)
     encoding: str = attr.ib(default=None)
     expires: Optional[datetime] = attr.ib(default=None)
-    headers: Mapping = attr.ib(factory=dict)
+    raw_headers: RawHeaders = attr.ib(factory=tuple)
     history: Iterable = attr.ib(factory=tuple)
     last_used: datetime = attr.ib(factory=datetime.utcnow)
     request_info: RequestInfo = attr.ib(default=None)
@@ -78,7 +83,6 @@ class CachedResponse:
         # Set some remaining attributes individually
         response._body = client_response._body
         response.expires = expires
-        response.headers = dict(client_response.headers)
 
         # The encoding may be unset even if the response has been read
         try:
@@ -105,6 +109,10 @@ class CachedResponse:
 
     def get_encoding(self):
         return self.encoding
+
+    @property
+    def headers(self) -> CIMultiDictProxy:
+        return decode_headers(self.raw_headers)
 
     @property
     def is_expired(self) -> bool:
@@ -138,6 +146,19 @@ class CachedResponse:
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""
         return self._body.decode(encoding or self.encoding, errors=errors)
+
+
+def decode_headers(raw_headers: RawHeaders) -> CIMultiDictProxy:
+    """Get an immutable, case-insensitive header dict from raw headers"""
+    return CIMultiDictProxy(MultiDict([decode_header(h) for h in raw_headers]))
+
+
+def decode_header(header: Tuple[bytes, bytes]) -> Tuple[str, str]:
+    """Decode a raw header key-value pair"""
+    return (
+        header[0].decode('utf-8', 'surrogateescape'),
+        header[1].decode('utf-8', 'surrogateescape'),
+    )
 
 
 AnyResponse = Union[ClientResponse, CachedResponse]
