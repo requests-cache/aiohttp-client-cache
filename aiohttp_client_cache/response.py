@@ -1,12 +1,14 @@
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
-from typing import Any, Dict, Iterable, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError
-from aiohttp.client_reqrep import ContentDisposition
-from aiohttp.typedefs import StrOrURL
+from aiohttp.client_reqrep import ContentDisposition, RequestInfo
+from aiohttp.typedefs import RawHeaders, StrOrURL
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
@@ -15,30 +17,11 @@ EXCLUDE_ATTRS = {
     'encoding',
     'expires',
     'history',
-    'is_expired',
     'last_used',
+    'real_url',
     'request_info',
 }
 JsonResponse = Optional[Dict[str, Any]]
-
-
-@attr.s(auto_attribs=True, slots=True)
-class RequestInfo:
-    """A picklable version of aiohttp.client_reqrep.RequestInfo"""
-
-    url: str
-    method: str
-    headers: dict
-    real_url: str
-
-    @classmethod
-    def from_object(cls, request_info):
-        return cls(
-            url=str(request_info.url),
-            method=request_info.method,
-            headers=dict(request_info.headers),
-            real_url=str(request_info.real_url),
-        )
 
 
 @attr.s(slots=True)
@@ -59,10 +42,10 @@ class CachedResponse:
     created_at: datetime = attr.ib(factory=datetime.utcnow)
     encoding: str = attr.ib(default=None)
     expires: Optional[datetime] = attr.ib(default=None)
-    headers: Mapping = attr.ib(factory=dict)
+    raw_headers: RawHeaders = attr.ib(factory=tuple)
+    real_url: StrOrURL = attr.ib(default=None)
     history: Iterable = attr.ib(factory=tuple)
     last_used: datetime = attr.ib(factory=datetime.utcnow)
-    request_info: RequestInfo = attr.ib(default=None)
 
     @classmethod
     async def from_client_response(cls, client_response: ClientResponse, expires: datetime = None):
@@ -78,7 +61,7 @@ class CachedResponse:
         # Set some remaining attributes individually
         response._body = client_response._body
         response.expires = expires
-        response.headers = dict(client_response.headers)
+        response.real_url = client_response.request_info.real_url
 
         # The encoding may be unset even if the response has been read
         try:
@@ -86,7 +69,6 @@ class CachedResponse:
         except RuntimeError:
             pass
 
-        response.request_info = RequestInfo.from_object(client_response.request_info)
         response.url = str(client_response.url)
         if client_response.history:
             response.history = (
@@ -107,13 +89,24 @@ class CachedResponse:
         return self.encoding
 
     @property
+    def headers(self) -> CIMultiDictProxy[str]:
+        """Get headers as an immutable, case-insensitive multidict from raw headers"""
+
+        def decode_header(header):
+            return (
+                header[0].decode('utf-8', 'surrogateescape'),
+                header[1].decode('utf-8', 'surrogateescape'),
+            )
+
+        return CIMultiDictProxy(CIMultiDict([decode_header(h) for h in self.raw_headers]))
+
+    @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
         return self.expires is not None and datetime.utcnow() > self.expires
 
     async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
         """Read and decode JSON response"""
-
         stripped = self._body.strip()
         if not stripped:
             return None
@@ -134,6 +127,15 @@ class CachedResponse:
 
     def release(self):
         """No-op function for compatibility with ClientResponse"""
+
+    @property
+    def request_info(self) -> RequestInfo:
+        return RequestInfo(
+            url=URL(self.url),
+            method=self.method,
+            headers=self.headers,
+            real_url=URL(self.real_url),
+        )
 
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""
