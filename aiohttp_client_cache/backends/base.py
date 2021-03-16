@@ -110,6 +110,7 @@ class CacheBackend:
         self.allowed_methods = allowed_methods
         self.filter_fn = filter_fn
         self.disabled = False
+        self.lru = False  # Not yet functional, just for debugging purposes
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
         self.redirects: BaseCache = DictCache()
@@ -176,9 +177,10 @@ class CacheBackend:
             await self.delete(key)
             return None
 
-        # Update last_used time
-        response.last_used = datetime.utcnow()
-        await self.responses.write(key, response)
+        # Optionally update last_used time
+        if self.lru:
+            response.last_used = datetime.utcnow()
+            await self.responses.write(key, response)
 
         logger.info(f'Cached response found for key: {key}')
         return response
