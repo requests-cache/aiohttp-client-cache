@@ -4,6 +4,7 @@
 [See all issues & PRs here](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
 
 * Add support for setting different expiration times based on URL patterns
+* Add support for serializing/deserializing `ClientSession.links`
 * Add case-insensitive response headers for compatibility with aiohttp.ClientResponse.headers
 
 ## 0.2.0 (2021-02-28)

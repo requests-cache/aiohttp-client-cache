@@ -1,18 +1,19 @@
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError
 from aiohttp.client_reqrep import ContentDisposition, RequestInfo
 from aiohttp.typedefs import RawHeaders, StrOrURL
-from multidict import CIMultiDict, CIMultiDictProxy
+from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
     '_body',
+    '_links',
     'created_at',
     'encoding',
     'expires',
@@ -22,6 +23,9 @@ EXCLUDE_ATTRS = {
     'request_info',
 }
 JsonResponse = Optional[Dict[str, Any]]
+DictItems = List[Tuple[str, str]]
+LinkItems = List[Tuple[str, DictItems]]
+LinkMultiDict = MultiDictProxy[MultiDictProxy[Union[str, URL]]]
 
 
 @attr.s(slots=True)
@@ -37,6 +41,7 @@ class CachedResponse:
     url: StrOrURL = attr.ib()
     version: str = attr.ib()
     _body: Any = attr.ib(default=None)
+    _links: LinkItems = attr.ib(factory=list)
     content_disposition: ContentDisposition = attr.ib(default=None)
     cookies: SimpleCookie = attr.ib(default=None)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
@@ -60,6 +65,7 @@ class CachedResponse:
 
         # Set some remaining attributes individually
         response._body = client_response._body
+        response._links = [(k, _to_str_tuples(v)) for k, v in client_response.links.items()]
         response.expires = expires
         response.real_url = client_response.request_info.real_url
 
@@ -105,6 +111,12 @@ class CachedResponse:
         """Determine if this cached response is expired"""
         return self.expires is not None and datetime.utcnow() > self.expires
 
+    @property
+    def links(self) -> LinkMultiDict:
+        """Convert stored links into the format returned by :attr:`ClientResponse.links`"""
+        items = [(k, _to_url_multidict(v)) for k, v in self._links]
+        return MultiDictProxy(MultiDict([(k, MultiDictProxy(v)) for k, v in items]))
+
     async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
         """Read and decode JSON response"""
         stripped = self._body.strip()
@@ -140,6 +152,14 @@ class CachedResponse:
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""
         return self._body.decode(encoding or self.encoding, errors=errors)
+
+
+def _to_str_tuples(data: Mapping) -> DictItems:
+    return [(k, str(v)) for k, v in data.items()]
+
+
+def _to_url_multidict(data: DictItems) -> MultiDict:
+    return MultiDict([(k, URL(url)) for k, url in data])
 
 
 AnyResponse = Union[ClientResponse, CachedResponse]
