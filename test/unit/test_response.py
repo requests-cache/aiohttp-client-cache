@@ -3,6 +3,8 @@ import pytest
 from datetime import datetime, timedelta
 
 from aiohttp import ClientResponseError, ClientSession, web
+from multidict import MultiDictProxy
+from yarl import URL
 
 from aiohttp_client_cache.response import CachedResponse, RequestInfo
 
@@ -23,7 +25,10 @@ async def get_test_response(client_factory, url='/', **kwargs):
 
 
 async def mock_handler(request):
-    return web.Response(body=b'Hello, world')
+    return web.Response(
+        body=b'Hello, world',
+        headers={'Link': '<https://example.com>; rel="preconnect"'},
+    )
 
 
 async def test_basic_attrs(aiohttp_client):
@@ -85,6 +90,14 @@ async def test_headers__case_insensitive_multidict(aiohttp_client):
     assert set(response.headers.getall('Cache-Control')) == {'max-age=360', 'public'}
 
 
+async def test_links(aiohttp_client):
+    response = await get_test_response(aiohttp_client, '/valid_url')
+    expected_links = [('preconnect', [('rel', 'preconnect'), ('url', 'https://example.com')])]
+    assert response._links == expected_links
+    assert isinstance(response.links, MultiDictProxy)
+    assert response.links['preconnect']['url'] == URL('https://example.com')
+
+
 # TODO
 async def test_history(aiohttp_client):
     pass
@@ -95,15 +108,12 @@ async def test_json(aiohttp_client):
     pass
 
 
-# TODO
 async def test_raise_for_status__200(aiohttp_client):
-    # pass
     response = await get_test_response(aiohttp_client, '/valid_url')
     assert not response.raise_for_status()
     assert response.ok is True
 
 
-# TODO
 async def test_raise_for_status__404(aiohttp_client):
     response = await get_test_response(aiohttp_client, '/invalid_url')
     with pytest.raises(ClientResponseError):
