@@ -40,4 +40,5 @@ setup(
     version=__version__,
     install_requires=['aiohttp', 'attrs', 'python-forge'],
     extras_require=extras_require,
+    zip_safe=False,
 )
