@@ -7,13 +7,10 @@
 [![PyPI - Python Versions](https://img.shields.io/pypi/pyversions/aiohttp-client-cache)](https://pypi.org/project/aiohttp-client-cache)
 [![PyPI - Format](https://img.shields.io/pypi/format/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 
-See full documentation at https://aiohttp-client-cache.readthedocs.io
-
 **aiohttp-client-cache** is an async persistent cache for [aiohttp](https://docs.aiohttp.org)
-requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
+client requests.
 
-Not to be confused with [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache), which is a cache
-for the aiohttp web server. This package is, as you might guess, specifically for the **aiohttp client**.
+See full documentation at https://aiohttp-client-cache.readthedocs.io
 
 ## Development Status
 **This is an early work in progress!**
@@ -70,7 +67,7 @@ async with CachedSession(cache=cache) as session:
     await session.get('https://img.site.com/static/a27bf6.jpg')  # Expires in a week
 ```
 See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
-for more usage details.
+documentation for more usage details.
 
 `aiohttp-client-cache` can also be used as a mixin, if you happen have other mixin classes that you
 want to combine with it:
@@ -122,12 +119,25 @@ Caching behavior can be customized by defining various conditions:
 See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
 docs for details.
 
+## Related Projects
+Other python cache projects you may want to check out:
+
+* [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache): A server-side async HTTP cache for the
+  `aiohttp` web server
+* [diskcache](https://github.com/grantjenks/python-diskcache): A general-purpose (not HTTP-specific)
+  file-based cache built on SQLite
+* [aiocache](https://github.com/aio-libs/aiocache): General-purpose (not HTTP-specific) async cache
+  backends
+* [requests-cache](https://github.com/reclosedev/requests-cache) An HTTP cache for `requests`; also served as a starting point for making `aiohttp-client-cache`
+* [CacheControl](https://github.com/ionrock/cachecontrol): An HTTP cache for `requests` that caches
+  according to uses HTTP headers and status codes
+
 ## Credits
 Thanks to [Roman Haritonov](https://github.com/reclosedev) and
 [contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.rst)
 for the original `requests-cache`!
 
-This project is licensed under the MIT license, with the exception of
+This project is licensed under the MIT license, with the exception of portions of
 [storage backend code](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)
 adapted from `requests-cache`, which is licensed under the BSD license
 ([copy included](https://github.com/JWCook/aiohttp-client-cache/blob/main/requests_cache.md)).
