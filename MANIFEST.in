@@ -1,2 +1,3 @@
 include README.md HISTORY.md
 include LICENSE requests_cache.md
+include aiohttp_client_cache/py.typed
