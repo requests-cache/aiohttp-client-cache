@@ -105,7 +105,7 @@ next time the same request is made. If you want to manually purge all expired it
 
 ```python
 session = CachedSession(expire_after=3)   # Cached responses expire after 3 hours
-await session.remove_expired_responses()  # Remove any responses over 3 hours old
+await session.delete_expired_responses()  # Remove any responses over 3 hours old
 ```
 
 ## Conditional Caching
