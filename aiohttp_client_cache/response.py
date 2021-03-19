@@ -134,8 +134,9 @@ class CachedResponse:
                 headers=self.headers,
             )
 
-    def read(self):
-        """No-op function for compatibility with ClientResponse"""
+    async def read(self) -> bytes:
+        """Read response payload."""
+        return self._body
 
     def release(self):
         """No-op function for compatibility with ClientResponse"""
