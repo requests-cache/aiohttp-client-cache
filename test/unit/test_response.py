@@ -126,8 +126,12 @@ async def test_text(aiohttp_client):
     assert await response.text() == '404: Not Found'
 
 
+async def test_read(aiohttp_client):
+    response = await get_test_response(aiohttp_client)
+    assert await response.read() == b'404: Not Found'
+
+
 async def test_no_op(aiohttp_client):
     # Just make sure CachedResponse doesn't explode if extra ClientResponse methods are called
     response = await get_test_response(aiohttp_client)
-    response.read()
     response.release()
