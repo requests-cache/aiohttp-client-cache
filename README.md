@@ -92,10 +92,10 @@ Several backends are available. If one isn't specified, a non-persistent in-memo
   (requires [aioredis](https://github.com/aio-libs/aioredis-py))
 * `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
   (requires [motor](https://motor.readthedocs.io))
-  
-**Incomplete:**
 * `DynamoDBBackend`: Uses a [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) database
-  (requires [boto3](https://github.com/boto/boto3))
+  (requires [aioboto3](https://github.com/terrycain/aioboto3))
+    
+**Incomplete:**
 * `GridFSBackend`: Uses a [MongoDB GridFS](https://docs.mongodb.com/manual/core/gridfs/) database,
   which enables storage of documents greater than 16MB
   (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
