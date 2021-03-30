@@ -165,7 +165,7 @@ class CacheBackend:
             if not await self.responses.contains(key):
                 key = str(await self.redirects.read(key))
             response = await self.responses.read(key)
-        except (KeyError, TypeError):
+        except (AttributeError, KeyError, TypeError):
             logger.debug('No cached response found')
             return None
         if not isinstance(response, CachedResponse):
