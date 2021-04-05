@@ -30,6 +30,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx_autodoc_typehints',
+    'sphinx_copybutton',
     'sphinxcontrib.apidoc',
     'm2r2',
 ]
@@ -50,8 +51,11 @@ napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
 numpydoc_show_class_members = False
 
+# Strip prompt text when copying code blocks with copy button
+copybutton_prompt_text = r'>>> |\.\.\. |\$ '
+copybutton_prompt_is_regexp = True
+
 # Use apidoc to auto-generate rst sources
-# Added here instead of instead of in Makefile so it will be used by ReadTheDocs
 apidoc_excluded_paths = ['api_docs.py']
 apidoc_extra_args = ['--private']
 apidoc_module_dir = PACKAGE_DIR

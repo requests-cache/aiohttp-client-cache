@@ -11,10 +11,12 @@ extras_require = {
     'backends': ['aiosqlite', 'boto3', 'motor', 'aioredis'],
     # Packages used for documentation builds
     'docs': [
-        'm2r2',
-        'Sphinx~=3.2.1',
+        'm2r2~=0.2.5',
+        'docutils==0.16',
+        'Sphinx~=3.5.3',
         'sphinx-autodoc-typehints',
-        'sphinx-rtd-theme',
+        'sphinx-copybutton',
+        'sphinx-rtd-theme~=0.5.2',
         'sphinxcontrib-apidoc',
     ],
     # Packages used for testing both locally and in CI jobs
