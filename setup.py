@@ -16,7 +16,7 @@ extras_require = {
         'Sphinx~=3.5.3',
         'sphinx-autodoc-typehints',
         'sphinx-copybutton',
-        'sphinx-rtd-theme~=0.5.2',
+        'sphinx-material',
         'sphinxcontrib-apidoc',
     ],
     # Packages used for testing both locally and in CI jobs
