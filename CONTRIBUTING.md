@@ -1,6 +1,6 @@
 # Contributing
 
-## Installation
+## Dev Installation
 To set up for local development:
 
 ```bash
@@ -49,27 +49,32 @@ $ xdg-open docs/_build/index.html
 ```
 
 ### Readthedocs
-Documentation is automatically built by Readthedocs whenever code is merged into the `main` branch.
+Documentation is automatically built and published by Readthedocs whenever code is merged into the
+`main` branch.
 
 Sometimes, there are differences in the Readthedocs build environment that can cause builds to
-succeed locally but fail remotely. To help debug this, you can use the Readthedocs Docker container
-(`readthedocs/build`) to perform the build. Example:
+succeed locally but fail remotely. To help debug this, you can use the 
+[readthedocs/build](https://github.com/readthedocs/readthedocs-docker-images) container to build
+the docs. A configured build container is included in `docker-compose.yml` to simplify this.
+
+Run with:
 ```bash
-docker pull readthedocs/build
-docker run --rm -ti \
-  -v (pwd):/home/docs/project \
-  readthedocs/build \
-  /bin/bash -c \
-  "cd /home/docs/project \
-    && pip3 install '.[dev]' \
-    && make -C docs html"
+docker-compose up -d --build
+docker exec readthedocs make all
 ```
+
+## Pull Requests
+Here are some general guidelines for submitting a pull request:
+
+- If the changes are trivial, just briefly explain the changes in the PR description.
+- Otherwise, please submit an issue describing the proposed change prior to submitting a PR.
+- Please add unit test coverage and updated docs (if applicable) for your changes.
+- Submit the PR to be merged into the `main` branch.
 
 ## Releases
 Releases are built and published to pypi based on **git tags.**
 [Milestones](https://github.com/JWCook/aiohttp-client-cache/milestones) will be used to track
 progress on major and minor releases.
-
 
 ## Code Layout
 Here is a brief overview of the main classes and modules:
