@@ -10,6 +10,7 @@ from urllib.parse import parse_qsl, urlparse, urlsplit, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
 from aiohttp.typedefs import StrOrURL
+from url_normalize import url_normalize
 
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
@@ -267,7 +268,7 @@ class CacheBackend:
 
         key = hashlib.sha256()
         key.update(method.upper().encode())
-        key.update(str(url).encode())
+        key.update(str(url_normalize(url)).encode())
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
 
