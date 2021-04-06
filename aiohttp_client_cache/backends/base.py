@@ -43,6 +43,9 @@ class CacheBackend:
         filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
             returns a boolean indicating whether or not that response should be cached. Will be
             applied to both new and previously cached responses
+        secret_key: Optional secret key used to sign cache items for added security
+        salt: Optional salt used to sign cache items
+        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
 
     **Cache Name:**
 
@@ -101,6 +104,9 @@ class CacheBackend:
         include_headers: bool = False,
         ignored_params: Iterable = None,
         filter_fn: Callable = lambda r: True,
+        secret_key: Union[Iterable, str, bytes] = None,
+        salt: Union[str, bytes] = b'aiohttp-client-cache',
+        serializer=None,
     ):
         self.name = cache_name
         self.expire_after = _convert_timedelta(expire_after)
@@ -303,9 +309,52 @@ class BaseCache(metaclass=ABCMeta):
     """A wrapper for lower-level cache storage operations. This is separate from
     :py:class:`.CacheBackend` to allow a single backend to contain multiple cache objects.
 
-    This is no longer using a dict-like interface due to lack of python syntax support for async
-    dict operations.
+    Args:
+        secret_key: Optional secret key used to sign cache items for added security
+        salt: Optional salt used to sign cache items
+        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
     """
+
+    def __init__(
+        self,
+        secret_key: Union[Iterable, str, bytes] = None,
+        salt: Union[str, bytes] = b'aiohttp-client-cache',
+        serializer=None,
+        **kwargs,
+    ):
+        super().__init__()
+        self._serializer = serializer or self._get_serializer(secret_key, salt)
+
+    def serialize(self, item: ResponseOrKey = None) -> Optional[bytes]:
+        """Serialize a URL or response into bytes"""
+        if isinstance(item, bytes):
+            return item
+        return self._serializer.dumps(item) if item else None
+
+    def deserialize(self, item: ResponseOrKey) -> Union[CachedResponse, str, None]:
+        """Deserialize a cached URL or response"""
+        if isinstance(item, (CachedResponse, str)):
+            return item
+        return self._serializer.loads(item) if item else None
+
+    # TODO: Remove once all backends have been updated to use serialize/deserialize
+    @staticmethod
+    def unpickle(result):
+        return pickle.loads(bytes(result)) if result else None
+
+    @staticmethod
+    def _get_serializer(secret_key, salt):
+        """Get the appropriate serializer to use; either ``itsdangerous``, if a secret key is
+        specified, or plain ``pickle`` otherwise.
+        Raises:
+            py:exc:`ImportError` if ``secret_key`` is specified but ``itsdangerous`` is not installed
+        """
+        if secret_key:
+            from itsdangerous.serializer import Serializer
+
+            return Serializer(secret_key, salt=salt, serializer=pickle)
+        else:
+            return pickle
 
     @abstractmethod
     async def contains(self, key: str) -> bool:
@@ -339,10 +388,6 @@ class BaseCache(metaclass=ABCMeta):
     async def write(self, key: str, item: ResponseOrKey):
         """Write an item to the cache"""
 
-    @staticmethod
-    def unpickle(result):
-        return pickle.loads(bytes(result)) if result else None
-
     async def pop(self, key: str, default=None) -> ResponseOrKey:
         """Delete an item from the cache, and return the deleted item"""
         try:
@@ -357,7 +402,10 @@ class DictCache(BaseCache, UserDict):
     """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
 
     async def delete(self, key: str):
-        del self.data[key]
+        try:
+            del self.data[key]
+        except KeyError:
+            pass
 
     async def clear(self):
         self.data.clear()
@@ -368,8 +416,11 @@ class DictCache(BaseCache, UserDict):
     async def keys(self) -> Iterable[str]:  # type: ignore
         return self.data.keys()
 
-    async def read(self, key: str) -> Union[CachedResponse, str]:
-        return self.data[key]
+    async def read(self, key: str) -> Union[CachedResponse, str, None]:
+        try:
+            return self.data[key]
+        except KeyError:
+            return None
 
     async def size(self) -> int:
         return len(self.data)

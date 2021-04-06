@@ -1,4 +1,3 @@
-import pickle
 from typing import Iterable
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -21,8 +20,8 @@ class MongoDBBackend(CacheBackend):
         self, cache_name: str = 'aiohttp-cache', connection: AsyncIOMotorClient = None, **kwargs
     ):
         super().__init__(cache_name=cache_name, **kwargs)
-        self.responses = MongoDBPickleCache(cache_name, 'responses', connection)
-        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection)
+        self.responses = MongoDBPickleCache(cache_name, 'responses', connection, **kwargs)
+        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection, **kwargs)
 
 
 class MongoDBCache(BaseCache):
@@ -34,7 +33,10 @@ class MongoDBCache(BaseCache):
         connection: MongoDB connection instance to use instead of creating a new one
     """
 
-    def __init__(self, db_name, collection_name: str, connection: AsyncIOMotorClient = None):
+    def __init__(
+        self, db_name, collection_name: str, connection: AsyncIOMotorClient = None, **kwargs
+    ):
+        super().__init__(**kwargs)
         self.connection = connection or AsyncIOMotorClient()
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
@@ -75,7 +77,7 @@ class MongoDBPickleCache(MongoDBCache):
     """Same as :py:class:`MongoDBCache`, but pickles values before saving"""
 
     async def read(self, key):
-        return self.unpickle(bytes(await super().read(key)))
+        return self.deserialize(await super().read(key))
 
     async def write(self, key, item):
-        await super().write(key, pickle.dumps(item, protocol=-1))
+        await super().write(key, self.serialize(item))
