@@ -16,9 +16,13 @@ See full documentation at https://aiohttp-client-cache.readthedocs.io
 **This is an early work in progress!**
 
 The current state is a working drop-in replacement (or mixin) for `aiohttp.ClientSession`, with
-multiple asynchronous cache backends.
+multiple asynchronous cache backends. Breaking changes should be expected until a `1.0` release,
+so version pinning is recommended.
 
-Breaking changes should be expected until a `1.0` release.
+I am developing this while also maintaining [requests-cache](https://github.com/reclosedev/requests-cache),
+and my eventual goal is to have a similar (but not identical) feature set between the two libraries.
+If there is a specific feature you want that aiohttp-client-cache doesn't yet have, please create an
+issue to request it!
 
 ## Installation
 Requires python 3.7+
@@ -128,13 +132,13 @@ Other python cache projects you may want to check out:
   file-based cache built on SQLite
 * [aiocache](https://github.com/aio-libs/aiocache): General-purpose (not HTTP-specific) async cache
   backends
-* [requests-cache](https://github.com/reclosedev/requests-cache) An HTTP cache for `requests`; also served as a starting point for making `aiohttp-client-cache`
+* [requests-cache](https://github.com/reclosedev/requests-cache) An HTTP cache for the `requests` library
 * [CacheControl](https://github.com/ionrock/cachecontrol): An HTTP cache for `requests` that caches
   according to uses HTTP headers and status codes
 
 ## Credits
 Thanks to [Roman Haritonov](https://github.com/reclosedev) and
-[contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.rst)
+[contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.md)
 for the original `requests-cache`!
 
 This project is licensed under the MIT license, with the exception of portions of

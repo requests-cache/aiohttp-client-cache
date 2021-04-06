@@ -2,10 +2,10 @@
 
 .. Omit README link to ReadTheDocs, since we're already on ReadTheDocs!
 .. mdinclude:: ../README.md
-    :end-line: 9
+    :end-line: 15
 
 .. mdinclude:: ../README.md
-    :start-line: 11
+    :start-line: 17
 
 
 Contents
