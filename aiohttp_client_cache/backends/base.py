@@ -265,6 +265,7 @@ class CacheBackend:
         url: StrOrURL,
         params: dict = None,
         data: dict = None,
+        json: dict = None,
         headers: dict = None,
         **kwargs,
     ) -> str:
@@ -277,6 +278,7 @@ class CacheBackend:
         key.update(str(url_normalize(url)).encode())
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
+        key.update(_encode_dict(json))
 
         if (
             self.include_headers
@@ -290,7 +292,7 @@ class CacheBackend:
 
     def _remove_ignored_parameters(self, url, params, data):
         def filter_ignored_params(d):
-            return {k: v for k, v in d.items() if k not in self.ignored_params}
+            return {k: v for k, v in (d or {}).items() if k not in self.ignored_params}
 
         # Strip off any request params manually added to URL and add to `params`
         u = urlparse(url)
