@@ -2,7 +2,7 @@ from typing import Iterable
 
 from aioredis import Redis, create_redis_pool
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.forge_utils import extend_signature
 
 DEFAULT_ADDRESS = 'redis://localhost'
@@ -40,14 +40,10 @@ class RedisCache(BaseCache):
         **kwargs,
     ):
         # Pop off BaseCache kwargs and use the rest as Redis connection kwargs
-        super().__init__(
-            secret_key=kwargs.pop('secret_key'),
-            salt=kwargs.pop('salt'),
-            serializer=kwargs.pop('serializer'),
-        )
+        super().__init__(**kwargs)
         self.address = address
         self._connection = connection
-        self.connection_kwargs = kwargs
+        self.connection_kwargs = get_valid_kwargs(create_redis_pool, kwargs)
         self.hash_key = f'{namespace}:{collection_name}'
 
     async def get_connection(self):

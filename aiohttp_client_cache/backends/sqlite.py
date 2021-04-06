@@ -6,7 +6,7 @@ from typing import AsyncIterator, Iterable, Union
 
 import aiosqlite
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.forge_utils import extend_signature
 
 
@@ -43,12 +43,14 @@ class SQLiteCache(BaseCache):
         >>> d2 = SQLiteCache('testdb', 'table2')
 
     Args:
-        filename: filename for database (without extension)
-        table_name: table name
+        filename: Database filename
+        table_name: Table name
+        kwargs: Additional keyword arguments for :py:func:`sqlite3.connect`
     """
 
     def __init__(self, filename: str, table_name: str, **kwargs):
         super().__init__(**kwargs)
+        self.connection_kwargs = get_valid_kwargs(sqlite_connect, kwargs)
         self.filename = filename
         self.table_name = table_name
         self._can_commit = True  # Transactions can be committed if this is set to `True`
@@ -61,7 +63,11 @@ class SQLiteCache(BaseCache):
     @asynccontextmanager
     async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
         async with self._lock:
-            db = self._connection if self._connection else await aiosqlite.connect(self.filename)
+            db = (
+                self._connection
+                if self._connection
+                else await aiosqlite.connect(self.filename, **self.connection_kwargs)
+            )
             try:
                 yield await self._init_db(db)
                 if autocommit and self._can_commit:
@@ -165,3 +171,16 @@ class SQLitePickleCache(SQLiteCache):
 
     async def write(self, key, item):
         await super().write(key, sqlite3.Binary(self.serialize(item)))
+
+
+def sqlite_connect(
+    database,
+    timeout=None,
+    detect_types=None,
+    isolation_level=None,
+    check_same_thread=None,
+    factory=None,
+    cached_statements=None,
+    uri=None,
+):
+    """Placeholder to get signature of builtin sqlite3.connect()"""
