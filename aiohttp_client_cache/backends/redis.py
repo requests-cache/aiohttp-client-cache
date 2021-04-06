@@ -1,4 +1,3 @@
-import pickle
 from typing import Iterable
 
 from aioredis import Redis, create_redis_pool
@@ -40,6 +39,12 @@ class RedisCache(BaseCache):
         connection: Redis = None,
         **kwargs,
     ):
+        # Pop off BaseCache kwargs and use the rest as Redis connection kwargs
+        super().__init__(
+            secret_key=kwargs.pop('secret_key'),
+            salt=kwargs.pop('salt'),
+            serializer=kwargs.pop('serializer'),
+        )
         self.address = address
         self._connection = connection
         self.connection_kwargs = kwargs
@@ -72,7 +77,7 @@ class RedisCache(BaseCache):
     async def read(self, key: str) -> ResponseOrKey:
         connection = await self.get_connection()
         result = await connection.hget(self.hash_key, key)
-        return self.unpickle(result)
+        return self.deserialize(result)
 
     async def size(self) -> int:
         connection = await self.get_connection()
@@ -80,12 +85,12 @@ class RedisCache(BaseCache):
 
     async def values(self) -> Iterable[ResponseOrKey]:
         connection = await self.get_connection()
-        return [self.unpickle(v) for v in await connection.hvals(self.hash_key)]
+        return [self.deserialize(v) for v in await connection.hvals(self.hash_key)]
 
     async def write(self, key: str, item: ResponseOrKey):
         connection = await self.get_connection()
         await connection.hset(
             self.hash_key,
             key,
-            pickle.dumps(item, protocol=-1),
+            self.serialize(item),
         )
