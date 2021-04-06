@@ -40,7 +40,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     version=__version__,
-    install_requires=['aiohttp', 'attrs', 'python-forge', 'url-normalize'],
+    install_requires=['aiohttp', 'attrs', 'itsdangerous', 'python-forge', 'url-normalize'],
     extras_require=extras_require,
     zip_safe=False,
 )

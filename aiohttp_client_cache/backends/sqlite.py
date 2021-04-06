@@ -1,5 +1,4 @@
 import asyncio
-import pickle
 import sqlite3
 from contextlib import asynccontextmanager
 from os.path import expanduser, splitext
@@ -30,8 +29,8 @@ class SQLiteBackend(CacheBackend):
         path, ext = splitext(cache_name)
         cache_path = expanduser(f'{path}{ext or ".sqlite"}')
 
-        self.responses = SQLitePickleCache(cache_path, 'responses')
-        self.redirects = SQLiteCache(cache_path, 'redirects')
+        self.responses = SQLitePickleCache(cache_path, 'responses', **kwargs)
+        self.redirects = SQLiteCache(cache_path, 'redirects', **kwargs)
 
 
 class SQLiteCache(BaseCache):
@@ -48,7 +47,8 @@ class SQLiteCache(BaseCache):
         table_name: table name
     """
 
-    def __init__(self, filename: str, table_name: str):
+    def __init__(self, filename: str, table_name: str, **kwargs):
+        super().__init__(**kwargs)
         self.filename = filename
         self.table_name = table_name
         self._can_commit = True  # Transactions can be committed if this is set to `True`
@@ -156,14 +156,12 @@ class SQLitePickleCache(SQLiteCache):
     """ Same as :py:class:`SqliteCache`, but pickles values before saving """
 
     async def read(self, key: str) -> ResponseOrKey:
-        item = await super().read(key)
-        return pickle.loads(bytes(item)) if item else None  # type: ignore
+        return self.deserialize(await super().read(key))
 
     async def values(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'select value from `{self.table_name}`')
-            return [self.unpickle(row[0]) for row in await cur.fetchall()]
+            return [self.deserialize(row[0]) for row in await cur.fetchall()]
 
     async def write(self, key, item):
-        binary_item = sqlite3.Binary(pickle.dumps(item, protocol=-1))
-        await super().write(key, binary_item)
+        await super().write(key, sqlite3.Binary(self.serialize(item)))
