@@ -5,7 +5,7 @@ from collections import UserDict
 from datetime import datetime, timedelta
 from fnmatch import fnmatch as glob_match
 from logging import getLogger
-from typing import Callable, Dict, Iterable, Optional, Union
+from typing import Callable, Dict, Iterable, List, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlsplit, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
@@ -259,6 +259,10 @@ class CacheBackend:
         key = self.create_key('GET', url)
         return await self.responses.contains(str(key)) or await self.redirects.contains(str(key))
 
+    async def urls(self) -> List[str]:
+        """Get all URLs currently in the cache"""
+        return sorted([r.url for r in await self.responses.values()])  # type: ignore
+
     def create_key(
         self,
         method: str,
@@ -275,7 +279,7 @@ class CacheBackend:
 
         key = hashlib.sha256()
         key.update(method.upper().encode())
-        key.update(str(url_normalize(url)).encode())
+        key.update(str(url_normalize(str(url))).encode())
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
         key.update(_encode_dict(json))
