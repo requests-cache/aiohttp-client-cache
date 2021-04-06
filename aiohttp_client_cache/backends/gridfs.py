@@ -3,7 +3,7 @@ from typing import Iterable
 from gridfs import GridFS
 from pymongo import MongoClient
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.backends.mongo import MongoDBCache
 from aiohttp_client_cache.forge_utils import extend_signature
 
@@ -38,7 +38,8 @@ class GridFSCache(BaseCache):
 
     def __init__(self, db_name, connection: MongoClient = None, **kwargs):
         super().__init__(**kwargs)
-        self.connection = connection or MongoClient()
+        connection_kwargs = get_valid_kwargs(MongoClient.__init__, kwargs)
+        self.connection = connection or MongoClient(**connection_kwargs)
         self.db = self.connection[db_name]
         self.fs = GridFS(self.db)
 

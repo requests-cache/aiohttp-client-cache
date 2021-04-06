@@ -2,7 +2,7 @@ from typing import Iterable
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.forge_utils import extend_signature
 
 
@@ -37,7 +37,8 @@ class MongoDBCache(BaseCache):
         self, db_name, collection_name: str, connection: AsyncIOMotorClient = None, **kwargs
     ):
         super().__init__(**kwargs)
-        self.connection = connection or AsyncIOMotorClient()
+        connection_kwargs = get_valid_kwargs(AsyncIOMotorClient.__init__, kwargs)
+        self.connection = connection or AsyncIOMotorClient(**connection_kwargs)
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
 
