@@ -26,9 +26,8 @@ async def test_all_methods(field, method, tempfile_session):
 
 
 # TODO: Fix ignored parameters for data, json
-# @pytest.mark.parametrize('field', ['params', 'data', 'json'])
 @pytest.mark.parametrize('method', HTTPBIN_METHODS)
-@pytest.mark.parametrize('field', ['params'])
+@pytest.mark.parametrize('field', ['params', 'data', 'json'])
 async def test_all_methods__ignore_parameters(field, method, tempfile_session):
     """Test all relevant combinations of methods and data fields. Requests with different request
     params, data, or json should not be cached under different keys based on an ignored param.
@@ -54,9 +53,8 @@ async def test_all_methods__ignore_parameters(field, method, tempfile_session):
 async def test_redirects(endpoint, n_redirects, tempfile_session):
     """Test all types of redirect endpoints with different numbers of consecutive redirects"""
     await tempfile_session.get(httpbin(f'redirect/{n_redirects}'))
-    r2 = await tempfile_session.get(httpbin('get'))
+    await tempfile_session.get(httpbin('get'))
 
-    # assert from_cache(r2)
     assert len(await tempfile_session.cache.redirects.keys()) == n_redirects
 
 
