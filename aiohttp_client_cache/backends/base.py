@@ -35,7 +35,7 @@ class CacheBackend:
         cache_name: Cache prefix or namespace, depending on backend (see notes below)
         expire_after: Expiration time, in hours, after which a cache entry will expire;
             set to ``None`` to never expire
-        expire_after_urls: Expiration times to apply for different URL patterns (see notes below)
+        urls_expire_after: Expiration times to apply for different URL patterns (see notes below)
         allowed_codes: Only cache responses with these status codes
         allowed_methods: Only cache requests with these HTTP methods
         include_headers: Make request headers part of the cache key (see notes below)
@@ -68,14 +68,14 @@ class CacheBackend:
 
     **URL Patterns:**
 
-    The ``expire_after_urls`` parameter can be used to set different expiration times for different
+    The ``urls_expire_after`` parameter can be used to set different expiration times for different
     requests, based on glob patterns. This allows you to customize caching based on what you
     know about what you're requesting. For example, you might request one resource that gets updated
     frequently, another that changes infrequently, and another that never changes.
 
     Example::
 
-        expire_after_urls = {
+        urls_expire_after = {
             '*.site_1.com': 24,
             'site_2.com/resource_1': 24 * 2,
             'site_2.com/resource_2': 24 * 7,
@@ -84,7 +84,7 @@ class CacheBackend:
 
     Notes:
 
-    * ``expire_after_urls`` should be a dict in the format ``{'pattern': expiration_time}``
+    * ``urls_expire_after`` should be a dict in the format ``{'pattern': expiration_time}``
     * ``expiration_time`` may be either a number (in hours) or a ``timedelta``
       (same as ``expire_after``)
     * Patterns will match request **base URLs**, so the pattern ``site.com/base`` is equivalent to
@@ -98,7 +98,7 @@ class CacheBackend:
         self,
         cache_name: str = 'aiohttp-cache',
         expire_after: ExpirationTime = None,
-        expire_after_urls: Dict[str, ExpirationTime] = None,
+        urls_expire_after: Dict[str, ExpirationTime] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
@@ -110,8 +110,8 @@ class CacheBackend:
     ):
         self.name = cache_name
         self.expire_after = _convert_timedelta(expire_after)
-        self.expire_after_urls: ExpirationPatterns = {
-            _format_pattern(k): _convert_timedelta(v) for k, v in (expire_after_urls or {}).items()
+        self.urls_expire_after: ExpirationPatterns = {
+            _format_pattern(k): _convert_timedelta(v) for k, v in (urls_expire_after or {}).items()
         }
         self.allowed_codes = allowed_codes
         self.allowed_methods = allowed_methods
@@ -153,7 +153,7 @@ class CacheBackend:
         match, raise a ``ValueError`` to differentiate beween this case and a matching pattern with
         ``expire_after=None``
         """
-        for pattern, expire_after in self.expire_after_urls.items():
+        for pattern, expire_after in self.urls_expire_after.items():
             if glob_match(_base_url(response.url), pattern):
                 logger.debug(f'URL {response.url} matched pattern "{pattern}": {expire_after}')
                 return expire_after

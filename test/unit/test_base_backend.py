@@ -116,7 +116,7 @@ def test_get_expiration_date(mock_datetime, url, expected_expiration_hours):
 
     cache = CacheBackend(
         expire_after=1,
-        expire_after_urls={
+        urls_expire_after={
             '*.site_1.com': 24,
             'site_2.com/resource_1': 24 * 2,
             'site_2.com/resource_2': 24 * 7,
