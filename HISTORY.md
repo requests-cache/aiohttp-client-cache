@@ -7,9 +7,10 @@
 * Add support for serializing/deserializing `ClientSession.links`
 * Add case-insensitive response headers for compatibility with aiohttp.ClientResponse.headers
 * Add optional integration with `itsdangerous` for safer serialization
-* Add `CacheBackend.urls()` to get all urls currently in the cache
+* Add `CacheBackend.get_urls()` to get all urls currently in the cache
 * Allow passing all connection kwargs (for SQLite, Redis, and MongoDB connection methods) via CacheBackend
 * Add support for `json` request body
+* Convert all `keys()` and `values()` methods into async generators
 * Fix filtering ignored parameters for request body (`data` and `json`)
 
 ## 0.2.0 (2021-02-28)

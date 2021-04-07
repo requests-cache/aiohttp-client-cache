@@ -2,7 +2,7 @@ import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
 from os.path import expanduser, splitext
-from typing import AsyncIterator, Iterable, Union
+from typing import AsyncIterable, AsyncIterator, Union
 
 import aiosqlite
 
@@ -120,35 +120,39 @@ class SQLiteCache(BaseCache):
 
     async def contains(self, key: str) -> bool:
         async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT COUNT(*) FROM `{self.table_name}` WHERE key=?', (key,))
-            row = await cur.fetchone()
+            cursor = await db.execute(
+                f'SELECT COUNT(*) FROM `{self.table_name}` WHERE key=?', (key,)
+            )
+            row = await cursor.fetchone()
             return bool(row[0]) if row else False
 
     async def delete(self, key: str):
         async with self.get_connection(autocommit=True) as db:
             await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))
 
-    async def keys(self) -> Iterable[str]:
+    async def keys(self) -> AsyncIterable[str]:
         async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT key FROM `{self.table_name}`')
-            return [row[0] for row in await cur.fetchall()]
+            async with db.execute(f'SELECT key FROM `{self.table_name}`') as cursor:
+                async for row in cursor:
+                    yield row[0]
 
     async def read(self, key: str) -> ResponseOrKey:
         async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
-            row = await cur.fetchone()
+            cursor = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
+            row = await cursor.fetchone()
             return row[0] if row else None
 
     async def size(self) -> int:
         async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT COUNT(key) FROM `{self.table_name}`')
-            row = await cur.fetchone()
+            cursor = await db.execute(f'SELECT COUNT(key) FROM `{self.table_name}`')
+            row = await cursor.fetchone()
             return row[0] if row else 0
 
-    async def values(self) -> Iterable[ResponseOrKey]:
+    async def values(self) -> AsyncIterable[ResponseOrKey]:
         async with self.get_connection() as db:
-            cur = await db.execute(f'SELECT value FROM `{self.table_name}`')
-            return [row[0] for row in await cur.fetchall()]
+            async with db.execute(f'SELECT value FROM `{self.table_name}`') as cursor:
+                async for row in cursor:
+                    yield row[0]
 
     async def write(self, key: str, item: Union[ResponseOrKey, sqlite3.Binary]):
         async with self.get_connection(autocommit=True) as db:
@@ -164,10 +168,11 @@ class SQLitePickleCache(SQLiteCache):
     async def read(self, key: str) -> ResponseOrKey:
         return self.deserialize(await super().read(key))
 
-    async def values(self) -> Iterable[ResponseOrKey]:
+    async def values(self) -> AsyncIterable[ResponseOrKey]:
         async with self.get_connection() as db:
-            cur = await db.execute(f'select value from `{self.table_name}`')
-            return [self.deserialize(row[0]) for row in await cur.fetchall()]
+            async with db.execute(f'select value from `{self.table_name}`') as cursor:
+                async for row in cursor:
+                    yield self.deserialize(row[0])
 
     async def write(self, key, item):
         await super().write(key, sqlite3.Binary(self.serialize(item)))
