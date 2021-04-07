@@ -275,7 +275,10 @@ class CacheBackend:
     ) -> str:
         """Create a unique cache key based on request details"""
         if self.ignored_params:
-            url, params, body = self._remove_ignored_parameters(url, params, data)
+            url, params = self._split_url_params(url, params)
+            params = self._filter_ignored_params(params)
+            data = self._filter_ignored_params(data)
+            json = self._filter_ignored_params(json)
 
         key = hashlib.sha256()
         key.update(method.upper().encode())
@@ -294,20 +297,18 @@ class CacheBackend:
                 key.update(value.encode())
         return key.hexdigest()
 
-    def _remove_ignored_parameters(self, url, params, data):
-        def filter_ignored_params(d):
-            return {k: v for k, v in (d or {}).items() if k not in self.ignored_params}
+    def _filter_ignored_params(self, d):
+        return {k: v for k, v in (d or {}).items() if k not in self.ignored_params}
 
-        # Strip off any request params manually added to URL and add to `params`
+    def _split_url_params(self, url, params):
+        """Strip off any request params manually added to URL and add to `params`"""
         u = urlparse(url)
         if u.query:
             query = parse_qsl(u.query)
             params.update(query)
             url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
 
-        params = filter_ignored_params(params)
-        data = filter_ignored_params(data)
-        return url, params, data
+        return url, params
 
 
 # TODO: Support yarl.URL like aiohttp does?
