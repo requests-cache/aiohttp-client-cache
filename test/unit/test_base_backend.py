@@ -1,3 +1,4 @@
+import pickle
 import pytest
 from datetime import timedelta
 from sys import version_info
@@ -49,18 +50,17 @@ async def test_get_response__cache_redirect_hit():
     assert response == mock_response
 
 
-async def test_get_response__cache_miss():
+@patch.object(CacheBackend, 'delete')
+async def test_get_response__cache_miss(mock_delete):
     cache = CacheBackend()
-    await cache.responses.write('invalid-response-key', MagicMock())
 
-    response = await cache.get_response('nonexistent-key')
-    assert response is None
-    response = await cache.get_response('invalid-response-key')
-    assert response is None
+    response_1 = await cache.get_response('nonexistent-key')
+    assert response_1 is None
+    mock_delete.assert_not_called()
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason='Tests require AsyncMock from python 3.8+')
-@patch.object(CacheBackend, 'delete', return_value=False)
+@pytest.mark.skipif(version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+')
+@patch.object(CacheBackend, 'delete')
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
     cache = CacheBackend()
@@ -72,7 +72,22 @@ async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
     mock_delete.assert_called_with('request-key')
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason='Tests require AsyncMock from python 3.8+')
+@pytest.mark.skipif(version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+')
+@pytest.mark.parametrize('error_type', [AttributeError, KeyError, TypeError, pickle.PickleError])
+@patch.object(CacheBackend, 'delete')
+@patch.object(DictCache, 'read')
+async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
+    cache = CacheBackend()
+    mock_read.side_effect = error_type
+    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
+    await cache.responses.write('request-key', mock_response)
+
+    response = await cache.get_response('request-key')
+    assert response is None
+    mock_delete.assert_not_called()
+
+
+@pytest.mark.skipif(version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+')
 @patch.object(CacheBackend, 'is_cacheable', return_value=True)
 async def test_save_response(mock_is_cacheable):
     cache = CacheBackend()
