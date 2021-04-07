@@ -1,4 +1,6 @@
+from inspect import signature
 from logging import getLogger
+from typing import Callable, Dict
 
 from aiohttp_client_cache.backends.base import (  # noqa: F401
     BaseCache,
@@ -21,6 +23,12 @@ def get_placeholder_backend(original_exception):
             raise original_exception
 
     return PlaceholderBackend
+
+
+def get_valid_kwargs(func: Callable, kwargs: Dict) -> Dict:
+    """Get the subset of ``kwargs`` that are valid params for ``func``"""
+    params = list(signature(func).parameters)
+    return {k: v for k, v in kwargs.items() if k in params}
 
 
 # Import all backends for which dependencies are installed

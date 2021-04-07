@@ -5,7 +5,7 @@ from collections import UserDict
 from datetime import datetime, timedelta
 from fnmatch import fnmatch as glob_match
 from logging import getLogger
-from typing import Callable, Dict, Iterable, Optional, Union
+from typing import Callable, Dict, Iterable, List, Optional, Union
 from urllib.parse import parse_qsl, urlparse, urlsplit, urlunparse
 
 from aiohttp import ClientRequest, ClientResponse
@@ -35,7 +35,7 @@ class CacheBackend:
         cache_name: Cache prefix or namespace, depending on backend (see notes below)
         expire_after: Expiration time, in hours, after which a cache entry will expire;
             set to ``None`` to never expire
-        expire_after_urls: Expiration times to apply for different URL patterns (see notes below)
+        urls_expire_after: Expiration times to apply for different URL patterns (see notes below)
         allowed_codes: Only cache responses with these status codes
         allowed_methods: Only cache requests with these HTTP methods
         include_headers: Make request headers part of the cache key (see notes below)
@@ -43,6 +43,9 @@ class CacheBackend:
         filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
             returns a boolean indicating whether or not that response should be cached. Will be
             applied to both new and previously cached responses
+        secret_key: Optional secret key used to sign cache items for added security
+        salt: Optional salt used to sign cache items
+        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
 
     **Cache Name:**
 
@@ -65,14 +68,14 @@ class CacheBackend:
 
     **URL Patterns:**
 
-    The ``expire_after_urls`` parameter can be used to set different expiration times for different
+    The ``urls_expire_after`` parameter can be used to set different expiration times for different
     requests, based on glob patterns. This allows you to customize caching based on what you
     know about what you're requesting. For example, you might request one resource that gets updated
     frequently, another that changes infrequently, and another that never changes.
 
     Example::
 
-        expire_after_urls = {
+        urls_expire_after = {
             '*.site_1.com': 24,
             'site_2.com/resource_1': 24 * 2,
             'site_2.com/resource_2': 24 * 7,
@@ -81,7 +84,7 @@ class CacheBackend:
 
     Notes:
 
-    * ``expire_after_urls`` should be a dict in the format ``{'pattern': expiration_time}``
+    * ``urls_expire_after`` should be a dict in the format ``{'pattern': expiration_time}``
     * ``expiration_time`` may be either a number (in hours) or a ``timedelta``
       (same as ``expire_after``)
     * Patterns will match request **base URLs**, so the pattern ``site.com/base`` is equivalent to
@@ -95,17 +98,20 @@ class CacheBackend:
         self,
         cache_name: str = 'aiohttp-cache',
         expire_after: ExpirationTime = None,
-        expire_after_urls: Dict[str, ExpirationTime] = None,
+        urls_expire_after: Dict[str, ExpirationTime] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
         ignored_params: Iterable = None,
         filter_fn: Callable = lambda r: True,
+        secret_key: Union[Iterable, str, bytes] = None,
+        salt: Union[str, bytes] = b'aiohttp-client-cache',
+        serializer=None,
     ):
         self.name = cache_name
         self.expire_after = _convert_timedelta(expire_after)
-        self.expire_after_urls: ExpirationPatterns = {
-            _format_pattern(k): _convert_timedelta(v) for k, v in (expire_after_urls or {}).items()
+        self.urls_expire_after: ExpirationPatterns = {
+            _format_pattern(k): _convert_timedelta(v) for k, v in (urls_expire_after or {}).items()
         }
         self.allowed_codes = allowed_codes
         self.allowed_methods = allowed_methods
@@ -147,7 +153,7 @@ class CacheBackend:
         match, raise a ``ValueError`` to differentiate beween this case and a matching pattern with
         ``expire_after=None``
         """
-        for pattern, expire_after in self.expire_after_urls.items():
+        for pattern, expire_after in self.urls_expire_after.items():
             if glob_match(_base_url(response.url), pattern):
                 logger.debug(f'URL {response.url} matched pattern "{pattern}": {expire_after}')
                 return expire_after
@@ -253,24 +259,33 @@ class CacheBackend:
         key = self.create_key('GET', url)
         return await self.responses.contains(str(key)) or await self.redirects.contains(str(key))
 
+    async def urls(self) -> List[str]:
+        """Get all URLs currently in the cache"""
+        return sorted([r.url for r in await self.responses.values()])  # type: ignore
+
     def create_key(
         self,
         method: str,
         url: StrOrURL,
         params: dict = None,
         data: dict = None,
+        json: dict = None,
         headers: dict = None,
         **kwargs,
     ) -> str:
         """Create a unique cache key based on request details"""
         if self.ignored_params:
-            url, params, body = self._remove_ignored_parameters(url, params, data)
+            url, params = self._split_url_params(url, params)
+            params = self._filter_ignored_params(params)
+            data = self._filter_ignored_params(data)
+            json = self._filter_ignored_params(json)
 
         key = hashlib.sha256()
         key.update(method.upper().encode())
-        key.update(str(url_normalize(url)).encode())
+        key.update(str(url_normalize(str(url))).encode())
         key.update(_encode_dict(params))
         key.update(_encode_dict(data))
+        key.update(_encode_dict(json))
 
         if (
             self.include_headers
@@ -282,20 +297,18 @@ class CacheBackend:
                 key.update(value.encode())
         return key.hexdigest()
 
-    def _remove_ignored_parameters(self, url, params, data):
-        def filter_ignored_params(d):
-            return {k: v for k, v in d.items() if k not in self.ignored_params}
+    def _filter_ignored_params(self, d):
+        return {k: v for k, v in (d or {}).items() if k not in self.ignored_params}
 
-        # Strip off any request params manually added to URL and add to `params`
+    def _split_url_params(self, url, params):
+        """Strip off any request params manually added to URL and add to `params`"""
         u = urlparse(url)
         if u.query:
             query = parse_qsl(u.query)
             params.update(query)
             url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
 
-        params = filter_ignored_params(params)
-        data = filter_ignored_params(data)
-        return url, params, data
+        return url, params
 
 
 # TODO: Support yarl.URL like aiohttp does?
@@ -303,9 +316,52 @@ class BaseCache(metaclass=ABCMeta):
     """A wrapper for lower-level cache storage operations. This is separate from
     :py:class:`.CacheBackend` to allow a single backend to contain multiple cache objects.
 
-    This is no longer using a dict-like interface due to lack of python syntax support for async
-    dict operations.
+    Args:
+        secret_key: Optional secret key used to sign cache items for added security
+        salt: Optional salt used to sign cache items
+        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
     """
+
+    def __init__(
+        self,
+        secret_key: Union[Iterable, str, bytes] = None,
+        salt: Union[str, bytes] = b'aiohttp-client-cache',
+        serializer=None,
+        **kwargs,
+    ):
+        super().__init__()
+        self._serializer = serializer or self._get_serializer(secret_key, salt)
+
+    def serialize(self, item: ResponseOrKey = None) -> Optional[bytes]:
+        """Serialize a URL or response into bytes"""
+        if isinstance(item, bytes):
+            return item
+        return self._serializer.dumps(item) if item else None
+
+    def deserialize(self, item: ResponseOrKey) -> Union[CachedResponse, str, None]:
+        """Deserialize a cached URL or response"""
+        if isinstance(item, (CachedResponse, str)):
+            return item
+        return self._serializer.loads(item) if item else None
+
+    # TODO: Remove once all backends have been updated to use serialize/deserialize
+    @staticmethod
+    def unpickle(result):
+        return pickle.loads(bytes(result)) if result else None
+
+    @staticmethod
+    def _get_serializer(secret_key, salt):
+        """Get the appropriate serializer to use; either ``itsdangerous``, if a secret key is
+        specified, or plain ``pickle`` otherwise.
+        Raises:
+            py:exc:`ImportError` if ``secret_key`` is specified but ``itsdangerous`` is not installed
+        """
+        if secret_key:
+            from itsdangerous.serializer import Serializer
+
+            return Serializer(secret_key, salt=salt, serializer=pickle)
+        else:
+            return pickle
 
     @abstractmethod
     async def contains(self, key: str) -> bool:
@@ -339,10 +395,6 @@ class BaseCache(metaclass=ABCMeta):
     async def write(self, key: str, item: ResponseOrKey):
         """Write an item to the cache"""
 
-    @staticmethod
-    def unpickle(result):
-        return pickle.loads(bytes(result)) if result else None
-
     async def pop(self, key: str, default=None) -> ResponseOrKey:
         """Delete an item from the cache, and return the deleted item"""
         try:
@@ -357,7 +409,10 @@ class DictCache(BaseCache, UserDict):
     """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
 
     async def delete(self, key: str):
-        del self.data[key]
+        try:
+            del self.data[key]
+        except KeyError:
+            pass
 
     async def clear(self):
         self.data.clear()
@@ -368,8 +423,11 @@ class DictCache(BaseCache, UserDict):
     async def keys(self) -> Iterable[str]:  # type: ignore
         return self.data.keys()
 
-    async def read(self, key: str) -> Union[CachedResponse, str]:
-        return self.data[key]
+    async def read(self, key: str) -> Union[CachedResponse, str, None]:
+        try:
+            return self.data[key]
+        except KeyError:
+            return None
 
     async def size(self) -> int:
         return len(self.data)

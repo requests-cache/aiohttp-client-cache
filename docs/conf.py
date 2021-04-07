@@ -12,7 +12,7 @@ from aiohttp_client_cache import __version__  # noqa
 
 # General information about the project.
 project = 'aiohttp-client-cache'
-copyright = '2020 Jordan Cook'
+copyright = '2021 Jordan Cook'
 needs_sphinx = '3.0'
 master_doc = 'index'
 source_suffix = ['.rst', '.md']
