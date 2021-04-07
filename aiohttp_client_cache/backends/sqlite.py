@@ -1,5 +1,4 @@
 import asyncio
-import pickle
 import sqlite3
 from contextlib import asynccontextmanager
 from os.path import expanduser, splitext
@@ -7,7 +6,7 @@ from typing import AsyncIterator, Iterable, Union
 
 import aiosqlite
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.forge_utils import extend_signature
 
 
@@ -30,8 +29,8 @@ class SQLiteBackend(CacheBackend):
         path, ext = splitext(cache_name)
         cache_path = expanduser(f'{path}{ext or ".sqlite"}')
 
-        self.responses = SQLitePickleCache(cache_path, 'responses')
-        self.redirects = SQLiteCache(cache_path, 'redirects')
+        self.responses = SQLitePickleCache(cache_path, 'responses', **kwargs)
+        self.redirects = SQLiteCache(cache_path, 'redirects', **kwargs)
 
 
 class SQLiteCache(BaseCache):
@@ -44,11 +43,14 @@ class SQLiteCache(BaseCache):
         >>> d2 = SQLiteCache('testdb', 'table2')
 
     Args:
-        filename: filename for database (without extension)
-        table_name: table name
+        filename: Database filename
+        table_name: Table name
+        kwargs: Additional keyword arguments for :py:func:`sqlite3.connect`
     """
 
-    def __init__(self, filename: str, table_name: str):
+    def __init__(self, filename: str, table_name: str, **kwargs):
+        super().__init__(**kwargs)
+        self.connection_kwargs = get_valid_kwargs(sqlite_connect, kwargs)
         self.filename = filename
         self.table_name = table_name
         self._can_commit = True  # Transactions can be committed if this is set to `True`
@@ -61,7 +63,11 @@ class SQLiteCache(BaseCache):
     @asynccontextmanager
     async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
         async with self._lock:
-            db = self._connection if self._connection else await aiosqlite.connect(self.filename)
+            db = (
+                self._connection
+                if self._connection
+                else await aiosqlite.connect(self.filename, **self.connection_kwargs)
+            )
             try:
                 yield await self._init_db(db)
                 if autocommit and self._can_commit:
@@ -156,14 +162,25 @@ class SQLitePickleCache(SQLiteCache):
     """ Same as :py:class:`SqliteCache`, but pickles values before saving """
 
     async def read(self, key: str) -> ResponseOrKey:
-        item = await super().read(key)
-        return pickle.loads(bytes(item)) if item else None  # type: ignore
+        return self.deserialize(await super().read(key))
 
     async def values(self) -> Iterable[ResponseOrKey]:
         async with self.get_connection() as db:
             cur = await db.execute(f'select value from `{self.table_name}`')
-            return [self.unpickle(row[0]) for row in await cur.fetchall()]
+            return [self.deserialize(row[0]) for row in await cur.fetchall()]
 
     async def write(self, key, item):
-        binary_item = sqlite3.Binary(pickle.dumps(item, protocol=-1))
-        await super().write(key, binary_item)
+        await super().write(key, sqlite3.Binary(self.serialize(item)))
+
+
+def sqlite_connect(
+    database,
+    timeout=None,
+    detect_types=None,
+    isolation_level=None,
+    check_same_thread=None,
+    factory=None,
+    cached_statements=None,
+    uri=None,
+):
+    """Placeholder to get signature of builtin sqlite3.connect()"""
