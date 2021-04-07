@@ -1,6 +1,5 @@
 import pickle
 import pytest
-from datetime import timedelta
 from sys import version_info
 from unittest.mock import MagicMock, patch
 
@@ -12,7 +11,24 @@ from aiohttp_client_cache.backends import (
     get_placeholder_backend,
 )
 
+TEST_URL = 'https://test.com'
+
 pytestmark = pytest.mark.asyncio
+skip_py37 = pytest.mark.skipif(
+    version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+'
+)
+
+
+def get_mock_response(**kwargs):
+    response_kwargs = {
+        'url': TEST_URL,
+        'method': 'GET',
+        'status': 200,
+        'is_expired': False,
+        '_released': True,
+    }
+    response_kwargs.update(kwargs)
+    return MagicMock(spec=CachedResponse, **response_kwargs)
 
 
 def test_get_placeholder_backend():
@@ -32,7 +48,7 @@ def test_get_placeholder_backend():
 
 async def test_get_response__cache_response_hit():
     cache = CacheBackend()
-    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
+    mock_response = get_mock_response()
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -42,7 +58,7 @@ async def test_get_response__cache_response_hit():
 async def test_get_response__cache_redirect_hit():
     # Set up a cache with a couple cached items and a redirect
     cache = CacheBackend()
-    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
+    mock_response = get_mock_response()
     await cache.responses.write('request-key', mock_response)
     await cache.redirects.write('redirect-key', 'request-key')
 
@@ -59,12 +75,12 @@ async def test_get_response__cache_miss(mock_delete):
     mock_delete.assert_not_called()
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+')
+@skip_py37
 @patch.object(CacheBackend, 'delete')
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
     cache = CacheBackend()
-    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=True)
+    mock_response = get_mock_response(is_expired=True)
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -72,14 +88,14 @@ async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
     mock_delete.assert_called_with('request-key')
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+')
+@skip_py37
 @pytest.mark.parametrize('error_type', [AttributeError, KeyError, TypeError, pickle.PickleError])
 @patch.object(CacheBackend, 'delete')
 @patch.object(DictCache, 'read')
 async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
     cache = CacheBackend()
     mock_read.side_effect = error_type
-    mock_response = MagicMock(spec=CachedResponse, method='GET', status=200, is_expired=False)
+    mock_response = get_mock_response()
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -87,11 +103,11 @@ async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
     mock_delete.assert_not_called()
 
 
-@pytest.mark.skipif(version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+')
+@skip_py37
 @patch.object(CacheBackend, 'is_cacheable', return_value=True)
 async def test_save_response(mock_is_cacheable):
     cache = CacheBackend()
-    mock_response = MagicMock()
+    mock_response = get_mock_response()
     mock_response.history = [MagicMock(method='GET', url='test')]
     redirect_key = cache.create_key('GET', 'test')
 
@@ -108,41 +124,17 @@ async def test_save_response__not_cacheable(mock_is_cacheable):
     assert 'key' not in cache.responses
 
 
-@pytest.mark.parametrize(
-    'url, expected_expiration_hours',
-    [
-        ('img.site_1.com', 24),
-        ('http://img.site.com/base/', 1),
-        ('https://img.site.com/base/img.jpg', 1),
-        ('site_2.com/resource_1', 24 * 2),
-        ('http://site_2.com/resource_1/index.html', 24 * 2),
-        ('http://site_2.com/resource_2/', 24 * 7),
-        ('http://site_2.com/static/', None),
-        ('http://site_2.com/static/img.jpg', None),
-        ('site_2.com', 1),
-        ('some_other_site.com', 1),
-    ],
-)
-@patch('aiohttp_client_cache.backends.base.datetime')
-def test_get_expiration_date(mock_datetime, url, expected_expiration_hours):
-    # Instead of returning utcnow() + expiration, return just expiration (plus empty timedelta)
-    mock_datetime.timedelta = timedelta
-    mock_datetime.utcnow.return_value = timedelta()
-
+@patch('aiohttp_client_cache.backends.base.get_expiration')
+def test_get_expiration(mock_get_expiration):
+    """Actual logic is in expiration module; just test to make sure it gets called correctly"""
+    urls_expire_after = {'*.site_1.com': 60}
     cache = CacheBackend(
         expire_after=1,
-        urls_expire_after={
-            '*.site_1.com': 24,
-            'site_2.com/resource_1': 24 * 2,
-            'site_2.com/resource_2': 24 * 7,
-            'site_2.com/static': None,
-        },
+        urls_expire_after=urls_expire_after,
     )
-    expiration_date = cache.get_expiration_date(MagicMock(url=url))
-    if expected_expiration_hours is None:
-        assert expiration_date is None
-    else:
-        assert expiration_date == timedelta(hours=expected_expiration_hours)
+    response = get_mock_response()
+    cache._get_expiration(response, request_expire_after=2)
+    mock_get_expiration.assert_called_with(response, 2, 1, urls_expire_after)
 
 
 async def test_clear():
@@ -157,7 +149,7 @@ async def test_clear():
 
 async def test_delete():
     cache = CacheBackend()
-    mock_response = MagicMock()
+    mock_response = get_mock_response()
     mock_response.history = [MagicMock(method='GET', url='test')]
     redirect_key = cache.create_key('GET', 'test')
 
@@ -170,35 +162,59 @@ async def test_delete():
     assert await cache.redirects.size() == 1
 
 
-# TODO
-async def test_delete_url():
-    pass
-
-
-# TODO
 async def test_delete_expired_responses():
-    pass
+    cache = CacheBackend()
+    await cache.responses.write('request-key-1', get_mock_response(is_expired=False))
+    await cache.responses.write('request-key-2', get_mock_response(is_expired=True))
+
+    assert await cache.responses.size() == 2
+    await cache.delete_expired_responses()
+    assert await cache.responses.size() == 1
 
 
-# TODO
+async def test_delete_url():
+    cache = CacheBackend()
+    mock_response = await CachedResponse.from_client_response(get_mock_response())
+    cache_key = cache.create_key('GET', TEST_URL)
+
+    await cache.responses.write(cache_key, mock_response)
+    assert await cache.responses.size() == 1
+    await cache.delete_url(TEST_URL)
+    assert await cache.responses.size() == 0
+
+
 async def test_has_url():
-    pass
+    cache = CacheBackend()
+    mock_response = await CachedResponse.from_client_response(get_mock_response())
+    cache_key = cache.create_key('GET', TEST_URL)
+
+    await cache.responses.write(cache_key, mock_response)
+    assert await cache.has_url(TEST_URL)
+    assert not await cache.has_url('https://test.com/some_other_path')
 
 
-# TODO
-async def test_create_key():
-    pass
+@skip_py37
+@patch('aiohttp_client_cache.backends.base.create_key')
+async def test_create_key(mock_create_key):
+    """Actual logic is in expiration module; just test to make sure it gets called correctly"""
+    headers = {'key': 'value'}
+    ignored_params = ['ignored']
+    cache = CacheBackend(include_headers=True, ignored_params=ignored_params)
+
+    cache.create_key('GET', 'https://test.com', headers=headers)
+    mock_create_key.assert_called_with(
+        'GET',
+        'https://test.com',
+        include_headers=True,
+        ignored_params=set(ignored_params),
+        headers=headers,
+    )
 
 
 async def test_get_urls():
     cache = CacheBackend()
     for i in range(7):
-        mock_response = MagicMock(
-            spec=CachedResponse,
-            url=f'https://test.com/{i}',
-            method='GET',
-            status=200,
-        )
+        mock_response = get_mock_response(url=f'https://test.com/{i}')
         await cache.responses.write(f'request-key-{i}', mock_response)
 
     urls = {url async for url in cache.get_urls()}
@@ -217,7 +233,7 @@ async def test_get_urls():
     ],
 )
 async def test_is_cacheable(method, status, disabled, expired, filter_return, expected_result):
-    mock_response = MagicMock(
+    mock_response = get_mock_response(
         method=method,
         status=status,
         is_expired=expired,
