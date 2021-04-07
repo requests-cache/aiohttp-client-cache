@@ -190,6 +190,21 @@ async def test_create_key():
     pass
 
 
+async def test_get_urls():
+    cache = CacheBackend()
+    for i in range(7):
+        mock_response = MagicMock(
+            spec=CachedResponse,
+            url=f'https://test.com/{i}',
+            method='GET',
+            status=200,
+        )
+        await cache.responses.write(f'request-key-{i}', mock_response)
+
+    urls = {url async for url in cache.get_urls()}
+    assert urls == {f'https://test.com/{i}' for i in range(7)}
+
+
 @pytest.mark.parametrize(
     'method, status, disabled, expired, filter_return, expected_result',
     [
