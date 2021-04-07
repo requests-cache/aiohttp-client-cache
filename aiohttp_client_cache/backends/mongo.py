@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import AsyncIterable
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -55,8 +55,9 @@ class MongoDBCache(BaseCache):
         else:
             await self.collection.find_and_modify(spec, remove=True, fields={'_id': True})
 
-    async def keys(self) -> Iterable[str]:
-        return [d['_id'] for d in await self.collection.find({}, {'_id': True}).to_list(None)]
+    async def keys(self) -> AsyncIterable[str]:
+        async for doc in self.collection.find({}, {'_id': True}):
+            yield doc['_id']
 
     async def read(self, key: str) -> ResponseOrKey:
         result = await self.collection.find_one({'_id': key})
@@ -65,9 +66,9 @@ class MongoDBCache(BaseCache):
     async def size(self) -> int:
         return await self.collection.count_documents({})
 
-    async def values(self) -> Iterable[ResponseOrKey]:
-        results = await self.collection.find({'data': {'$exists': True}}).to_list(None)
-        return [x['data'] for x in results]
+    async def values(self) -> AsyncIterable[ResponseOrKey]:
+        async for doc in self.collection.find({'data': {'$exists': True}}):
+            yield doc['data']
 
     async def write(self, key: str, item: ResponseOrKey):
         doc = {'_id': key, 'data': item}

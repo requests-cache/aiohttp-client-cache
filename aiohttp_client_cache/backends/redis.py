@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import AsyncIterable
 
 from aioredis import Redis, create_redis_pool
 
@@ -54,9 +54,8 @@ class RedisCache(BaseCache):
 
     async def clear(self):
         connection = await self.get_connection()
-        keys = await self.keys()
-        if keys:
-            await connection.hdel(self.hash_key, *keys)
+        async for key in self.keys():
+            await connection.hdel(self.hash_key, key)
 
     async def contains(self, key: str) -> bool:
         connection = await self.get_connection()
@@ -66,9 +65,10 @@ class RedisCache(BaseCache):
         connection = await self.get_connection()
         await connection.hdel(self.hash_key, key)
 
-    async def keys(self) -> Iterable[str]:
+    async def keys(self) -> AsyncIterable[str]:
         connection = await self.get_connection()
-        return [k.decode() for k in await connection.hkeys(self.hash_key)]
+        for k in await connection.hkeys(self.hash_key):
+            yield k.decode()
 
     async def read(self, key: str) -> ResponseOrKey:
         connection = await self.get_connection()
@@ -79,9 +79,10 @@ class RedisCache(BaseCache):
         connection = await self.get_connection()
         return await connection.hlen(self.hash_key)
 
-    async def values(self) -> Iterable[ResponseOrKey]:
+    async def values(self) -> AsyncIterable[ResponseOrKey]:
         connection = await self.get_connection()
-        return [self.deserialize(v) for v in await connection.hvals(self.hash_key)]
+        for v in await connection.hvals(self.hash_key):
+            yield self.deserialize(v)
 
     async def write(self, key: str, item: ResponseOrKey):
         connection = await self.get_connection()
