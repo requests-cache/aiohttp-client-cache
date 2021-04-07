@@ -1,10 +1,9 @@
-import pickle
 from typing import Iterable
 
 from gridfs import GridFS
 from pymongo import MongoClient
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.backends.mongo import MongoDBCache
 from aiohttp_client_cache.forge_utils import extend_signature
 
@@ -22,8 +21,8 @@ class GridFSBackend(CacheBackend):
     @extend_signature(CacheBackend.__init__)
     def __init__(self, cache_name: str = 'aiohttp-cache', connection: MongoClient = None, **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
-        self.responses = GridFSCache(cache_name, connection)
-        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection)
+        self.responses = GridFSCache(cache_name, connection, **kwargs)
+        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection, **kwargs)
 
 
 # TODO: Incomplete/untested
@@ -37,8 +36,10 @@ class GridFSCache(BaseCache):
         connection: MongoDB connection instance to use instead of creating a new one
     """
 
-    def __init__(self, db_name, connection: MongoClient = None):
-        self.connection = connection or MongoClient()
+    def __init__(self, db_name, connection: MongoClient = None, **kwargs):
+        super().__init__(**kwargs)
+        connection_kwargs = get_valid_kwargs(MongoClient.__init__, kwargs)
+        self.connection = connection or MongoClient(**connection_kwargs)
         self.db = self.connection[db_name]
         self.fs = GridFS(self.db)
 
@@ -62,7 +63,7 @@ class GridFSCache(BaseCache):
         result = self.fs.find_one({'_id': key})
         if result is None:
             raise KeyError
-        return self.unpickle(bytes(result.read()))
+        return self.deserialize(result.read())
 
     async def size(self) -> int:
         return self.db['fs.files'].count()
@@ -73,4 +74,4 @@ class GridFSCache(BaseCache):
 
     async def write(self, key: str, item: ResponseOrKey):
         await self.delete(key)
-        self.fs.put(pickle.dumps(item, protocol=-1), **{'_id': key})
+        self.fs.put(self.serialize(item), **{'_id': key})

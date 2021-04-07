@@ -62,7 +62,7 @@ Here is an example with more customized behavior:
 cache = SQLiteBackend(
     cache_name='~/.cache/aiohttp-requests.db',     # For SQLite, this will be used as the filename
     expire_after=24,                               # By default, cached responses expire in a day
-    expire_after_urls={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
+    urls_expire_after={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
     ignored_params=['auth_token'],                 # Ignore this param when caching responses
 )
 
@@ -89,7 +89,7 @@ Several backends are available. If one isn't specified, a non-persistent in-memo
 * `SQLiteBackend`: Uses a [SQLite](https://www.sqlite.org) database
   (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
 * `RedisBackend`: Uses a [Redis](https://redis.io/) cache
-  (requires [redis-py](https://github.com/andymccurdy/redis-py))
+  (requires [aioredis](https://github.com/aio-libs/aioredis-py))
 * `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
   (requires [motor](https://motor.readthedocs.io))
   
@@ -104,7 +104,7 @@ You can also provide your own backend by subclassing `aiohttp_client_cache.backe
 
 ## Expiration
 If you are using the `expire_after` parameter, expired responses are removed from the storage the
-next time the same request is made. If you want to manually purge all expired items, you can use
+next time the same request is made. If you want to manually clear all expired items, you can use
 `CachedSession.delete_expired_responses`. Example:
 
 ```python
