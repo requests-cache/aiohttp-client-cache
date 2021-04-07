@@ -116,7 +116,6 @@ class CacheBackend:
         self.allowed_methods = allowed_methods
         self.filter_fn = filter_fn
         self.disabled = False
-        self.lru = False  # Not yet functional, just for debugging purposes
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
         self.redirects: BaseCache = DictCache()
@@ -168,32 +167,27 @@ class CacheBackend:
         # Attempt to fetch response from the cache
         logger.debug(f'Attempting to get cached response for key: {key}')
         try:
-            response = await self.responses.read(key)
-            if not response:
-                redirect_key = await self.redirects.read(key)
-                if redirect_key:
-                    response = await self.responses.read(redirect_key)
-        except (AttributeError, KeyError, TypeError):
-            logger.debug('No cached response found')
-            return None
+            response = await self.responses.read(key) or await self._get_redirect_response(str(key))
+        except (AttributeError, KeyError, TypeError, pickle.PickleError):
+            response = None
 
         if not response:
             logger.debug('No cached response found')
-            return None
-
         # If the item is expired or filtered out, delete it from the cache
-        if not self.is_cacheable(response):
+        elif not self.is_cacheable(response):  # type: ignore
             logger.info('Cached response expired; deleting')
+            response = None
             await self.delete(key)
-            return None
+        else:
+            logger.info(f'Cached response found for key: {key}')
 
-        # Optionally update last_used time
-        if self.lru:
-            response.last_used = datetime.utcnow()
-            await self.responses.write(key, response)
+        # Response will be a CachedResponse or None by this point
+        return response  # type: ignore
 
-        logger.info(f'Cached response found for key: {key}')
-        return response
+    async def _get_redirect_response(self, key: str) -> Optional[CachedResponse]:
+        """Get the response referenced by a redirect key, if available"""
+        redirect_key = await self.redirects.read(key)
+        return await self.responses.read(redirect_key) if redirect_key else None  # type: ignore
 
     async def save_response(self, key: str, response: ClientResponse):
         """Save response to cache
