@@ -55,7 +55,7 @@ async def test_redirects(endpoint, n_redirects, tempfile_session):
     await tempfile_session.get(httpbin(f'redirect/{n_redirects}'))
     await tempfile_session.get(httpbin('get'))
 
-    assert len(await tempfile_session.cache.redirects.keys()) == n_redirects
+    assert await tempfile_session.cache.redirects.size() == n_redirects
 
 
 async def test_serializer_pickle():
