@@ -1,4 +1,3 @@
-import hashlib
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
@@ -6,12 +5,12 @@ from datetime import datetime, timedelta
 from fnmatch import fnmatch as glob_match
 from logging import getLogger
 from typing import Callable, Dict, Iterable, List, Optional, Union
-from urllib.parse import parse_qsl, urlparse, urlsplit, urlunparse
+from urllib.parse import urlsplit
 
-from aiohttp import ClientRequest, ClientResponse
+from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
-from url_normalize import url_normalize
 
+from aiohttp_client_cache.cache_keys import create_key
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
@@ -254,6 +253,15 @@ class CacheBackend:
         for key in keys_to_delete:
             await self.delete(key)
 
+    def create_key(self, *args, **kwargs):
+        """Create a unique cache key based on request details"""
+        return create_key(
+            *args,
+            include_headers=self.include_headers,
+            ignored_params=self.ignored_params,
+            **kwargs,
+        )
+
     async def has_url(self, url: StrOrURL) -> bool:
         """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
         key = self.create_key('GET', url)
@@ -262,53 +270,6 @@ class CacheBackend:
     async def urls(self) -> List[str]:
         """Get all URLs currently in the cache"""
         return sorted([r.url for r in await self.responses.values()])  # type: ignore
-
-    def create_key(
-        self,
-        method: str,
-        url: StrOrURL,
-        params: dict = None,
-        data: dict = None,
-        json: dict = None,
-        headers: dict = None,
-        **kwargs,
-    ) -> str:
-        """Create a unique cache key based on request details"""
-        if self.ignored_params:
-            url, params = self._split_url_params(url, params)
-            params = self._filter_ignored_params(params)
-            data = self._filter_ignored_params(data)
-            json = self._filter_ignored_params(json)
-
-        key = hashlib.sha256()
-        key.update(method.upper().encode())
-        key.update(str(url_normalize(str(url))).encode())
-        key.update(_encode_dict(params))
-        key.update(_encode_dict(data))
-        key.update(_encode_dict(json))
-
-        if (
-            self.include_headers
-            and headers is not None
-            and headers != ClientRequest.DEFAULT_HEADERS
-        ):
-            for name, value in sorted(headers.items()):
-                key.update(name.encode())
-                key.update(value.encode())
-        return key.hexdigest()
-
-    def _filter_ignored_params(self, d):
-        return {k: v for k, v in (d or {}).items() if k not in self.ignored_params}
-
-    def _split_url_params(self, url, params):
-        """Strip off any request params manually added to URL and add to `params`"""
-        u = urlparse(url)
-        if u.query:
-            query = parse_qsl(u.query)
-            params.update(query)
-            url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
-
-        return url, params
 
 
 # TODO: Support yarl.URL like aiohttp does?
@@ -448,11 +409,6 @@ def _convert_timedelta(expire_after: ExpirationTime = None) -> Optional[timedelt
     if expire_after is not None and not isinstance(expire_after, timedelta):
         expire_after = timedelta(hours=expire_after)
     return expire_after
-
-
-def _encode_dict(d):
-    item_pairs = [f'{k}={v}' for k, v in sorted((d or {}).items())]
-    return '&'.join(item_pairs).encode()
 
 
 def _format_pattern(pattern: str) -> str:
