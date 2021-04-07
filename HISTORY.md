@@ -4,7 +4,8 @@
 [See all issues & PRs here](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
 
 * Add async implementation of DynamoDb backend
-* Add support for setting different expiration times based on URL patterns
+* Add support for expiration for individual requests
+* Add support for expiration based on URL patterns
 * Add support for serializing/deserializing `ClientSession.links`
 * Add case-insensitive response headers for compatibility with aiohttp.ClientResponse.headers
 * Add optional integration with `itsdangerous` for safer serialization

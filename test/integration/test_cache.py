@@ -25,7 +25,6 @@ async def test_all_methods(field, method, tempfile_session):
         assert not from_cache(response_1) and from_cache(response_2)
 
 
-# TODO: Fix ignored parameters for data, json
 @pytest.mark.parametrize('method', HTTPBIN_METHODS)
 @pytest.mark.parametrize('field', ['params', 'data', 'json'])
 async def test_all_methods__ignore_parameters(field, method, tempfile_session):
@@ -56,6 +55,15 @@ async def test_redirects(endpoint, n_redirects, tempfile_session):
     await tempfile_session.get(httpbin('get'))
 
     assert await tempfile_session.cache.redirects.size() == n_redirects
+
+
+async def test_include_headers(tempfile_session):
+    tempfile_session.cache.include_headers = True
+    await tempfile_session.get(httpbin('get'))
+    response_1 = await tempfile_session.get(httpbin('get'), headers={'key': 'value'})
+    response_2 = await tempfile_session.get(httpbin('get'), headers={'key': 'value'})
+
+    assert not from_cache(response_1) and from_cache(response_2)
 
 
 async def test_serializer_pickle():

@@ -18,11 +18,19 @@ async def cache_client():
         await cache_client.clear()
 
 
-def test_sqlite_backend():
+def test_backend_init():
     with NamedTemporaryFile(suffix='.db') as temp:
         backend = SQLiteBackend(cache_name=temp.name)
         assert backend.responses.filename == temp.name
         assert backend.redirects.filename == temp.name
+
+
+async def test_bulk_commit(cache_client):
+    async with cache_client.bulk_commit():
+        for i in range(1000):
+            await cache_client.write(f'key_{i}', str(i * 2))
+
+    assert await cache_client.size() == 1000
 
 
 async def test_write_read(cache_client):
@@ -34,14 +42,6 @@ async def test_write_read(cache_client):
     # Test read()
     for k, v in test_data.items():
         assert await cache_client.read(k) == v
-
-
-async def test_bulk_commit(cache_client):
-    async with cache_client.bulk_commit():
-        for i in range(1000):
-            await cache_client.write(f'key_{i}', str(i * 2))
-
-    assert await cache_client.size() == 1000
 
 
 async def test_delete(cache_client):
@@ -57,9 +57,15 @@ async def test_keys_values_size(cache_client):
     for k, v in test_data.items():
         await cache_client.write(k, v)
 
-    assert await cache_client.size() == len(test_data)
     assert {k async for k in cache_client.keys()} == set(test_data.keys())
     assert {v async for v in cache_client.values()} == set(test_data.values())
+
+
+async def test_size(cache_client):
+    for k, v in test_data.items():
+        await cache_client.write(k, v)
+
+    assert await cache_client.size() == len(test_data)
 
 
 async def test_clear(cache_client):
