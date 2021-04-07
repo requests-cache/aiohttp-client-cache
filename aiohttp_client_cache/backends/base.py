@@ -168,15 +168,18 @@ class CacheBackend:
         # Attempt to fetch response from the cache
         logger.debug(f'Attempting to get cached response for key: {key}')
         try:
-            if not await self.responses.contains(key):
-                key = str(await self.redirects.read(key))
             response = await self.responses.read(key)
+            if not response:
+                redirect_key = await self.redirects.read(key)
+                if redirect_key:
+                    response = await self.responses.read(redirect_key)
         except (AttributeError, KeyError, TypeError):
             logger.debug('No cached response found')
             return None
-        if not isinstance(response, CachedResponse):
-            logger.debug('Cached response is invalid')
-            return None
+
+        if not response:
+            logger.debug('No cached response found')
+
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
             logger.info('Cached response expired; deleting')
