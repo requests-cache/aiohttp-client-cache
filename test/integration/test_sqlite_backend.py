@@ -58,8 +58,8 @@ async def test_keys_values_size(cache_client):
         await cache_client.write(k, v)
 
     assert await cache_client.size() == len(test_data)
-    assert await cache_client.keys() == list(test_data.keys())
-    assert await cache_client.values() == list(test_data.values())
+    assert {k async for k in cache_client.keys()} == set(test_data.keys())
+    assert {v async for v in cache_client.values()} == set(test_data.values())
 
 
 async def test_clear(cache_client):
@@ -68,5 +68,5 @@ async def test_clear(cache_client):
 
     await cache_client.clear()
     assert await cache_client.size() == 0
-    assert await cache_client.keys() == []
-    assert await cache_client.values() == []
+    assert {k async for k in cache_client.keys()} == set()
+    assert {v async for v in cache_client.values()} == set()

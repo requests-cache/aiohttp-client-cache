@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import AsyncIterable
 
 from gridfs import GridFS
 from pymongo import MongoClient
@@ -56,8 +56,9 @@ class GridFSCache(BaseCache):
         if res is not None:
             self.fs.delete(res._id)
 
-    async def keys(self) -> Iterable[str]:
-        return [d._id for d in self.fs.find()]
+    async def keys(self) -> AsyncIterable[str]:
+        for d in self.fs.find():
+            yield d._id
 
     async def read(self, key: str) -> ResponseOrKey:
         result = self.fs.find_one({'_id': key})
@@ -69,7 +70,9 @@ class GridFSCache(BaseCache):
         return self.db['fs.files'].count()
 
     # TODO
-    async def values(self) -> Iterable[ResponseOrKey]:
+    async def values(self) -> AsyncIterable[ResponseOrKey]:
+        if False:
+            yield
         raise NotImplementedError
 
     async def write(self, key: str, item: ResponseOrKey):
