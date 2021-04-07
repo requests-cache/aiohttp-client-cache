@@ -1,3 +1,4 @@
+# TODO: Use BaseCache.serialize() and deserialize()
 import pickle
 from typing import Dict, Iterable
 
