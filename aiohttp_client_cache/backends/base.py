@@ -4,7 +4,7 @@ from collections import UserDict
 from datetime import datetime, timedelta
 from fnmatch import fnmatch as glob_match
 from logging import getLogger
-from typing import Callable, Dict, Iterable, List, Optional, Union
+from typing import AsyncIterable, Callable, Dict, Iterable, Optional, Union
 from urllib.parse import urlsplit
 
 from aiohttp import ClientResponse
@@ -242,7 +242,7 @@ class CacheBackend:
         logger.info(f'Deleting all responses more than {self.expire_after} hours old')
         keys_to_delete = set()
 
-        for key in await self.responses.keys():
+        async for key in self.responses.keys():
             response = await self.get_response(key)
             if response and response.is_expired:
                 keys_to_delete.add(key)
@@ -265,9 +265,10 @@ class CacheBackend:
         key = self.create_key('GET', url)
         return await self.responses.contains(str(key)) or await self.redirects.contains(str(key))
 
-    async def urls(self) -> List[str]:
+    async def get_urls(self) -> AsyncIterable[str]:
         """Get all URLs currently in the cache"""
-        return sorted([r.url for r in await self.responses.values()])  # type: ignore
+        async for r in self.responses.values():
+            yield r.url  # type: ignore
 
 
 # TODO: Support yarl.URL like aiohttp does?
@@ -335,7 +336,7 @@ class BaseCache(metaclass=ABCMeta):
         """Delete a single item from the cache. Does not raise an error if the item is missing."""
 
     @abstractmethod
-    async def keys(self) -> Iterable[str]:
+    def keys(self) -> AsyncIterable[str]:
         """Get all keys stored in the cache"""
 
     @abstractmethod
@@ -347,7 +348,7 @@ class BaseCache(metaclass=ABCMeta):
         """Get the number of items in the cache"""
 
     @abstractmethod
-    async def values(self) -> Iterable[ResponseOrKey]:
+    def values(self) -> AsyncIterable[ResponseOrKey]:
         """Get all values stored in the cache"""
 
     @abstractmethod
@@ -379,8 +380,9 @@ class DictCache(BaseCache, UserDict):
     async def contains(self, key: str) -> bool:
         return key in self.data
 
-    async def keys(self) -> Iterable[str]:  # type: ignore
-        return self.data.keys()
+    async def keys(self) -> AsyncIterable[str]:  # type: ignore
+        for key in self.data.keys():
+            yield key
 
     async def read(self, key: str) -> Union[CachedResponse, str, None]:
         try:
@@ -391,8 +393,9 @@ class DictCache(BaseCache, UserDict):
     async def size(self) -> int:
         return len(self.data)
 
-    async def values(self) -> Iterable[ResponseOrKey]:  # type: ignore
-        return self.data.values()
+    async def values(self) -> AsyncIterable[ResponseOrKey]:  # type: ignore
+        for value in self.data.values():
+            yield value
 
     async def write(self, key: str, item: ResponseOrKey):
         self.data[key] = item

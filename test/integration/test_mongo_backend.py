@@ -93,13 +93,13 @@ async def test_keys_many(cache_client):
     expected_ids = (
         await cache_client.collection.insert_many({"x": i} for i in range(10))
     ).inserted_ids
-    actual_ids = await cache_client.keys()
-    assert set(actual_ids) == set(expected_ids)
+    actual_ids = {k async for k in cache_client.keys()}
+    assert actual_ids == set(expected_ids)
 
 
 async def test_keys_empty(cache_client):
-    actual_ids = await cache_client.keys()
-    assert set(actual_ids) == set()
+    actual_ids = {k async for k in cache_client.keys()}
+    assert actual_ids == set()
 
 
 async def test_read_exists(cache_client):
@@ -147,8 +147,8 @@ async def test_write_does_exist(cache_client):
 
 
 async def test_values_none(cache_client):
-    actual_results = await cache_client.values()
-    assert set(actual_results) == set()
+    actual_results = {v async for v in cache_client.values()}
+    assert actual_results == set()
 
 
 async def test_values_many(cache_client):
@@ -156,6 +156,5 @@ async def test_values_many(cache_client):
     # should not be returned with the results.
     await cache_client.collection.insert_many({"data": i} for i in range(10))
     await cache_client.collection.insert_many({"not_data": i} for i in range(10))
-    actual_results = await cache_client.values()
-    expected_results = set(range(10))
-    assert set(actual_results) == expected_results
+    actual_results = {v async for v in cache_client.values()}
+    assert actual_results == set(range(10))
