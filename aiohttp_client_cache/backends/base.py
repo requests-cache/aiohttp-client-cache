@@ -179,6 +179,7 @@ class CacheBackend:
 
         if not response:
             logger.debug('No cached response found')
+            return None
 
         # If the item is expired or filtered out, delete it from the cache
         if not self.is_cacheable(response):
