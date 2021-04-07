@@ -62,7 +62,7 @@ Here is an example with more customized behavior:
 cache = SQLiteBackend(
     cache_name='~/.cache/aiohttp-requests.db',     # For SQLite, this will be used as the filename
     expire_after=24,                               # By default, cached responses expire in a day
-    expire_after_urls={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
+    urls_expire_after={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
     ignored_params=['auth_token'],                 # Ignore this param when caching responses
 )
 
