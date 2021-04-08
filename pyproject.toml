@@ -11,7 +11,10 @@ directory = 'test-reports'
 [tool.coverage.run]
 branch = true
 source = ['aiohttp_client_cache']
-omit = ['aiohttp_client_cache/backends/__init__.py']
+omit = [
+    'aiohttp_client_cache/backends/__init__.py',
+    'aiohttp_client_cache/forge_utils.py',
+]
 
 [tool.isort]
 profile = "black"

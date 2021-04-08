@@ -5,20 +5,18 @@ from aioboto3.session import ResourceCreatorContext
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
-from aiohttp_client_cache.forge_utils import extend_signature
+from aiohttp_client_cache.forge_utils import extend_init_signature
 
 
+@extend_init_signature(CacheBackend)
 class DynamoDBBackend(CacheBackend):
     """DynamoDB cache backend.
     See :py:class:`.DynamoDbCache` for backend-specific options
     See `DynamoDB Service Resource
     <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
     for more usage details.
-
-    See :py:class:`.CacheBackend` for args.
     """
 
-    @extend_signature(CacheBackend.__init__)
     def __init__(
         self,
         cache_name: str = 'aiohttp-cache',
