@@ -28,7 +28,7 @@ def test_backend_init():
 async def test_bulk_commit(cache_client):
     async with cache_client.bulk_commit():
         for i in range(1000):
-            await cache_client.write(f'key_{i}', str(i * 2))
+            await cache_client.write(f'key_{i}', str(i))
 
     assert await cache_client.size() == 1000
 

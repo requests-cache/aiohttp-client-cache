@@ -28,7 +28,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
+    # 'sphinx.ext.viewcode',
     'sphinx_autodoc_typehints',
     'sphinx_copybutton',
     'sphinxcontrib.apidoc',
@@ -37,11 +37,14 @@ extensions = [
 
 # Enable automatic links to other projects' Sphinx docs
 intersphinx_mapping = {
+    'aioboto3': ('https://aioboto3.readthedocs.io/en/latest/', None),
     'aiohttp': ('https://docs.aiohttp.org/en/stable/', None),
+    'aioredis': ('https://aioredis.readthedocs.io/en/stable/', None),
     'aiosqlite': ('https://aiosqlite.omnilib.dev/en/latest/', None),
-    'boto3': ('http://boto3.readthedocs.io/en/latest/', None),
     'botocore': ('http://botocore.readthedocs.io/en/latest/', None),
+    'motor': ('https://motor.readthedocs.io/en/stable/', None),
     'pymongo': ('https://pymongo.readthedocs.io/en/stable/', None),
+    'python': ('https://docs.python.org/3', None),
     'redis': ('https://redis-py.readthedocs.io/en/stable/', None),
 }
 
@@ -49,7 +52,7 @@ intersphinx_mapping = {
 napoleon_google_docstring = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
-numpydoc_show_class_members = False
+# numpydoc_show_class_members = False
 
 # Strip prompt text when copying code blocks with copy button
 copybutton_prompt_text = r'>>> |\.\.\. |\$ '
@@ -64,9 +67,7 @@ apidoc_output_dir = 'modules'
 apidoc_separate_modules = True
 apidoc_toc_file = False
 
-# Move type hint info to function description instead of signature;
-# since we have some really long signatures, the default (`autodoc_typehints = 'signature'`)
-# becomes unreadable because all params + types get crammed into a single line.
+# Move type hint info to function description instead of signature
 autodoc_typehints = 'description'
 set_type_checking_flag = True
 
@@ -76,8 +77,10 @@ html_theme = 'sphinx_material'
 html_theme_options = {
     'color_primary': 'blue',
     'color_accent': 'light-blue',
+    'globaltoc_depth': 1,
+    'globaltoc_includehidden': False,
     'logo_icon': '&#xe1af',
-    'repo_url': 'https://github.com/reclosedev/requests-cache',
+    'repo_url': 'https://github.com/JWCook/aiohttp-client-cache',
     'repo_name': project,
     'nav_title': project,
 }

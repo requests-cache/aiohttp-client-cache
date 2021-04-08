@@ -10,6 +10,7 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.cache_keys import create_key
 from aiohttp_client_cache.expiration import ExpirationPatterns, ExpirationTime, get_expiration
+from aiohttp_client_cache.forge_utils import extend_init_signature
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
@@ -26,22 +27,6 @@ class CacheBackend:
     To extend this with your own custom backend, implement one or more subclasses of
     :py:class:`.BaseCache` to use as :py:attr:`CacheBackend.responses` and
     :py:attr:`CacheBackend.response_aliases`.
-
-    Args:
-        cache_name: Cache prefix or namespace, depending on backend (see notes below)
-        expire_after: Expiration time after which a cache entry will expire; may be a numeric value
-            in seconds, a :py:class:`.timedelta`, or ``-1`` to never expire
-        urls_expire_after: Expiration times to apply for different URL patterns (see notes below)
-        allowed_codes: Only cache responses with these status codes
-        allowed_methods: Only cache requests with these HTTP methods
-        include_headers: Make request headers part of the cache key (see notes below)
-        ignored_params: Request parameters to be excluded from the cache key (see notes below)
-        filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
-            returns a boolean indicating whether or not that response should be cached. Will be
-            applied to both new and previously cached responses
-        secret_key: Optional secret key used to sign cache items for added security
-        salt: Optional salt used to sign cache items
-        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
 
     **Cache Name:**
 
@@ -87,7 +72,6 @@ class CacheBackend:
       ``https://site.com/base/**``
     * If there is more than one match, the first match (in the order they are defined) will be used
     * If no patterns match a request, ``expire_after`` will be used as a default.
-
     """
 
     def __init__(
@@ -100,10 +84,22 @@ class CacheBackend:
         include_headers: bool = False,
         ignored_params: Iterable = None,
         filter_fn: Callable = lambda r: True,
-        secret_key: Union[Iterable, str, bytes] = None,
-        salt: Union[str, bytes] = b'aiohttp-client-cache',
-        serializer=None,
+        **kwargs,
     ):
+        """
+        Args:
+            cache_name: Cache prefix or namespace, depending on backend
+            expire_after: Expiration time after which a cache entry will expire; may be a numeric value
+                in seconds, a :py:class:`.timedelta`, or ``-1`` to never expire
+            urls_expire_after: Expiration times to apply for different URL patterns
+            allowed_codes: Only cache responses with these status codes
+            allowed_methods: Only cache requests with these HTTP methods
+            include_headers: Make request headers part of the cache key
+            ignored_params: Request parameters to be excluded from the cache key
+            filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
+                returns a boolean indicating whether or not that response should be cached. Will be
+                applied to both new and previously cached responses
+        """
         self.name = cache_name
         self.expire_after = expire_after
         self.urls_expire_after = urls_expire_after
@@ -174,7 +170,7 @@ class CacheBackend:
             key: Key for this response
             response: Response to save
             expire_after: Expiration time to set only for this request; overrides
-                ``CachedSession.expire_after`, and accepts all the same values.
+                ``CachedSession.expire_after``, and accepts all the same values.
         """
         if not self.is_cacheable(response):
             return
@@ -262,11 +258,6 @@ class CacheBackend:
 class BaseCache(metaclass=ABCMeta):
     """A wrapper for lower-level cache storage operations. This is separate from
     :py:class:`.CacheBackend` to allow a single backend to contain multiple cache objects.
-
-    Args:
-        secret_key: Optional secret key used to sign cache items for added security
-        salt: Optional salt used to sign cache items
-        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
     """
 
     def __init__(
@@ -276,6 +267,12 @@ class BaseCache(metaclass=ABCMeta):
         serializer=None,
         **kwargs,
     ):
+        """
+        Args:
+            secret_key: Optional secret key used to sign cache items for added security
+            salt: Optional salt used to sign cache items
+            serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
+        """
         super().__init__()
         self._serializer = serializer or self._get_serializer(secret_key, salt)
 
@@ -350,6 +347,9 @@ class BaseCache(metaclass=ABCMeta):
             return item
         except KeyError:
             return default
+
+
+CacheBackend = extend_init_signature(BaseCache)(CacheBackend)  # type: ignore
 
 
 class DictCache(BaseCache, UserDict):
