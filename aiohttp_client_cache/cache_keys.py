@@ -1,3 +1,4 @@
+"""Functions for creating keys used for cache requests"""
 import hashlib
 from collections.abc import Mapping
 from typing import Dict, List
@@ -41,7 +42,8 @@ def create_key(
 
 
 def filter_ignored_params(data, ignored_params):
-    if not isinstance(data, Mapping):
+    """Remove any ignored params from an object, if it's dict-like"""
+    if not isinstance(data, Mapping) or not ignored_params:
         return data
     return {k: v for k, v in data.items() if k not in ignored_params}
 

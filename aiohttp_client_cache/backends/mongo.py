@@ -21,7 +21,7 @@ class MongoDBBackend(CacheBackend):
     ):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection, **kwargs)
-        self.keys_map = MongoDBCache(cache_name, 'redirects', self.responses.connection, **kwargs)
+        self.redirects = MongoDBCache(cache_name, 'redirects', self.responses.connection, **kwargs)
 
 
 class MongoDBCache(BaseCache):
