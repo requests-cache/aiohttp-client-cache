@@ -80,6 +80,7 @@ progress on major and minor releases.
 Here is a brief overview of the main classes and modules:
 * `session.CacheMixin`, `session.CachedSession`: A mixin and wrapper class, respectively, for `aiohttp.ClientSession`. There is little logic  here except wrapping `ClientSession._request()` with caching behavior.
 * `response.CachedResponse`: A wrapper class built from an `aiohttp.ClientResponse`, with additional cache-related info. This is what is serialized and persisted to the cache.
-* `backends.base.CacheBackend`: Most of the caching logic lives here, including saving and retriving responses, creating cache keys, expiration, etc. It contains two `BaseCache` objects for storing responses and redirects, respectively. By default this is just a non-persistent dict cache.
+* `backends.base.CacheBackend`: Most of the caching logic lives here, including saving and retriving responses. It contains two `BaseCache` objects for storing responses and redirects, respectively.
+* `cache_keys` and `expiration`: Utilities for creating cache keys and cache expiration, respectively
 * `backends.base.BaseCache`: Base class for lower-level storage operations, overridden by individual backends.
 * Other backend implementations in `backends.*`: A backend implementation subclasses `CacheBackend` (for higher-level operations), as well as `BaseCache` (for lower-level operations).
