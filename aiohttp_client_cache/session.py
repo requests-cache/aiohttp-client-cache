@@ -8,7 +8,7 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.expiration import ExpirationTime
-from aiohttp_client_cache.forge_utils import extend_signature, forge
+from aiohttp_client_cache.forge_utils import copy_signature, extend_signature
 from aiohttp_client_cache.response import AnyResponse
 
 logger = getLogger(__name__)
@@ -27,7 +27,7 @@ class CacheMixin:
         super().__init__(**kwargs)  # type: ignore
         self.cache = cache or CacheBackend()
 
-    @forge.copy(ClientSession._request)
+    @copy_signature(ClientSession._request)
     async def _request(
         self, method: str, str_or_url: StrOrURL, expire_after: ExpirationTime = None, **kwargs
     ) -> AnyResponse:

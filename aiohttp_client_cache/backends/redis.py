@@ -3,15 +3,16 @@ from typing import AsyncIterable
 from aioredis import Redis, create_redis_pool
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_signature
+from aiohttp_client_cache.forge_utils import extend_init_signature
 
 DEFAULT_ADDRESS = 'redis://localhost'
 
 
+# @extend_init_signature(CacheBackend, create_redis_pool)
+@extend_init_signature(CacheBackend)
 class RedisBackend(CacheBackend):
     """Redis cache backend"""
 
-    @extend_signature(CacheBackend.__init__)
     def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
