@@ -38,7 +38,7 @@ async def cache_client():
     await cache_client.clear()
 
 
-def test_redis_backend():
+def test_backend_init():
     backend = RedisBackend()
     assert backend.responses.address == DEFAULT_ADDRESS
     assert backend.responses.hash_key == 'aiohttp-cache:responses'

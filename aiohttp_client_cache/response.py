@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
+from logging import getLogger
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import attr
@@ -26,6 +27,8 @@ JsonResponse = Optional[Dict[str, Any]]
 DictItems = List[Tuple[str, str]]
 LinkItems = List[Tuple[str, DictItems]]
 LinkMultiDict = MultiDictProxy[MultiDictProxy[Union[str, URL]]]
+
+logger = getLogger(__name__)
 
 
 @attr.s(slots=True)

@@ -7,6 +7,7 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend
+from aiohttp_client_cache.expiration import ExpirationTime
 from aiohttp_client_cache.forge_utils import extend_signature, forge
 from aiohttp_client_cache.response import AnyResponse
 
@@ -27,7 +28,9 @@ class CacheMixin:
         self.cache = cache or CacheBackend()
 
     @forge.copy(ClientSession._request)
-    async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:
+    async def _request(
+        self, method: str, str_or_url: StrOrURL, expire_after: ExpirationTime = None, **kwargs
+    ) -> AnyResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         cache_key = self.cache.create_key(method, str_or_url, **kwargs)
 
@@ -39,7 +42,7 @@ class CacheMixin:
             logger.info(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
             await new_response.read()
-            await self.cache.save_response(cache_key, new_response)
+            await self.cache.save_response(cache_key, new_response, expire_after=expire_after)
             return new_response
 
     @asynccontextmanager
