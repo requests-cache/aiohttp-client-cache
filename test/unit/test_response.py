@@ -41,14 +41,15 @@ async def test_basic_attrs(aiohttp_client):
     assert response.headers['Content-Type'] == 'text/plain; charset=utf-8'
     assert await response.text() == '404: Not Found'
     assert response.history == tuple()
+
+
+async def test_is_expired(aiohttp_client):
+    expires = datetime.utcnow() + timedelta(seconds=0.02)
+    response = await get_test_response(aiohttp_client, expires=expires)
+
+    assert response.expires == expires
     assert response.is_expired is False
-
-
-async def test_expiration(aiohttp_client):
-    response = await get_test_response(
-        aiohttp_client, expires=datetime.utcnow() + timedelta(seconds=0.01)
-    )
-    await asyncio.sleep(0.01)
+    await asyncio.sleep(0.02)
     assert response.is_expired is True
 
 

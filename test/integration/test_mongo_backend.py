@@ -5,7 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-from aiohttp_client_cache.backends.mongo import MongoDBCache
+from aiohttp_client_cache.backends.mongo import MongoDBBackend, MongoDBCache
 
 
 def is_db_running():
@@ -31,6 +31,11 @@ async def cache_client():
     await cache_client.clear()
     yield cache_client
     await cache_client.clear()
+
+
+def test_backend_init():
+    backend = MongoDBBackend('aiohttp-cache')
+    assert backend.responses.connection == backend.redirects.connection
 
 
 async def test_clear(cache_client):
