@@ -26,9 +26,9 @@ def get_placeholder_backend(original_exception):
 
 
 def get_valid_kwargs(func: Callable, kwargs: Dict) -> Dict:
-    """Get the subset of ``kwargs`` that are valid params for ``func``"""
+    """Get the subset of non-None ``kwargs`` that are valid params for ``func``"""
     params = list(signature(func).parameters)
-    return {k: v for k, v in kwargs.items() if k in params}
+    return {k: v for k, v in kwargs.items() if k in params and v is not None}
 
 
 # Import all backends for which dependencies are installed
