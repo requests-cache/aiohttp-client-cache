@@ -1,7 +1,7 @@
 # History
 
-## 0.3.0 (TBD)
-[See all issues & PRs here](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
+## 0.3.0 (2021-04-TBD)
+[See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
 
 * Add async implementation of DynamoDb backend
 * Add support for expiration for individual requests
@@ -13,10 +13,11 @@
 * Allow passing all connection kwargs (for SQLite, Redis, and MongoDB connection methods) via CacheBackend
 * Add support for `json` request body
 * Convert all `keys()` and `values()` methods into async generators
+* Fix serialization of Content-Disposition
 * Fix filtering ignored parameters for request body (`data` and `json`)
 
 ## 0.2.0 (2021-02-28)
-[See all issues & PRs here](https://github.com/JWCook/aiohttp-client-cache/milestone/1?closed=1)
+[See all issues & PRs for v0.2](https://github.com/JWCook/aiohttp-client-cache/milestone/1?closed=1)
 
 * Refactor SQLite backend to use `aiosqlite` for async cache operations
 * Refactor MongoDB backend to use `motor` for async cache operations

@@ -46,16 +46,16 @@ class CacheMixin:
             return new_response
 
     @asynccontextmanager
-    async def disable_cache(self):
+    async def disabled(self):
         """Temporarily disable the cache
 
         Example:
 
-            >>> session = CachedSession()
-            >>> await session.get('http://httpbin.org/ip')
-            >>> async with session.disable_cache():
-            >>>     # Will return a new response, not a cached one
+            >>> async with CachedSession() as session:
             >>>     await session.get('http://httpbin.org/ip')
+            >>>     async with session.disabled():
+            >>>         # Will return a new response, not a cached one
+            >>>         await session.get('http://httpbin.org/ip')
         """
         self.cache.disabled = True
         yield

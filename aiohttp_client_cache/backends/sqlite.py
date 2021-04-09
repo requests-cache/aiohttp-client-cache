@@ -12,7 +12,9 @@ from aiohttp_client_cache.forge_utils import extend_init_signature, sqlite_conne
 
 @extend_init_signature(CacheBackend, sqlite_connect)
 class SQLiteBackend(CacheBackend):
-    """An async SQLite cache backend.
+    """Async cache backend for `SQLite <https://www.sqlite.org>`_
+    (requires `aiosqlite <https://aiosqlite.omnilib.dev>`_)
+
     Reading is fast, saving is a bit slower. It can store a large amount of data with low memory usage.
     The path to the database file will be ``<cache_name>`` (or ``<cache_name>.sqlite`` if no file
     extension is specified)
