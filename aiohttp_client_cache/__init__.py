@@ -1,6 +1,6 @@
 __version__ = '0.3.0'
 
-# flake8: noqa: F401,F403
+# flake8: noqa: F401, F403
 try:
     from aiohttp_client_cache.backends import *
     from aiohttp_client_cache.response import CachedResponse

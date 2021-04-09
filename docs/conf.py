@@ -108,6 +108,7 @@ html_sidebars = {'**': ['logo-text.html', 'globaltoc.html', 'localtoc.html', 'se
 def setup(app):
     """Run some additional steps after the Sphinx builder is initialized"""
     app.connect('builder-inited', patch_automodapi)
+    app.add_css_file('collapsible_container.css')
 
 
 def patch_automodapi(app):

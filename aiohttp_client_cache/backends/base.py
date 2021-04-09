@@ -50,7 +50,7 @@ class CacheBackend:
             urls_expire_after: Expiration times to apply for different URL patterns
             allowed_codes: Only cache responses with these status codes
             allowed_methods: Only cache requests with these HTTP methods
-            include_headers: Make request headers part of the cache key
+            include_headers: Cache requests with different headers separately
             ignored_params: Request parameters to be excluded from the cache key
             filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
                 returns a boolean indicating whether or not that response should be cached. Will be
