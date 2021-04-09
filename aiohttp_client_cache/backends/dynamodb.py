@@ -10,7 +10,9 @@ from aiohttp_client_cache.forge_utils import extend_init_signature
 
 @extend_init_signature(CacheBackend)
 class DynamoDBBackend(CacheBackend):
-    """DynamoDB cache backend.
+    """Async cache backend for `DynamoDB <https://aws.amazon.com/dynamodb>`_
+    (requires `aioboto3 <https://aioboto3.readthedocs.io>`_)
+
     See :py:class:`.DynamoDbCache` for backend-specific options
     See `DynamoDB Service Resource
     <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_

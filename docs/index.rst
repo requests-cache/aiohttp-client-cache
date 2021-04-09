@@ -14,6 +14,9 @@ Contents
 .. toctree::
     :maxdepth: 2
 
+    user_guide
+    backends
+    security
     reference
     history
     contributing
