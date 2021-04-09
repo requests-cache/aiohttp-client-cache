@@ -5,8 +5,8 @@ from logging import getLogger
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import attr
-from aiohttp import ClientResponse, ClientResponseError
-from aiohttp.client_reqrep import ContentDisposition, RequestInfo
+from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
+from aiohttp.client_reqrep import ContentDisposition, MappingProxyType, RequestInfo
 from aiohttp.typedefs import RawHeaders, StrOrURL
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
@@ -41,11 +41,10 @@ class CachedResponse:
     method: str = attr.ib()
     reason: str = attr.ib()
     status: int = attr.ib()
-    url: StrOrURL = attr.ib()
+    url: URL = attr.ib(converter=URL)
     version: str = attr.ib()
     _body: Any = attr.ib(default=None)
     _links: LinkItems = attr.ib(factory=list)
-    content_disposition: ContentDisposition = attr.ib(default=None)
     cookies: SimpleCookie = attr.ib(default=None)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
     encoding: str = attr.ib(default=None)
@@ -78,7 +77,6 @@ class CachedResponse:
         except RuntimeError:
             pass
 
-        response.url = str(client_response.url)
         if client_response.history:
             response.history = (
                 *[await cls.from_client_response(r) for r in client_response.history],
@@ -86,16 +84,15 @@ class CachedResponse:
         return response
 
     @property
-    def ok(self) -> bool:
-        """Returns ``True`` if ``status`` is less than ``400``, ``False`` if not"""
-        try:
-            self.raise_for_status()
-            return True
-        except ClientResponseError:
-            return False
-
-    def get_encoding(self):
-        return self.encoding
+    def content_disposition(self) -> Optional[ContentDisposition]:
+        """Get Content-Disposition headers, if any"""
+        raw = self.headers.get(hdrs.CONTENT_DISPOSITION)
+        if raw is None:
+            return None
+        disposition_type, params_dct = multipart.parse_content_disposition(raw)
+        params = MappingProxyType(params_dct)
+        filename = multipart.content_disposition_filename(params)
+        return ContentDisposition(disposition_type, params, filename)
 
     @property
     def headers(self) -> CIMultiDictProxy[str]:
@@ -110,6 +107,10 @@ class CachedResponse:
         return CIMultiDictProxy(CIMultiDict([decode_header(h) for h in self.raw_headers]))
 
     @property
+    def host(self) -> str:
+        return self.url.host or ''
+
+    @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
         return self.expires is not None and datetime.utcnow() > self.expires
@@ -120,6 +121,27 @@ class CachedResponse:
         items = [(k, _to_url_multidict(v)) for k, v in self._links]
         return MultiDictProxy(MultiDict([(k, MultiDictProxy(v)) for k, v in items]))
 
+    @property
+    def ok(self) -> bool:
+        """Returns ``True`` if ``status`` is less than ``400``, ``False`` if not"""
+        try:
+            self.raise_for_status()
+            return True
+        except ClientResponseError:
+            return False
+
+    @property
+    def request_info(self) -> RequestInfo:
+        return RequestInfo(
+            url=URL(self.url),
+            method=self.method,
+            headers=self.headers,
+            real_url=URL(self.real_url),
+        )
+
+    def get_encoding(self):
+        return self.encoding
+
     async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
         """Read and decode JSON response"""
         stripped = self._body.strip()
@@ -127,7 +149,7 @@ class CachedResponse:
             return None
         return json.loads(stripped.decode(encoding or self.encoding))
 
-    def raise_for_status(self) -> None:
+    def raise_for_status(self):
         if self.status >= 400:
             raise ClientResponseError(
                 self.request_info,  # type: ignore  # These types are interchangeable
@@ -143,15 +165,6 @@ class CachedResponse:
 
     def release(self):
         """No-op function for compatibility with ClientResponse"""
-
-    @property
-    def request_info(self) -> RequestInfo:
-        return RequestInfo(
-            url=URL(self.url),
-            method=self.method,
-            headers=self.headers,
-            real_url=URL(self.real_url),
-        )
 
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""
