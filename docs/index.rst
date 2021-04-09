@@ -12,11 +12,11 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   reference
-   history
-   contributing
+    reference
+    history
+    contributing
 
 
 Indices and tables

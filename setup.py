@@ -15,6 +15,7 @@ extras_require = {
         'docutils==0.16',
         'Sphinx~=3.5.3',
         'sphinx-autodoc-typehints',
+        'sphinx_automodapi',
         'sphinx-copybutton',
         'sphinx-material',
         'sphinxcontrib-apidoc',
