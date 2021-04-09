@@ -1,7 +1,15 @@
-{%- if show_headings %}
 {{- basename.split('.')[-1] | e | heading }}
 
-{% endif -%}
+Summary
+-------
+.. automodsumm:: {{ qualname }}
+    :classes-only:
+
+.. automodsumm:: {{ qualname }}
+    :functions-only:
+
+Module Contents
+---------------
 .. automodule:: {{ qualname }}
 {%- for option in automodule_options %}
    :{{ option }}:

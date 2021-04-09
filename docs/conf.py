@@ -10,13 +10,15 @@ PACKAGE_DIR = join(PROJECT_DIR, 'aiohttp_client_cache')
 sys.path.insert(0, PROJECT_DIR)
 from aiohttp_client_cache import __version__  # noqa
 
-# General information about the project.
+# General project info
 project = 'aiohttp-client-cache'
 copyright = '2021 Jordan Cook'
 needs_sphinx = '3.0'
+version = release = __version__
+
+# General source info
 master_doc = 'index'
 source_suffix = ['.rst', '.md']
-version = release = __version__
 html_static_path = ['_static']
 templates_path = ['_templates']
 
@@ -30,10 +32,13 @@ exclude_patterns = [
 # Sphinx extension modules
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     # 'sphinx.ext.viewcode',
     'sphinx_autodoc_typehints',
+    'sphinx_automodapi.automodapi',
     'sphinx_copybutton',
     'sphinxcontrib.apidoc',
     'm2r2',
@@ -56,11 +61,14 @@ intersphinx_mapping = {
 napoleon_google_docstring = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
-# numpydoc_show_class_members = False
 
 # Strip prompt text when copying code blocks with copy button
 copybutton_prompt_text = r'>>> |\.\.\. |\$ '
 copybutton_prompt_is_regexp = True
+
+# Move type hint info to function description instead of signature
+autodoc_typehints = 'description'
+set_type_checking_flag = True
 
 # Use apidoc to auto-generate rst sources
 apidoc_excluded_paths = ['forge_utils.py']
@@ -70,14 +78,15 @@ apidoc_module_first = True
 apidoc_output_dir = 'modules'
 apidoc_separate_modules = True
 apidoc_toc_file = False
+add_module_names = False
 
-# Move type hint info to function description instead of signature
-autodoc_typehints = 'description'
-set_type_checking_flag = True
+# Options for automodapi
+automodsumm_inherited_members = False
+numpydoc_show_class_members = False
 
 # HTML theme settings
-pygments_style = 'sphinx'
 html_theme = 'sphinx_material'
+html_show_sphinx = False
 html_theme_options = {
     'color_primary': 'blue',
     'color_accent': 'light-blue',
@@ -89,3 +98,19 @@ html_theme_options = {
     'nav_title': project,
 }
 html_sidebars = {'**': ['logo-text.html', 'globaltoc.html', 'localtoc.html', 'searchbox.html']}
+
+
+def setup(app):
+    """Run some additional steps after the Sphinx builder is initialized"""
+    app.connect('builder-inited', patch_automodapi)
+
+
+def patch_automodapi(app):
+    """Monkey-patch the automodapi extension to exclude imported members
+
+    https://github.com/astropy/sphinx-automodapi/blob/master/sphinx_automodapi/automodsumm.py#L135
+    """
+    from sphinx_automodapi import automodsumm
+    from sphinx_automodapi.utils import find_mod_objs
+
+    automodsumm.find_mod_objs = lambda *args: find_mod_objs(args[0], onlylocals=True)
