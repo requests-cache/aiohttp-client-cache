@@ -7,10 +7,11 @@ from typing import AsyncIterable, AsyncIterator, Union
 import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_init_signature, sqlite_connect
+from aiohttp_client_cache.docs.connections import sqlite_template
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 
 
-@extend_init_signature(CacheBackend, sqlite_connect)
+@extend_init_signature(CacheBackend, sqlite_template)
 class SQLiteBackend(CacheBackend):
     """Async cache backend for `SQLite <https://www.sqlite.org>`_
     (requires `aiosqlite <https://aiosqlite.omnilib.dev>`_)
@@ -50,7 +51,7 @@ class SQLiteCache(BaseCache):
 
     def __init__(self, filename: str, table_name: str, **kwargs):
         super().__init__(**kwargs)
-        self.connection_kwargs = get_valid_kwargs(sqlite_connect, kwargs)
+        self.connection_kwargs = get_valid_kwargs(sqlite_template, kwargs)
         self.filename = filename
         self.table_name = table_name
 
