@@ -37,6 +37,7 @@ async def test_basic_attrs(aiohttp_client):
     assert response.method == 'GET'
     assert response.reason == 'Not Found'
     assert response.status == 404
+    assert isinstance(response.url, URL)
     assert response.encoding == 'utf-8'
     assert response.headers['Content-Type'] == 'text/plain; charset=utf-8'
     assert await response.text() == '404: Not Found'
