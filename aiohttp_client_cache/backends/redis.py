@@ -11,7 +11,9 @@ DEFAULT_ADDRESS = 'redis://localhost'
 # @extend_init_signature(CacheBackend, create_redis_pool)
 @extend_init_signature(CacheBackend)
 class RedisBackend(CacheBackend):
-    """Redis cache backend"""
+    """Async cache backend for `Redis <https://redis.io>`_
+    (requires `aioredis <https://aioredis.readthedocs.io>`_)
+    """
 
     def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
