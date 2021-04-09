@@ -95,20 +95,6 @@ async with CachedSession(cache=cache) as session:
 See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
 documentation for more usage details.
 
-
-## Cache Backends
-Several backends are available. If one isn't specified, a non-persistent in-memory cache will be used.
-
-* `SQLiteBackend`: Uses a [SQLite](https://www.sqlite.org) database
-  (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
-* `RedisBackend`: Uses a [Redis](https://redis.io/) cache
-  (requires [aioredis](https://github.com/aio-libs/aioredis-py))
-* `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
-  (requires [motor](https://motor.readthedocs.io))
-* `DynamoDBBackend`: Uses a [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) database
-  (requires [aioboto3](https://github.com/terrycain/aioboto3))
-
-
 ## Next Steps
 To find out more, see:
 
@@ -129,13 +115,3 @@ Other python cache projects you may want to check out:
 * [requests-cache](https://github.com/reclosedev/requests-cache) An HTTP cache for the `requests` library
 * [CacheControl](https://github.com/ionrock/cachecontrol): An HTTP cache for `requests` that caches
   according to uses HTTP headers and status codes
-
-## Credits
-Thanks to [Roman Haritonov](https://github.com/reclosedev) and
-[contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.md)
-for the original `requests-cache`!
-
-This project is licensed under the MIT license, with the exception of portions of
-[storage backend code](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)
-adapted from `requests-cache`, which is licensed under the BSD license
-([copy included](https://github.com/JWCook/aiohttp-client-cache/blob/main/requests_cache.md)).

@@ -18,8 +18,9 @@ Contents
     backends
     security
     reference
-    history
     contributing
+    contributors
+    history
 
 
 Indices and tables
