@@ -12,136 +12,78 @@ client requests.
 
 See full documentation at https://aiohttp-client-cache.readthedocs.io
 
-## Development Status
-**This is an early work in progress!**
+# Features
+* **Ease of use:** Use as a [drop-in replacement](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html)
+  for `aiohttp.ClientSession`
+* **Customization:** Works out of the box with little to no config, but with plenty of options
+  available for customizing cache
+  [expiration](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html#cache-expiration)
+  and other [behavior](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html#cache-options)
+* **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html):
+  SQLite, DynamoDB, MongoDB, and Redis.
+  
+# Development Status
+**This library is a work in progress!**
 
-The current state is a working drop-in replacement (or mixin) for `aiohttp.ClientSession`, with
-multiple asynchronous cache backends. Breaking changes should be expected until a `1.0` release,
-so version pinning is recommended.
+Breaking changes should be expected until a `1.0` release, so version pinning is recommended.
 
 I am developing this while also maintaining [requests-cache](https://github.com/reclosedev/requests-cache),
-and my eventual goal is to have a similar (but not identical) feature set between the two libraries.
-If there is a specific feature you want that aiohttp-client-cache doesn't yet have, please create an
-issue to request it!
+and my goal is to eventually have a similar (but not identical) feature set between the two libraries.
+If there is a feature you want, or if you've discovered a bug, of it you have other general feedback, please
+[create an issue](https://github.com/JWCook/aiohttp-client-cache/issues/new/choose) for it!
 
-## Installation
-Requires python 3.7+
-
-Install the latest stable version with pip:
+# Quickstart
+First, install with pip (python 3.7+ required):
 ```bash
 pip install aiohttp-client-cache
 ```
 
-**Note:** You will need additional dependencies depending on which backend you want to use; See
-[Cache Backends](#cache-backends) section below for details.
-To install with extra dependencies for all supported backends:
-```bash
-pip install aiohttp-client-cache[backends]
-```
+## Basic Usage
+Next, use [aiohttp_client_cache.CachedSession](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.session.html#aiohttp_client_cache.session.CachedSession)
+in place of [aiohttp.ClientSession](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession).
+To briefly demonstrate how to use it:                                      
+                                                                                                       
+**Replace this:**
+```python
+from aiohttp import ClientSession
 
-See [Contributing](https://github.com/JWCook/aiohttp-client-cache/blob/main/README.md)
-for setup info for local development.
-
-## Usage Examples
-See the [examples](https://github.com/JWCook/aiohttp-client-cache/blob/main/examples)
-folder for more detailed usage examples.
-
-Here is a simple example using an endpoint that takes 1 second to fetch.
-After the first request, subsequent requests to the same URL will return near-instantly; so,
-fetching it 10 times will only take ~1 second instead of 10.
+async with ClientSession() as session:
+    await session.get('http://httpbin.org/delay/1')                                                          
+```                                                                                                    
+                                                                                                       
+**With this:**           
 ```python
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 
-async with CachedSession(cache=SQLiteBackend()) as session:
-    for i in range(10):
-        await session.get('http://httpbin.org/delay/1')
+async with CachedSession(cache=SQLiteBackend('demo_cache')) as session:
+    await session.get('http://httpbin.org/delay/1')                                                          
 ```
 
-Here is an example with more customized behavior:
+The URL in this example adds a delay of 1 second, simulating a slow or rate-limited website.
+With caching, the response will be fetched once, saved to `demo_cache.sqlite`, and subsequent
+requests will return the cached response near-instantly.
+
+## Configuration
+Several options are available to customize caching behavior. This example demonstrates a few of them:
+
 ```python
+from aiohttp_client_cache import SQLiteBackend
+
 cache = SQLiteBackend(
-    cache_name='~/.cache/aiohttp-requests.db',     # For SQLite, this will be used as the filename
-    expire_after=24,                               # By default, cached responses expire in a day
-    urls_expire_after={'*.site.com/static': 24*7}, # Requests with this pattern will expire in a week
-    ignored_params=['auth_token'],                 # Ignore this param when caching responses
+    cache_name='~/.cache/aiohttp-requests.db',  # For SQLite, this will be used as the filename
+    expire_after=60*60,                         # By default, cached responses expire in an hour
+    urls_expire_after={'*.fillmurray.com': -1}, # Requests for any subdomain on this site will never expire
+    allowed_codes=(200, 418),                   # Cache responses with these status codes
+    allowed_methods=('GET', 'POST'),            # Cache requests with these HTTP methods
+    include_headers=True,                       # Cache requests with different headers separately
+    ignored_params=['auth_token'],              # Keep using the cached response even if this param changes
+    timeout=2.5,                                # Connection timeout for SQLite backend 
 )
-
-async with CachedSession(cache=cache) as session:
-    await session.get('https://site.com/index.html')             # Expires in a day
-    await session.get('https://img.site.com/static/a27bf6.jpg')  # Expires in a week
-```
-See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
-documentation for more usage details.
-
-`aiohttp-client-cache` can also be used as a mixin, if you happen have other mixin classes that you
-want to combine with it:
-```python
-from aiohttp import ClientSession
-from aiohttp_client_cache import CacheMixin
-
-class CustomSession(CacheMixin, CustomMixin, ClientSession):
-    pass
 ```
 
-## Cache Backends
-Several backends are available. If one isn't specified, a non-persistent in-memory cache will be used.
-
-* `SQLiteBackend`: Uses a [SQLite](https://www.sqlite.org) database
-  (requires [aiosqlite](https://github.com/omnilib/aiosqlite))
-* `RedisBackend`: Uses a [Redis](https://redis.io/) cache
-  (requires [aioredis](https://github.com/aio-libs/aioredis-py))
-* `MongoDBBackend`: Uses a [MongoDB](https://www.mongodb.com/) database
-  (requires [motor](https://motor.readthedocs.io))
-* `DynamoDBBackend`: Uses a [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) database
-  (requires [aioboto3](https://github.com/terrycain/aioboto3))
-    
-**Incomplete:**
-* `GridFSBackend`: Uses a [MongoDB GridFS](https://docs.mongodb.com/manual/core/gridfs/) database,
-  which enables storage of documents greater than 16MB
-  (requires [pymongo](https://pymongo.readthedocs.io/en/stable/))
-
-You can also provide your own backend by subclassing `aiohttp_client_cache.backends.BaseCache`.
-
-## Expiration
-If you are using the `expire_after` parameter, expired responses are removed from the storage the
-next time the same request is made. If you want to manually clear all expired items, you can use
-`CachedSession.delete_expired_responses`. Example:
-
-```python
-session = CachedSession(expire_after=3)   # Cached responses expire after 3 hours
-await session.delete_expired_responses()  # Remove any responses over 3 hours old
-```
-
-## Conditional Caching
-Caching behavior can be customized by defining various conditions:
-* Response status codes
-* Request HTTP methods
-* Request headers
-* Specific request parameters
-* Custom filter function
-
-See [CacheBackend](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.backends.base.html#aiohttp_client_cache.backends.base.CacheBackend)
-docs for details.
-
-## Related Projects
-Other python cache projects you may want to check out:
-
-* [aiohttp-cache](https://github.com/cr0hn/aiohttp-cache): A server-side async HTTP cache for the
-  `aiohttp` web server
-* [diskcache](https://github.com/grantjenks/python-diskcache): A general-purpose (not HTTP-specific)
-  file-based cache built on SQLite
-* [aiocache](https://github.com/aio-libs/aiocache): General-purpose (not HTTP-specific) async cache
-  backends
-* [requests-cache](https://github.com/reclosedev/requests-cache) An HTTP cache for the `requests` library
-* [CacheControl](https://github.com/ionrock/cachecontrol): An HTTP cache for `requests` that caches
-  according to uses HTTP headers and status codes
-
-## Credits
-Thanks to [Roman Haritonov](https://github.com/reclosedev) and
-[contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.md)
-for the original `requests-cache`!
-
-This project is licensed under the MIT license, with the exception of portions of
-[storage backend code](https://github.com/reclosedev/requests-cache/tree/master/requests_cache/backends/storage)
-adapted from `requests-cache`, which is licensed under the BSD license
-([copy included](https://github.com/JWCook/aiohttp-client-cache/blob/main/requests_cache.md)).
+# More Info
+To learn more, see:
+* [User Guide](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html)
+* [Cache Backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html)
+* [API Reference](https://aiohttp-client-cache.readthedocs.io/en/latest/reference.html)
+* [Examples](https://aiohttp-client-cache.readthedocs.io/en/latest/examples.html)
