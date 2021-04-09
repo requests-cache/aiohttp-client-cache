@@ -1,19 +1,19 @@
 from typing import AsyncIterable, Dict
 
 import aioboto3
-from aioboto3.session import ResourceCreatorContext
+from aioboto3.session import ResourceCreatorContext, Session
 from botocore.exceptions import ClientError
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
-from aiohttp_client_cache.forge_utils import extend_init_signature
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
+from aiohttp_client_cache.docs.connections import dynamodb_template
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 
 
-@extend_init_signature(CacheBackend)
+@extend_init_signature(CacheBackend, dynamodb_template)
 class DynamoDBBackend(CacheBackend):
     """Async cache backend for `DynamoDB <https://aws.amazon.com/dynamodb>`_
     (requires `aioboto3 <https://aioboto3.readthedocs.io>`_)
 
-    See :py:class:`.DynamoDbCache` for backend-specific options
     See `DynamoDB Service Resource
     <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
     for more usage details.
@@ -28,9 +28,19 @@ class DynamoDBBackend(CacheBackend):
         context: ResourceCreatorContext = None,
         **kwargs,
     ):
+        """
+        Args:
+            cache_name: Table name to use
+            key_attr_name: The name of the field to use for keys in the DynamoDB document
+            val_attr_name: The name of the field to use for values in the DynamoDB document
+            create_if_not_exists: Whether or not to attempt to create the DynamoDB table
+            context: An existing `ResourceCreatorContext <https://aioboto3.readthedocs.io/en/latest/usage.html>`_
+                to reuse instead of creating a new one
+        """
         super().__init__(cache_name=cache_name, **kwargs)
         if not context:
-            context = aioboto3.resource("dynamodb")
+            resource_kwargs = get_valid_kwargs(Session.resource, kwargs)
+            context = aioboto3.resource("dynamodb", **resource_kwargs)
         self.responses = DynamoDbCache(
             cache_name, 'resp', key_attr_name, val_attr_name, create_if_not_exists, context
         )
@@ -40,18 +50,10 @@ class DynamoDBBackend(CacheBackend):
 
 
 class DynamoDbCache(BaseCache):
-    """An async-compatible interface for caching objects in a DynamoDB key-store
+    """An async interface for caching objects in a DynamoDB key-store
 
     The actual key name on the dynamodb server will be ``namespace:key``.
     In order to deal with how dynamodb stores data/keys, all values must be serialized.
-
-    Args:
-        table_name: Table name to use
-        namespace: Prefix to be prepended to key in the DynamoDB document
-        key_attr_name: The name of the field to use for keys in the DynamoDB document
-        val_attr_name: The name of the field to use for values in the DynamoDB document
-        create_if_not_exists: Whether or not to attempt to create the DynamoDB table
-        context: An existing ResourceCreatorContext (See aioboto3.resource() ) to reuse instead of creating a new one
     """
 
     def __init__(

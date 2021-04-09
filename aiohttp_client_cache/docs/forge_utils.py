@@ -164,30 +164,3 @@ def _combine_args_sections(*args_sections: str) -> str:
         args.setdefault(k.strip(), v.strip())
 
     return '\n'.join([f'    {k}: {v}' for k, v in args.items()])
-
-
-def sqlite_connect(
-    timeout: float = 5.0,
-    detect_types: int = 0,
-    isolation_level: str = None,
-    check_same_thread: bool = True,
-    factory: Type = None,
-    cached_statements: int = 100,
-    uri: bool = False,
-):
-    """Template function to get an accurate function signature + docs (kwargs only) for the builtin
-    :py:func:`sqlite3.connect`
-
-    Args:
-        timeout: Specifies how long the connection should wait for the lock to go away until raising
-            an exception.
-        detect_types: Can be set to any combination of ``PARSE_DECLTYPES`` and ``PARSE_COLNAMES`` to
-            turn type detection on for custom types.
-        isolation_level: Transaction isolation level. Use ``None`` for autocommit mode, or one of:
-            ``“DEFERRED”, “IMMEDIATE”, “EXCLUSIVE”``
-        check_same_thread: If True, only the creating thread may use the connection. If False, the
-            returned connection may be shared across multiple threads.
-        factory: Custom subclass of :py:class:`sqlite3.Connection` used to create connections
-        cached_statements: The number of statements that are cached internally for the connection
-        uri: Interpret database path as a URI, to allow specifying additional options
-    """

@@ -7,21 +7,15 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend
+from aiohttp_client_cache.docs.forge_utils import copy_signature, extend_signature
 from aiohttp_client_cache.expiration import ExpirationTime
-from aiohttp_client_cache.forge_utils import copy_signature, extend_signature
 from aiohttp_client_cache.response import AnyResponse
 
 logger = getLogger(__name__)
 
 
 class CacheMixin:
-    """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support
-
-    Args:
-        cache: A cache backend object. See :py:mod:`aiohttp_client_cache.backends` for
-            options. If not provided, an in-memory cache will be used.
-    """
-
+    """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
     @extend_signature(ClientSession.__init__)
     def __init__(self, *, cache: CacheBackend = None, **kwargs):
         super().__init__(**kwargs)  # type: ignore
@@ -72,4 +66,9 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
     class CachedSession(CacheMixin, ClientSession):
-        """A drop-in replacement for :py:class:`aiohttp.ClientSession` that adds caching support"""
+        """A drop-in replacement for :py:class:`aiohttp.ClientSession` that adds caching support
+
+        Args:
+            cache: A cache backend object. See :py:mod:`aiohttp_client_cache.backends` for
+                options. If not provided, an in-memory cache will be used.
+        """

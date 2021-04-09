@@ -13,7 +13,7 @@ branch = true
 source = ['aiohttp_client_cache']
 omit = [
     'aiohttp_client_cache/backends/__init__.py',
-    'aiohttp_client_cache/forge_utils.py',
+    'aiohttp_client_cache/docs/*',
 ]
 
 [tool.isort]
