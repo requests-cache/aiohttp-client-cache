@@ -9,4 +9,11 @@ API Reference
     :glob:
     :titlesonly:
 
-    modules/*
+    modules/aiohttp_client_cache.[!b]*
+
+.. toctree::
+    :caption: Backend Modules
+    :glob:
+    :titlesonly:
+
+    modules/aiohttp_client_cache.backends.*

@@ -21,7 +21,11 @@ html_static_path = ['_static']
 templates_path = ['_templates']
 
 # Exclude the generated aiohttp_client_cache.rst, which will just contain top-level __init__ info
-exclude_patterns = ['_build', 'modules/aiohttp_client_cache.rst']
+exclude_patterns = [
+    '_build',
+    'modules/aiohttp_client_cache.rst',
+    'modules/aiohttp_client_cache.backends.rst',
+]
 
 # Sphinx extension modules
 extensions = [
@@ -59,8 +63,8 @@ copybutton_prompt_text = r'>>> |\.\.\. |\$ '
 copybutton_prompt_is_regexp = True
 
 # Use apidoc to auto-generate rst sources
-apidoc_excluded_paths = ['api_docs.py']
-apidoc_extra_args = ['--private']
+apidoc_excluded_paths = ['forge_utils.py']
+apidoc_extra_args = ['--private', '--templatedir=_templates']
 apidoc_module_dir = PACKAGE_DIR
 apidoc_module_first = True
 apidoc_output_dir = 'modules'
