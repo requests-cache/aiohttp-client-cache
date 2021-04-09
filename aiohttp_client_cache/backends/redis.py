@@ -3,15 +3,17 @@ from typing import AsyncIterable
 from aioredis import Redis, create_redis_pool
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_signature
+from aiohttp_client_cache.docs import extend_init_signature, redis_template
 
 DEFAULT_ADDRESS = 'redis://localhost'
 
 
+@extend_init_signature(CacheBackend, redis_template)
 class RedisBackend(CacheBackend):
-    """Redis cache backend"""
+    """Async cache backend for `Redis <https://redis.io>`_
+    (requires `aioredis <https://aioredis.readthedocs.io>`_)
+    """
 
-    @extend_signature(CacheBackend.__init__)
     def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
@@ -19,7 +21,7 @@ class RedisBackend(CacheBackend):
 
 
 class RedisCache(BaseCache):
-    """An async-compatible interface for caching objects in Redis.
+    """An async interface for caching objects in Redis.
 
     Args:
         namespace: namespace to use

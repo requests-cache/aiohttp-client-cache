@@ -3,38 +3,40 @@ from typing import AsyncIterable
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_signature
+from aiohttp_client_cache.docs import extend_init_signature, mongo_template
 
 
+@extend_init_signature(CacheBackend, mongo_template)
 class MongoDBBackend(CacheBackend):
-    """MongoDB cache backend
-
-    Args:
-        connection: Optional client object to use instead of creating a new one
-
-    See :py:class:`.CacheBackend` for additional args.
+    """Async cache backend for `MongoDB <https://www.mongodb.com>`_
+    (requires `motor <https://motor.readthedocs.io>`_)
     """
 
-    @extend_signature(CacheBackend.__init__)
     def __init__(
         self, cache_name: str = 'aiohttp-cache', connection: AsyncIOMotorClient = None, **kwargs
     ):
+        """
+        Args:
+            cache_name: Database name
+            connection: Optional client object to use instead of creating a new one
+        """
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection, **kwargs)
         self.redirects = MongoDBCache(cache_name, 'redirects', self.responses.connection, **kwargs)
 
 
 class MongoDBCache(BaseCache):
-    """An async-compatible interface for caching objects in MongoDB
+    """An async interface for caching objects in MongoDB
 
     Args:
         db_name: database name (be careful with production databases)
         collection_name: collection name
         connection: MongoDB connection instance to use instead of creating a new one
+        kwargs: Additional keyword args for :py:class:`~motor.motor_asyncio.AsyncIOMotorClient`
     """
 
     def __init__(
-        self, db_name, collection_name: str, connection: AsyncIOMotorClient = None, **kwargs
+        self, db_name: str, collection_name: str, connection: AsyncIOMotorClient = None, **kwargs
     ):
         super().__init__(**kwargs)
         connection_kwargs = get_valid_kwargs(AsyncIOMotorClient.__init__, kwargs)

@@ -5,7 +5,7 @@ from pymongo import MongoClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.backends.mongo import MongoDBCache
-from aiohttp_client_cache.forge_utils import extend_signature
+from aiohttp_client_cache.docs.forge_utils import extend_signature
 
 
 class GridFSBackend(CacheBackend):

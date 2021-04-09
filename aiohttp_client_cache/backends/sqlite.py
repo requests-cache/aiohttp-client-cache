@@ -7,24 +7,24 @@ from typing import AsyncIterable, AsyncIterator, Union
 import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_signature
+from aiohttp_client_cache.docs import extend_init_signature, sqlite_template
 
 
+@extend_init_signature(CacheBackend, sqlite_template)
 class SQLiteBackend(CacheBackend):
-    """An async SQLite cache backend.
-    Reading is fast, saving is a bit slower. It can store a large amount of data
-    with low memory usage.
-    The path to the database file will be ``<cache_name>.sqlite``, or just ``<cache_name>`` if a
-    a different file extension is specified.
+    """Async cache backend for `SQLite <https://www.sqlite.org>`_
+    (requires `aiosqlite <https://aiosqlite.omnilib.dev>`_)
 
-    Args:
-        cache_name: Database filename
-
-    See :py:class:`.CacheBackend` for additional args.
+    Reading is fast, saving is a bit slower. It can store a large amount of data with low memory usage.
+    The path to the database file will be ``<cache_name>`` (or ``<cache_name>.sqlite`` if no file
+    extension is specified)
     """
 
-    @extend_signature(CacheBackend.__init__)
     def __init__(self, cache_name: str = 'aiohttp-cache', **kwargs):
+        """
+        Args:
+            cache_name: Database filename
+        """
         super().__init__(cache_name=cache_name, **kwargs)
         path, ext = splitext(cache_name)
         cache_path = expanduser(f'{path}{ext or ".sqlite"}')
@@ -50,10 +50,9 @@ class SQLiteCache(BaseCache):
 
     def __init__(self, filename: str, table_name: str, **kwargs):
         super().__init__(**kwargs)
-        self.connection_kwargs = get_valid_kwargs(sqlite_connect, kwargs)
+        self.connection_kwargs = get_valid_kwargs(sqlite_template, kwargs)
         self.filename = filename
         self.table_name = table_name
-        self._can_commit = True  # Transactions can be committed if this is set to `True`
 
         self._bulk_commit = False
         self._initialized = False
@@ -70,7 +69,7 @@ class SQLiteCache(BaseCache):
             )
             try:
                 yield await self._init_db(db)
-                if autocommit and self._can_commit:
+                if autocommit and not self._bulk_commit:
                     await db.commit()
             finally:
                 if not self._bulk_commit:
@@ -97,18 +96,16 @@ class SQLiteCache(BaseCache):
             >>> cache = SQLiteCache('test')
             >>> async with cache.bulk_commit():
             ...     for i in range(1000):
-            ...         await cache.write(f'key_{i}', str(i * 2))
+            ...         await cache.write(f'key_{i}', str(i))
 
         """
         self._bulk_commit = True
-        self._can_commit = False
-        self._connection = await aiosqlite.connect(self.filename)
+        self._connection = await aiosqlite.connect(self.filename, **self.connection_kwargs)
         try:
             yield
             await self._connection.commit()
         finally:
             self._bulk_commit = False
-            self._can_commit = True
             await self._connection.close()
             self._connection = None
 
@@ -176,16 +173,3 @@ class SQLitePickleCache(SQLiteCache):
 
     async def write(self, key, item):
         await super().write(key, sqlite3.Binary(self.serialize(item)))
-
-
-def sqlite_connect(
-    database,
-    timeout=None,
-    detect_types=None,
-    isolation_level=None,
-    check_same_thread=None,
-    factory=None,
-    cached_statements=None,
-    uri=None,
-):
-    """Placeholder to get signature of builtin sqlite3.connect()"""
