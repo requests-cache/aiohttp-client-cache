@@ -1,4 +1,4 @@
-# Contributing
+# Contributing Guide
 
 ## Dev Installation
 To set up for local development:

@@ -8,7 +8,9 @@ from aiohttp_client_cache.forge_utils import extend_init_signature
 
 @extend_init_signature(CacheBackend)
 class MongoDBBackend(CacheBackend):
-    """MongoDB cache backend"""
+    """Async cache backend for `MongoDB <https://www.mongodb.com>`_
+    (requires `motor <https://motor.readthedocs.io>`_)
+    """
 
     def __init__(
         self, cache_name: str = 'aiohttp-cache', connection: AsyncIOMotorClient = None, **kwargs

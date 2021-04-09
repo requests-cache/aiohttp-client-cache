@@ -80,8 +80,10 @@ apidoc_separate_modules = True
 apidoc_toc_file = False
 add_module_names = False
 
-# Options for automodapi
+
+# Options for automodapi and autosectionlabel
 automodsumm_inherited_members = False
+autosectionlabel_prefix_document = True
 numpydoc_show_class_members = False
 
 # HTML theme settings
@@ -90,9 +92,9 @@ html_show_sphinx = False
 html_theme_options = {
     'color_primary': 'blue',
     'color_accent': 'light-blue',
-    'globaltoc_depth': 1,
+    'globaltoc_depth': 3,
     'globaltoc_includehidden': False,
-    'logo_icon': '&#xe1af',
+    'logo_icon': '&#xe2c0',
     'repo_url': 'https://github.com/JWCook/aiohttp-client-cache',
     'repo_name': project,
     'nav_title': project,

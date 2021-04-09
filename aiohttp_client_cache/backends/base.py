@@ -18,60 +18,16 @@ logger = getLogger(__name__)
 
 
 class CacheBackend:
-    """Base class for cache backends. This manages higher-level cache operations,
-    including cache expiration, generating cache keys, and managing redirect history.
+    """Base class for cache backends; includes a non-persistent, in-memory cache.
 
-    If instantiated directly, ``CacheBackend`` will use a non-persistent in-memory cache.
+    This manages higher-level cache operations, including cache expiration, generating cache keys,
+    and managing redirect history.
+
 
     Lower-level storage operations are handled by :py:class:`.BaseCache`.
     To extend this with your own custom backend, implement one or more subclasses of
     :py:class:`.BaseCache` to use as :py:attr:`CacheBackend.responses` and
     :py:attr:`CacheBackend.response_aliases`.
-
-    **Cache Name:**
-
-    The ``cache_name`` parameter will be used as follows depending on the backend:
-
-    * ``sqlite``: Cache filename prefix, e.g ``my_cache.sqlite``
-    * ``mongodb``: Database name
-    * ``redis``: Namespace, meaning all keys will be prefixed with ``'cache_name:'``
-
-    **Cache Keys:**
-
-    The cache key is a hash created from request information, and is used as an index for cached
-    responses. There are a couple ways you can customize how the cache key is created:
-
-    * Use ``include_get_headers`` if you want headers to be included in the cache key. In other
-      words, this will create separate cache items for responses with different headers.
-    * Use ``ignored_parameters`` to exclude specific request params from the cache key. This is
-      useful, for example, if you request the same resource with different credentials or access
-      tokens.
-
-    **URL Patterns:**
-
-    The ``urls_expire_after`` parameter can be used to set different expiration times for different
-    requests, based on glob patterns. This allows you to customize caching based on what you
-    know about what you're requesting. For example, you might request one resource that gets updated
-    frequently, another that changes infrequently, and another that never changes.
-
-    Example::
-
-        urls_expire_after = {
-            '*.site_1.com': timedelta(days=1),
-            'site_2.com/resource_1': timedelta(hours=12),
-            'site_2.com/resource_2': 60,
-            'site_2.com/static': -1,
-        }
-
-    Notes:
-
-    * ``urls_expire_after`` should be a dict in the format ``{'pattern': expiration_time}``
-    * ``expiration_time`` may be either a number (in seconds) or a ``timedelta``
-      (same as ``expire_after``)
-    * Patterns will match request **base URLs**, so the pattern ``site.com/base`` is equivalent to
-      ``https://site.com/base/**``
-    * If there is more than one match, the first match (in the order they are defined) will be used
-    * If no patterns match a request, ``expire_after`` will be used as a default.
     """
 
     def __init__(
@@ -317,7 +273,7 @@ class BaseCache(metaclass=ABCMeta):
 
     @abstractmethod
     async def delete(self, key: str):
-        """Delete a single item from the cache. Does not raise an error if the item is missing."""
+        """Delete an item from the cache. Does not raise an error if the item is missing."""
 
     @abstractmethod
     def keys(self) -> AsyncIterable[str]:
@@ -325,7 +281,7 @@ class BaseCache(metaclass=ABCMeta):
 
     @abstractmethod
     async def read(self, key: str) -> ResponseOrKey:
-        """Read a single item from the cache. Returns ``None`` if the item is missing."""
+        """Read an item from the cache. Returns ``None`` if the item is missing."""
 
     @abstractmethod
     async def size(self) -> int:
