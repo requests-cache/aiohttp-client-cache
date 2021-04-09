@@ -10,7 +10,6 @@
 
 Contents
 ========
-
 .. toctree::
     :maxdepth: 2
 
@@ -18,6 +17,12 @@ Contents
     backends
     security
     reference
+
+Project Info
+============
+.. toctree::
+    :maxdepth: 2
+
     contributing
     contributors
     history
