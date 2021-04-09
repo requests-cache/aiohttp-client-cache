@@ -22,13 +22,6 @@ source_suffix = ['.rst', '.md']
 html_static_path = ['_static']
 templates_path = ['_templates']
 
-# Exclude the generated aiohttp_client_cache.rst, which will just contain top-level __init__ info
-exclude_patterns = [
-    '_build',
-    'modules/aiohttp_client_cache.rst',
-    'modules/aiohttp_client_cache.backends.rst',
-]
-
 # Sphinx extension modules
 extensions = [
     'sphinx.ext.autodoc',
@@ -57,6 +50,16 @@ intersphinx_mapping = {
     'redis': ('https://redis-py.readthedocs.io/en/stable/', None),
 }
 
+# Exclude top-level package docs and documentation utility modules
+exclude_patterns = [
+    '_build',
+    'modules/aiohttp_client_cache.rst',
+    'modules/aiohttp_client_cache.backends.rst',
+    'modules/aiohttp_client_cache.docs.rst',
+    'modules/aiohttp_client_cache.docs.connections.rst',
+    'modules/aiohttp_client_cache.docs.forge_utils.rst',
+]
+
 # Enable Google-style docstrings
 napoleon_google_docstring = True
 napoleon_include_private_with_doc = False
@@ -79,7 +82,6 @@ apidoc_output_dir = 'modules'
 apidoc_separate_modules = True
 apidoc_toc_file = False
 add_module_names = False
-
 
 # Options for automodapi and autosectionlabel
 automodsumm_inherited_members = False

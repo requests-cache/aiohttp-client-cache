@@ -3,10 +3,11 @@ from typing import AsyncIterable
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_init_signature
+from aiohttp_client_cache.docs.connections import mongo_connect
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 
 
-@extend_init_signature(CacheBackend)
+@extend_init_signature(CacheBackend, mongo_connect)
 class MongoDBBackend(CacheBackend):
     """Async cache backend for `MongoDB <https://www.mongodb.com>`_
     (requires `motor <https://motor.readthedocs.io>`_)
@@ -26,7 +27,7 @@ class MongoDBBackend(CacheBackend):
 
 
 class MongoDBCache(BaseCache):
-    """An async-compatible interface for caching objects in MongoDB
+    """An async interface for caching objects in MongoDB
 
     Args:
         db_name: database name (be careful with production databases)

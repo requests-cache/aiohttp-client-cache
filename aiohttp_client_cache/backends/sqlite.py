@@ -7,7 +7,8 @@ from typing import AsyncIterable, AsyncIterator, Union
 import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.forge_utils import extend_init_signature, sqlite_connect
+from aiohttp_client_cache.docs.connections import sqlite_connect
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 
 
 @extend_init_signature(CacheBackend, sqlite_connect)

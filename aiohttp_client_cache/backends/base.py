@@ -9,8 +9,8 @@ from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.cache_keys import create_key
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 from aiohttp_client_cache.expiration import ExpirationPatterns, ExpirationTime, get_expiration
-from aiohttp_client_cache.forge_utils import extend_init_signature
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]

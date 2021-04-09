@@ -7,8 +7,8 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend
+from aiohttp_client_cache.docs.forge_utils import copy_signature, extend_signature
 from aiohttp_client_cache.expiration import ExpirationTime
-from aiohttp_client_cache.forge_utils import copy_signature, extend_signature
 from aiohttp_client_cache.response import AnyResponse
 
 logger = getLogger(__name__)

@@ -5,10 +5,11 @@ from aioboto3.session import ResourceCreatorContext
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey
-from aiohttp_client_cache.forge_utils import extend_init_signature
+from aiohttp_client_cache.docs.connections import dynamo_connect
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 
 
-@extend_init_signature(CacheBackend)
+@extend_init_signature(CacheBackend, dynamo_connect)
 class DynamoDBBackend(CacheBackend):
     """Async cache backend for `DynamoDB <https://aws.amazon.com/dynamodb>`_
     (requires `aioboto3 <https://aioboto3.readthedocs.io>`_)
@@ -40,7 +41,7 @@ class DynamoDBBackend(CacheBackend):
 
 
 class DynamoDbCache(BaseCache):
-    """An async-compatible interface for caching objects in a DynamoDB key-store
+    """An async interface for caching objects in a DynamoDB key-store
 
     The actual key name on the dynamodb server will be ``namespace:key``.
     In order to deal with how dynamodb stores data/keys, all values must be serialized.
