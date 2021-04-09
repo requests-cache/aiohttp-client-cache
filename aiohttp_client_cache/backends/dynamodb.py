@@ -5,8 +5,7 @@ from aioboto3.session import ResourceCreatorContext, Session
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.docs.connections import dynamodb_template
-from aiohttp_client_cache.docs.forge_utils import extend_init_signature
+from aiohttp_client_cache.docs import dynamodb_template, extend_init_signature
 
 
 @extend_init_signature(CacheBackend, dynamodb_template)

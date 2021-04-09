@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""A contrived example of using aiohttp + caching.
-Fetches and caches the content of a given web page and all links found on that page
+"""
+An example that fetches and caches the content of a given web page, and all links found on that page
 
-Usage::
+Usage: ``./precache.py <url>``
 
-    ./precache.py <url>
+Example:
 
-Example::
+.. code-block:: bash
 
     $ # Run twice and note stats before and after
     $ ./precache.py https://www.nytimes.com
