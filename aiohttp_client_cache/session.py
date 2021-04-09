@@ -16,6 +16,7 @@ logger = getLogger(__name__)
 
 class CacheMixin:
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
+
     @extend_signature(ClientSession.__init__)
     def __init__(self, *, cache: CacheBackend = None, **kwargs):
         super().__init__(**kwargs)  # type: ignore

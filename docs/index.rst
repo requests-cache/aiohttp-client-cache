@@ -1,12 +1,12 @@
 .. _index-page:
 
-.. Omit README link to ReadTheDocs, since we're already on ReadTheDocs!
+.. Omit links to ReadTheDocs, since we're already on ReadTheDocs
 .. mdinclude:: ../README.md
-    :end-line: 15
+    :end-line: 12
 
 .. mdinclude:: ../README.md
-    :start-line: 17
-
+    :start-line: 14
+    :end-line: 83
 
 Contents
 ========
@@ -17,11 +17,12 @@ Contents
     user_guide
     backends
     security
+    examples
     reference
+    related_projects
     contributing
     contributors
     history
-
 
 Indices and tables
 ==================
