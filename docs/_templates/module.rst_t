@@ -1,0 +1,16 @@
+{{- basename.split('.')[-1] | e | heading }}
+
+Summary
+-------
+.. automodsumm:: {{ qualname }}
+    :classes-only:
+
+.. automodsumm:: {{ qualname }}
+    :functions-only:
+
+Module Contents
+---------------
+.. automodule:: {{ qualname }}
+{%- for option in automodule_options %}
+   :{{ option }}:
+{%- endfor %}
