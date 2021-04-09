@@ -50,11 +50,12 @@ intersphinx_mapping = {
     'redis': ('https://redis-py.readthedocs.io/en/stable/', None),
 }
 
-# Exclude top-level package docs and documentation utility modules
+# Exclude modules with manually formatted docs and documentation utility modules
 exclude_patterns = [
     '_build',
     'modules/aiohttp_client_cache.rst',
     'modules/aiohttp_client_cache.backends.rst',
+    'modules/aiohttp_client_cache.session.rst',
     'modules/aiohttp_client_cache.docs.rst',
     'modules/aiohttp_client_cache.docs.connections.rst',
     'modules/aiohttp_client_cache.docs.forge_utils.rst',

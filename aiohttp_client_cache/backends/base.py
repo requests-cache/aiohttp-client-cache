@@ -45,8 +45,8 @@ class CacheBackend:
         """
         Args:
             cache_name: Cache prefix or namespace, depending on backend
-            expire_after: Expiration time after which a cache entry will expire; may be a numeric value
-                in seconds, a :py:class:`.timedelta`, or ``-1`` to never expire
+            expire_after: Time after which a cache entry will be expired. For numeric values,
+                specify either a positive value in seconds, or ``-1`` to never expire.
             urls_expire_after: Expiration times to apply for different URL patterns
             allowed_codes: Only cache responses with these status codes
             allowed_methods: Only cache requests with these HTTP methods
