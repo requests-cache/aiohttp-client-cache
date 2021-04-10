@@ -10,11 +10,13 @@
 * Add case-insensitive response headers for compatibility with aiohttp.ClientResponse.headers
 * Add optional integration with `itsdangerous` for safer serialization
 * Add `CacheBackend.get_urls()` to get all urls currently in the cache
-* Allow passing all connection kwargs (for SQLite, Redis, and MongoDB connection methods) via CacheBackend
+* Add some default attributes (`from_cache, is_expired`, etc.) to returned ClientResponse objects
+* Allow passing all backend-specific connection kwargs via CacheBackend
 * Add support for `json` request body
 * Convert all `keys()` and `values()` methods into async generators
 * Fix serialization of Content-Disposition
 * Fix filtering ignored parameters for request body (`data` and `json`)
+* Add user guide, more examples, and other project docs
 
 ## 0.2.0 (2021-02-28)
 [See all issues & PRs for v0.2](https://github.com/JWCook/aiohttp-client-cache/milestone/1?closed=1)
