@@ -33,7 +33,20 @@ The ``cache_name`` parameter will be used as follows depending on the backend:
 * DynamoDb: Table name
 * MongoDb: Database name
 * Redis: Namespace, meaning all keys will be prefixed with ``'<cache_name>:'``
-* SQLite: Database path, e.g ``~/.cache/my_cache.sqlite``
+* SQLite: Database path; user paths are allowed, e.g ``~/.cache/my_cache.sqlite``
+
+Backend-Specific Arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+When initializing a :py:class:`.CacheBackend`, you can provide any valid keyword arguments for the
+backend's internal connection class or function.
+
+For example, with :py:class:`.SQLiteBackend`, you can pass arguments accepted by
+:py:func:`sqlite3.connect`:
+
+    >>> cache = SQLiteBackend(
+    ...     timeout=2.5,
+    ...     uri='file://home/user/.cache/aiohttp-cache.db?mode=ro&cache=private',
+    ... )
 
 Custom Backends
 ~~~~~~~~~~~~~~~

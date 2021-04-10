@@ -23,6 +23,15 @@ EXCLUDE_ATTRS = {
     'real_url',
     'request_info',
 }
+
+# Default attriutes to add to ClientResponse objects
+RESPONSE_DEFAULTS = {
+    'created_at': None,
+    'expires': None,
+    'from_cache': False,
+    'is_expired': False,
+}
+
 JsonResponse = Optional[Dict[str, Any]]
 DictItems = List[Tuple[str, str]]
 LinkItems = List[Tuple[str, DictItems]]
@@ -93,6 +102,10 @@ class CachedResponse:
         params = MappingProxyType(params_dct)
         filename = multipart.content_disposition_filename(params)
         return ContentDisposition(disposition_type, params, filename)
+
+    @property
+    def from_cache(self):
+        return True
 
     @property
     def headers(self) -> CIMultiDictProxy[str]:
@@ -171,12 +184,22 @@ class CachedResponse:
         return self._body.decode(encoding or self.encoding, errors=errors)
 
 
+AnyResponse = Union[ClientResponse, CachedResponse]
+
+
+def set_response_defaults(response: AnyResponse) -> AnyResponse:
+    """Set some default CachedResponse values on a ClientResponse object, so they can be
+    expected to always be present
+    """
+    if not isinstance(response, CachedResponse):
+        for k, v in RESPONSE_DEFAULTS.items():
+            setattr(response, k, v)
+    return response
+
+
 def _to_str_tuples(data: Mapping) -> DictItems:
     return [(k, str(v)) for k, v in data.items()]
 
 
 def _to_url_multidict(data: DictItems) -> MultiDict:
     return MultiDict([(k, URL(url)) for k, url in data])
-
-
-AnyResponse = Union[ClientResponse, CachedResponse]
