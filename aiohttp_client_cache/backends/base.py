@@ -244,11 +244,6 @@ class BaseCache(metaclass=ABCMeta):
             return item
         return self._serializer.loads(item) if item else None
 
-    # TODO: Remove once all backends have been updated to use serialize/deserialize
-    @staticmethod
-    def unpickle(result):
-        return pickle.loads(bytes(result)) if result else None
-
     @staticmethod
     def _get_serializer(secret_key, salt):
         """Get the appropriate serializer to use; either ``itsdangerous``, if a secret key is
