@@ -100,11 +100,23 @@ Cache Expiration
 By default, cached responses will be stored indefinitely. You can initialize the cache with an
 ``expire_after`` value to specify how long responses will be cached.
 
-Expiration Types
-~~~~~~~~~~~~~~~~
+Expiration Scopes
+~~~~~~~~~~~~~~~~~
+Passing ``expire_after`` to a session's :py:class:`.CacheBackend` will set the expiration for the
+duration of that session. Expiration can also be set on a per-URL or per-request basis.
+The following order of precedence is used:
+
+1. Per-request expiration (``expire_after`` argument for :py:meth:`.CachedSession.request`)
+2. Per-URL expiration (``urls_expire_after`` argument for :py:class:`.CachedSession`)
+3. Cache-Control expiration headers (if enabled with ``cache_control`` argument for :py:class:`.CacheBackend`)
+4. Per-session expiration (``expire_after`` argument for :py:class:`.CacheBackend`)
+
+Expiration Values
+~~~~~~~~~~~~~~~~~
 ``expire_after`` can be any of the following:
 
-* ``-1`` (to never expire)
+* ``-1``: Never expire
+* ``0`` Expire immediately, e.g. skip writing to the cache
 * A positive number (in seconds)
 * A :py:class:`~datetime.timedelta`
 * A :py:class:`~datetime.datetime`
@@ -120,16 +132,6 @@ Examples:
 
     >>> # Update an existing session to disable expiration (i.e., store indefinitely)
     >>> session.expire_after = -1
-
-Expiration Scopes
-~~~~~~~~~~~~~~~~~
-Passing ``expire_after`` to a session's :py:class:`.CacheBackend` will set the expiration for the
-duration of that session. Expiration can also be set on a per-URL or per-request basis.
-The following order of precedence is used:
-
-1. Per-request expiration (``expire_after`` argument for :py:meth:`.CachedSession.request`)
-2. Per-URL expiration (``urls_expire_after`` argument for :py:class:`.CachedSession`)
-3. Per-session expiration (``expire_after`` argument for :py:class:`.CacheBackend`)
 
 URL Patterns
 ~~~~~~~~~~~~
@@ -156,6 +158,29 @@ that changes infrequently, and another that never changes. Example:
 * If there is more than one match, the first match will be used in the order they are defined
 * If no patterns match a request, ``CacheBackend.expire_after`` will be used as a default.
 
+Cache-Control
+~~~~~~~~~~~~~
+.. warning::
+    This is **not** intended to be a thorough or strict implementation of server-side HTTP caching,
+    e.g. according to RFC 2616.
+
+Optional support is included for a simplified subset of
+`Cache-Control <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control>`_
+response headers. To enable this behavior, use the ``cache_control`` option:
+
+    >>> cache = SQLiteBackend(cache_control=True)
+
+**Supported headers:**
+
+* ``max-age``: Used as the expiration time in seconds
+* ``no-store``: Skips writing response data to the cache
+
+**Notes:**
+
+* Unlike a browser or proxy cache, ``max-age=0`` does not currently clear previously cached responses.
+* Cache-Control directives will override ``CacheBackend.expire_after``. See
+  :ref:`user_guide:expiration scopes` for the full order of precedence.
+
 Removing Expired Responses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 For better performance, expired responses won't be removed immediately, but will be removed
@@ -169,7 +194,6 @@ revalidate the cache with the new expiration time:
 
     >>> session.remove_expired_responses(expire_after=timedelta(days=30))
 
-
 Cache Inspection
 ----------------
 Here are some ways to get additional information out of the cache session, backend, and responses:
@@ -177,6 +201,7 @@ Here are some ways to get additional information out of the cache session, backe
 Response Attributes
 ~~~~~~~~~~~~~~~~~~~
 The following attributes are available on both cached and new responses returned from :py:class:`.CachedSession`:
+
 * ``from_cache``: indicates if the response came from the cache
 * ``created_at``: :py:class:`~datetime.datetime` of when the cached response was created or last updated
 * ``expires``: :py:class:`~datetime.datetime` after which the cached response will expire

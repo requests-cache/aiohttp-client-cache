@@ -9,15 +9,11 @@ from yarl import URL
 from aiohttp_client_cache.response import CachedResponse, RequestInfo
 
 
-async def get_real_response():
-    # Just for debugging purposes, not used by unit tests
-    async with ClientSession() as session:
-        return await session.get('http://httpbin.org/get')
-
-
 async def get_test_response(client_factory, url='/', **kwargs):
     app = web.Application()
     app.router.add_route('GET', '/valid_url', mock_handler)
+    app.router.add_route('GET', '/json', json_mock_handler)
+    app.router.add_route('GET', '/empty_content', empty_mock_handler)
     client = await client_factory(app)
     client_response = await client.get(url)
 
@@ -27,8 +23,19 @@ async def get_test_response(client_factory, url='/', **kwargs):
 async def mock_handler(request):
     return web.Response(
         body=b'Hello, world',
-        headers={'Link': '<https://example.com>; rel="preconnect"'},
+        headers={
+            'Link': '<https://example.com>; rel="preconnect"',
+            'Content-Disposition': 'attachment; name="test-param"; filename="img.jpg"',
+        },
     )
+
+
+async def json_mock_handler(request):
+    return web.Response(body=b'{"key": "value"}')
+
+
+async def empty_mock_handler(request):
+    return web.Response(body=b' ')
 
 
 async def test_basic_attrs(aiohttp_client):
@@ -52,6 +59,13 @@ async def test_is_expired(aiohttp_client):
     assert response.is_expired is False
     await asyncio.sleep(0.02)
     assert response.is_expired is True
+
+
+async def test_content_disposition(aiohttp_client):
+    response = await get_test_response(aiohttp_client, '/valid_url')
+    assert response.content_disposition.type == 'attachment'
+    assert response.content_disposition.filename == 'img.jpg'
+    assert response.content_disposition.parameters.get('name') == 'test-param'
 
 
 async def test_encoding(aiohttp_client):
@@ -105,9 +119,20 @@ async def test_history(aiohttp_client):
     pass
 
 
-# TODO
 async def test_json(aiohttp_client):
-    pass
+    response = await get_test_response(aiohttp_client, '/json')
+    assert await response.json() == {'key': 'value'}
+
+
+async def test_json__empty_content(aiohttp_client):
+    response = await get_test_response(aiohttp_client, '/empty_content')
+    assert await response.json() is None
+
+
+async def test_json__non_json_content(aiohttp_client):
+    response = await get_test_response(aiohttp_client)
+    with pytest.raises(ValueError):
+        await response.json()
 
 
 async def test_raise_for_status__200(aiohttp_client):
