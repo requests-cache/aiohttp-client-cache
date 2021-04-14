@@ -1,4 +1,4 @@
-"""Functions for determining cache expiration"""
+"""Functions for determining cache expiration based on client settings and/or cache headers"""
 from datetime import datetime, timedelta
 from fnmatch import fnmatch
 from itertools import chain

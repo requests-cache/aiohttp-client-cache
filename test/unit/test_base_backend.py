@@ -135,7 +135,7 @@ def test_get_expiration(mock_get_expiration):
         cache_control=cache_control,
     )
     response = get_mock_response()
-    cache._get_expiration(response, request_expire_after=2)
+    cache.get_expiration(response, request_expire_after=2)
     mock_get_expiration.assert_called_with(response, 2, 1, urls_expire_after, True)
 
 

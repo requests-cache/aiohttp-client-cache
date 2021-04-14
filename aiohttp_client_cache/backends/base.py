@@ -7,15 +7,15 @@ from typing import AsyncIterable, Callable, Iterable, Optional, Union
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
 
-from aiohttp_client_cache.cache_keys import create_key
-from aiohttp_client_cache.docs.forge_utils import extend_init_signature
-from aiohttp_client_cache.expiration import (
+from aiohttp_client_cache.cache_control import (
     DO_NOT_CACHE,
     ExpirationPatterns,
     ExpirationTime,
     get_expiration,
     get_expiration_datetime,
 )
+from aiohttp_client_cache.cache_keys import create_key
+from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
