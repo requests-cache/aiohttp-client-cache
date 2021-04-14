@@ -1,7 +1,6 @@
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
-from datetime import datetime
 from logging import getLogger
 from typing import AsyncIterable, Callable, Iterable, Optional, Union
 
@@ -10,7 +9,13 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.cache_keys import create_key
 from aiohttp_client_cache.docs.forge_utils import extend_init_signature
-from aiohttp_client_cache.expiration import ExpirationPatterns, ExpirationTime, get_expiration
+from aiohttp_client_cache.expiration import (
+    DO_NOT_CACHE,
+    ExpirationPatterns,
+    ExpirationTime,
+    get_expiration,
+    get_expiration_datetime,
+)
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
@@ -45,8 +50,8 @@ class CacheBackend:
         """
         Args:
             cache_name: Cache prefix or namespace, depending on backend
-            expire_after: Time after which a cache entry will be expired. For numeric values,
-                specify either a positive value in seconds, or ``-1`` to never expire.
+            expire_after: Time after which a cache entry will be expired; see
+                :ref:`user_guide:cache expiration` for possible formats
             urls_expire_after: Expiration times to apply for different URL patterns
             allowed_codes: Only cache responses with these status codes
             allowed_methods: Only cache requests with these HTTP methods
@@ -105,11 +110,11 @@ class CacheBackend:
             logger.debug('No cached response found')
         # If the item is expired or filtered out, delete it from the cache
         elif not self.is_cacheable(response):  # type: ignore
-            logger.info('Cached response expired; deleting')
+            logger.debug('Cached response expired; deleting')
             response = None
             await self.delete(key)
         else:
-            logger.info(f'Cached response found for key: {key}')
+            logger.debug(f'Cached response found for key: {key}')
 
         # Response will be a CachedResponse or None by this point
         return response  # type: ignore
@@ -130,11 +135,13 @@ class CacheBackend:
             expire_after: Expiration time to set only for this request; overrides
                 ``CachedSession.expire_after``, and accepts all the same values.
         """
-        if not self.is_cacheable(response):
+        expire_after = self.get_expiration(response, expire_after)
+        if not self.is_cacheable(response) or expire_after == DO_NOT_CACHE:
+            logger.debug(f'Not caching response for key: {key}')
             return
-        logger.info(f'Saving response for key: {key}')
 
-        expire_after = self._get_expiration(response, expire_after)
+        logger.debug(f'Saving response for key: {key}')
+        expire_after = get_expiration_datetime(expire_after)
         cached_response = await CachedResponse.from_client_response(response, expire_after)
         await self.responses.write(key, cached_response)
 
@@ -142,9 +149,9 @@ class CacheBackend:
         for r in response.history:
             await self.redirects.write(self.create_key(r.method, r.url), key)
 
-    def _get_expiration(
+    def get_expiration(
         self, response: ClientResponse, request_expire_after: ExpirationTime = None
-    ) -> Optional[datetime]:
+    ) -> ExpirationTime:
         """Get the appropriate expiration for the given response"""
         return get_expiration(
             response,
@@ -186,7 +193,7 @@ class CacheBackend:
             if response and response.is_expired or not self.filter_fn(response):
                 keys_to_delete.add(key)
 
-        logger.info(f'Deleting {len(keys_to_delete)} expired cache entries')
+        logger.debug(f'Deleting {len(keys_to_delete)} expired cache entries')
         for key in keys_to_delete:
             await self.delete(key)
 
