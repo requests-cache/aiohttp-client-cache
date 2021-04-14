@@ -1,12 +1,16 @@
 """Functions for determining cache expiration"""
 from datetime import datetime, timedelta
 from fnmatch import fnmatch
+from itertools import chain
 from logging import getLogger
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
 from multidict import CIMultiDictProxy
+
+# Value that may be set by either Cache-Control headers or CacheBackend params to disable caching
+DO_NOT_CACHE = 0
 
 # Cache-related headers, for logging/reference; not all are supported
 REQUEST_CACHE_HEADERS = [
@@ -30,21 +34,19 @@ def get_expiration(
     session_expire_after: ExpirationTime = None,
     urls_expire_after: ExpirationPatterns = None,
     cache_control: bool = False,
-) -> Optional[datetime]:
+) -> ExpirationTime:
     """Get the appropriate expiration for the given response, in order of precedence:
     1. Per-request expiration
     2. Per-URL expiration
     3. Cache-Control (if enabled)
     4. Per-session expiration
 
-    Returns:
-        An absolute expiration :py:class:`.datetime` or ``None``
     """
-    return get_expiration_datetime(
-        request_expire_after
-        or get_url_expiration(response.url, urls_expire_after)
-        or get_header_expiration(response.headers, cache_control)
-        or session_expire_after
+    return coalesce(
+        request_expire_after,
+        get_url_expiration(response.url, urls_expire_after),
+        get_header_expiration(response.headers, cache_control),
+        session_expire_after,
     )
 
 
@@ -63,14 +65,19 @@ def get_expiration_datetime(expire_after: ExpirationTime) -> Optional[datetime]:
 
 def get_header_expiration(headers: CIMultiDictProxy, cache_control: bool = True) -> Optional[int]:
     """Get expiration from cache headers (in seconds), if available. Currently only supports
-    ``max-age``.
+    ``max-age`` and ``no-store``.
     """
     if not cache_control:
         return None
 
-    cache_headers = list(headers.getall('Cache-Control', []))
-    cache_directives = dict([split_kv_directive(value) for value in cache_headers])
-    return cache_directives.get('max-age')
+    # Get all Cache-Control directives, and handle multiple headers and/or comma-separated lists
+    cache_directives = [v.split(',') for v in headers.getall('Cache-Control', [])]
+    cache_directives = list(chain.from_iterable(cache_directives))
+
+    kv_directives = dict([split_kv_directive(value) for value in cache_directives])
+    if kv_directives.get('no-store'):
+        return DO_NOT_CACHE
+    return kv_directives.get('max-age')
 
 
 def get_url_expiration(
@@ -84,10 +91,16 @@ def get_url_expiration(
     return None
 
 
+def coalesce(*values: Any, default=None) -> Any:
+    """Get the first non-``None`` value in a list of values"""
+    return next((v for v in values if v is not None), default)
+
+
 def split_kv_directive(header_value: str) -> CacheDirective:
     """Split a cache directive into a ``(header_value, int)`` key-value pair, if possible;
     otherwise just ``(header_value, True)``.
     """
+    header_value = header_value.strip()
     if '=' in header_value:
         k, v = header_value.split('=', 1)
         return k, try_int(v)
