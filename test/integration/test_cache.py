@@ -1,6 +1,7 @@
 """Integration tests for behavior of CachedSession, backend classes, and storage classes"""
 import pickle
 import pytest
+from datetime import datetime
 from uuid import uuid4
 
 from itsdangerous.exc import BadSignature
@@ -64,6 +65,16 @@ async def test_include_headers(tempfile_session):
     response_2 = await tempfile_session.get(httpbin('get'), headers={'key': 'value'})
 
     assert not from_cache(response_1) and from_cache(response_2)
+
+
+async def test_cache_control(tempfile_session):
+    tempfile_session.cache.cache_control = True
+    now = datetime.utcnow()
+    await tempfile_session.get(httpbin('cache/60'))
+    response = await tempfile_session.get(httpbin('cache/60'))
+
+    approx_expire_after = (response.expires - now).total_seconds()
+    assert abs(approx_expire_after - 60) <= 2
 
 
 async def test_serializer_pickle():
