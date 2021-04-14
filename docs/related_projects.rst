@@ -8,6 +8,6 @@ Other python cache projects you may want to check out:
   file-based cache built on SQLite
 * `aiocache <https://github.com/aio-libs/aiocache>`_: General-purpose (not HTTP-specific) async cache
   backends
-* `requests-cache <https://github.com/reclosedev/requests-cache`_: An HTTP cache for the ``requests`` library
+* `requests-cache <https://github.com/reclosedev/requests-cache>`_: An HTTP cache for the ``requests`` library
 * `CacheControl <https://github.com/ionrock/cachecontrol>`_: An HTTP cache for ``requests`` that caches
   according to uses HTTP headers and status codes

@@ -1,7 +1,7 @@
 """Functions for creating keys used for cache requests"""
 import hashlib
 from collections.abc import Mapping
-from typing import Dict, List
+from typing import Dict, Iterable
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest
@@ -17,7 +17,7 @@ def create_key(
     json: Dict = None,
     headers: Dict = None,
     include_headers: bool = False,
-    ignored_params: List[str] = None,
+    ignored_params: Iterable[str] = None,
     **kwargs,
 ) -> str:
     """Create a unique cache key based on request details"""

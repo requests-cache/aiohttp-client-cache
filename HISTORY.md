@@ -1,6 +1,10 @@
 # History
 
-## 0.3.0 (2021-04-TBD)
+## 0.4.0 (2021-TBD)
+* Add optional support for `Cache-Control: max-age` and `no-store` response headers
+
+
+## 0.3.0 (2021-04-09)
 [See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
 
 * Add async implementation of DynamoDb backend
