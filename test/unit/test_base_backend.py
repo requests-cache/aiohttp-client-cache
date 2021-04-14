@@ -128,13 +128,15 @@ async def test_save_response__not_cacheable(mock_is_cacheable):
 def test_get_expiration(mock_get_expiration):
     """Actual logic is in expiration module; just test to make sure it gets called correctly"""
     urls_expire_after = {'*.site_1.com': 60}
+    cache_control = True
     cache = CacheBackend(
         expire_after=1,
         urls_expire_after=urls_expire_after,
+        cache_control=cache_control,
     )
     response = get_mock_response()
-    cache._get_expiration(response, request_expire_after=2)
-    mock_get_expiration.assert_called_with(response, 2, 1, urls_expire_after)
+    cache.get_expiration(response, request_expire_after=2)
+    mock_get_expiration.assert_called_with(response, 2, 1, urls_expire_after, True)
 
 
 async def test_clear():
