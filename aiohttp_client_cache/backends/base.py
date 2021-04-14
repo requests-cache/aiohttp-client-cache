@@ -23,7 +23,6 @@ class CacheBackend:
     This manages higher-level cache operations, including cache expiration, generating cache keys,
     and managing redirect history.
 
-
     Lower-level storage operations are handled by :py:class:`.BaseCache`.
     To extend this with your own custom backend, implement one or more subclasses of
     :py:class:`.BaseCache` to use as :py:attr:`CacheBackend.responses` and
@@ -39,6 +38,7 @@ class CacheBackend:
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
         ignored_params: Iterable = None,
+        cache_control: bool = True,
         filter_fn: Callable = lambda r: True,
         **kwargs,
     ):
@@ -52,6 +52,7 @@ class CacheBackend:
             allowed_methods: Only cache requests with these HTTP methods
             include_headers: Cache requests with different headers separately
             ignored_params: Request parameters to be excluded from the cache key
+            cache_control: Use Cache-Control response headers
             filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
                 returns a boolean indicating whether or not that response should be cached. Will be
                 applied to both new and previously cached responses
@@ -61,6 +62,7 @@ class CacheBackend:
         self.urls_expire_after = urls_expire_after
         self.allowed_codes = allowed_codes
         self.allowed_methods = allowed_methods
+        self.cache_control = cache_control
         self.filter_fn = filter_fn
         self.disabled = False
 
@@ -145,7 +147,11 @@ class CacheBackend:
     ) -> Optional[datetime]:
         """Get the appropriate expiration for the given response"""
         return get_expiration(
-            response, request_expire_after, self.expire_after, self.urls_expire_after
+            response,
+            request_expire_after,
+            self.expire_after,
+            self.urls_expire_after,
+            self.cache_control,
         )
 
     async def clear(self):
