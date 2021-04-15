@@ -49,6 +49,7 @@ async def test_basic_attrs(aiohttp_client):
     assert response.headers['Content-Type'] == 'text/plain; charset=utf-8'
     assert await response.text() == '404: Not Found'
     assert response.history == tuple()
+    assert response._released is True
 
 
 async def test_is_expired(aiohttp_client):

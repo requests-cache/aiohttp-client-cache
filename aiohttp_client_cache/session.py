@@ -7,7 +7,6 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend
-from aiohttp_client_cache.cache_control import ExpirationTime
 from aiohttp_client_cache.docs import copy_signature, extend_signature
 from aiohttp_client_cache.response import AnyResponse, set_response_defaults
 
@@ -23,21 +22,17 @@ class CacheMixin:
         self.cache = cache or CacheBackend()
 
     @copy_signature(ClientSession._request)
-    async def _request(
-        self, method: str, str_or_url: StrOrURL, expire_after: ExpirationTime = None, **kwargs
-    ) -> AnyResponse:
+    async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
-        cache_key = self.cache.create_key(method, str_or_url, **kwargs)
-
         # Attempt to fetch cached response; if missing or expired, fetch new one
-        cached_response = await self.cache.get_response(cache_key)
-        if cached_response:
-            return cached_response
+        response, actions = await self.cache.request(method=method, url=str_or_url, **kwargs)
+        if response:
+            return response
         else:
             logger.debug(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
             await new_response.read()
-            await self.cache.save_response(cache_key, new_response, expire_after=expire_after)
+            await self.cache.save_response(new_response, actions)
             return set_response_defaults(new_response)
 
     @asynccontextmanager
