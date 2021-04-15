@@ -3,18 +3,58 @@ from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
-from aiohttp_client_cache.cache_control import DO_NOT_CACHE, get_expiration, get_expiration_datetime
+from aiohttp_client_cache.cache_control import DO_NOT_CACHE, CacheActions, get_expiration_datetime
+from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 
 IGNORED_DIRECTIVES = [
     'must-revalidate',
-    'no-cache',
     'no-transform',
     'private',
     'proxy-revalidate',
     'public',
     's-maxage=<seconds>',
 ]
+
+
+@pytest.mark.parametrize(
+    'request_expire_after, url_expire_after, header_expire_after, expected_expiration',
+    [
+        (None, None, None, 1),
+        (2, None, None, 2),
+        (2, 3, None, 2),
+        (None, 3, None, 3),
+        (2, 3, 4, 4),
+        (2, None, 4, 4),
+        (None, 3, 4, 4),
+        (None, None, 4, 4),
+    ],
+)
+@patch('aiohttp_client_cache.cache_control.get_url_expiration')
+def test_init_from_request(
+    get_url_expiration,
+    request_expire_after,
+    url_expire_after,
+    header_expire_after,
+    expected_expiration,
+):
+    """Test precedence with various combinations or per-request, per-session, per-URL, and
+    Cache-Control expiration
+    """
+    url = 'https://img.site.com/base/img.jpg'
+    get_url_expiration.return_value = url_expire_after
+    headers = {'Cache-Control': f'max-age={header_expire_after}'} if header_expire_after else {}
+
+    actions = CacheActions.from_request(
+        key='key',
+        url=URL(url),
+        request_expire_after=request_expire_after,
+        session_expire_after=1,
+        cache_control=True,
+        headers=headers,
+    )
+    assert actions.expire_after == expected_expiration
 
 
 @pytest.mark.parametrize(
@@ -35,25 +75,29 @@ IGNORED_DIRECTIVES = [
         ('some_other_site.com', 60, 60),
     ],
 )
-def test_get_expiration(url, request_expire_after, expected_expiration):
-    """Test get_expiration with per-session, per-request, and per-URL expiration"""
-    session_expire_after = 1
+def test_init_from_settings(url, request_expire_after, expected_expiration):
+    """Test with per-session, per-request, and per-URL expiration"""
     urls_expire_after = {
         '*.site_1.com': timedelta(hours=12),
         'site_2.com/resource_1': timedelta(hours=20),
         'site_2.com/resource_2': timedelta(days=7),
         'site_2.com/static': -1,
     }
-    expiration = get_expiration(
-        MagicMock(url=url), request_expire_after, session_expire_after, urls_expire_after
+    actions = CacheActions.from_settings(
+        key='key',
+        url=URL(url),
+        request_expire_after=request_expire_after,
+        session_expire_after=1,
+        urls_expire_after=urls_expire_after,
     )
-    assert expiration == expected_expiration
+    assert actions.expire_after == expected_expiration
 
 
 @pytest.mark.parametrize(
     'headers, expected_expiration',
     [
-        ([], 1),
+        ([], None),
+        ([('Expires', HTTPDATE_STR)], None),  # Only valid for response headers
         ([('Cache-Control', 'max-age=60')], 60),
         ([('Cache-Control', 'public, max-age=60')], 60),
         ([('Cache-Control', 'public'), ('Cache-Control', 'max-age=60')], 60),
@@ -61,58 +105,63 @@ def test_get_expiration(url, request_expire_after, expected_expiration):
         ([('Cache-Control', 'no-store')], DO_NOT_CACHE),
     ],
 )
-def test_get_expiration__cache_control(headers, expected_expiration):
-    """Test get_expiration with Cache-Control response headers"""
+def test_init_from_headers(headers, expected_expiration):
+    """Test with Cache-Control request headers"""
     url = 'https://img.site.com/base/img.jpg'
-    response = MagicMock(url=url, headers=CIMultiDictProxy(CIMultiDict(headers)))
-    expiration = get_expiration(response, session_expire_after=1, cache_control=True)
-    assert expiration == expected_expiration
+    actions = CacheActions.from_headers(key='key', headers=CIMultiDict(headers))
+
+    assert actions.key == 'key'
+    if expected_expiration == DO_NOT_CACHE:
+        assert actions.skip_read is True
+        assert actions.skip_write is True
+    else:
+        assert actions.expire_after == expected_expiration
+        assert actions.skip_read is False
+        assert actions.skip_write is False
 
 
 @pytest.mark.parametrize(
-    'request_expire_after, url_expire_after, header_expire_after, expected_expiration',
+    'headers, expected_expiration',
     [
-        (None, None, None, 1),
-        (2, None, None, 2),
-        (2, 3, None, 2),
-        (2, None, 4, 2),
-        (2, 3, 4, 2),
-        (None, 3, None, 3),
-        (None, 3, 4, 3),
-        (None, None, 4, 4),
+        ([], None),
+        ([('Cache-Control', 'no-cache')], None),  # Only valid for request headers
+        ([('Cache-Control', 'max-age=60')], 60),
+        ([('Cache-Control', 'public, max-age=60')], 60),
+        ([('Cache-Control', 'public'), ('Cache-Control', 'max-age=60')], 60),
+        ([('Cache-Control', 'max-age=0')], DO_NOT_CACHE),
+        ([('Cache-Control', 'no-store')], DO_NOT_CACHE),
+        ([('Expires', HTTPDATE_STR)], HTTPDATE_STR),
+        ([('Expires', HTTPDATE_STR), ('Cache-Control', 'max-age=60')], 60),
     ],
 )
-@patch('aiohttp_client_cache.cache_control.get_header_expiration')
-@patch('aiohttp_client_cache.cache_control.get_url_expiration')
-def test_get_expiration__precedence(
-    get_url_expiration,
-    get_header_expiration,
-    request_expire_after,
-    url_expire_after,
-    header_expire_after,
-    expected_expiration,
-):
-    """Test get_expiration precedence with various combinations or per-request, per-session,
-    per-URL, and Cache-Control expiration
-    """
+def test_update_from_response(headers, expected_expiration):
+    """Test with Cache-Control response headers"""
     url = 'https://img.site.com/base/img.jpg'
-    get_url_expiration.return_value = url_expire_after
-    get_header_expiration.return_value = header_expire_after
+    response = MagicMock(url=url, headers=CIMultiDictProxy(CIMultiDict(headers)))
+    actions = CacheActions(key='key')
+    actions.update_from_response(response)
 
-    expiration = get_expiration(
-        MagicMock(url=url), request_expire_after, session_expire_after=1, cache_control=True
-    )
-    assert expiration == expected_expiration
+    if expected_expiration == DO_NOT_CACHE:
+        assert actions.skip_write is True
+    else:
+        assert actions.expire_after == expected_expiration
+        assert actions.skip_write is False
 
 
 @pytest.mark.parametrize('directive', IGNORED_DIRECTIVES)
-def test_get_expiration__ignored_headers(directive):
+def test_ignored_headers(directive):
     """Ensure that currently unimplemented Cache-Control headers do not affect behavior"""
     url = 'https://img.site.com/base/img.jpg'
-    headers = CIMultiDictProxy(CIMultiDict([('Cache-Control', directive)]))
-    response = MagicMock(url=url, headers=headers)
-    expiration = get_expiration(response, session_expire_after=1, cache_control=True)
-    assert expiration == 1
+    headers = {'Cache-Control': directive}
+    # expiration = get_expiration(response, session_expire_after=1, cache_control=True)
+    actions = CacheActions.from_request(
+        key='key',
+        url=URL(url),
+        session_expire_after=1,
+        cache_control=True,
+        headers=headers,
+    )
+    assert actions.expire_after == 1
 
 
 def test_get_expiration_datetime__no_expiration():
@@ -134,3 +183,8 @@ def test_get_expiration_datetime__relative(expire_after, expected_expiration_del
     expected_expiration = datetime.utcnow() + expected_expiration_delta
     # Instead of mocking datetime (which adds some complications), check for approximate value
     assert abs((expires - expected_expiration).total_seconds()) <= 5
+
+
+def test_get_expiration_datetime__httpdate():
+    assert get_expiration_datetime(HTTPDATE_STR) == HTTPDATE_DATETIME
+    assert get_expiration_datetime('P12Y34M56DT78H90M12.345S') is None

@@ -27,5 +27,5 @@ Utility Modules
 .. toctree::
     :titlesonly:
 
+    modules/aiohttp_client_cache.cache_control.rst
     modules/aiohttp_client_cache.cache_keys.rst
-    modules/aiohttp_client_cache.expiration.rst

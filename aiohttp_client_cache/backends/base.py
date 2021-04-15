@@ -2,18 +2,12 @@ import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from logging import getLogger
-from typing import AsyncIterable, Callable, Iterable, Optional, Union
+from typing import AsyncIterable, Callable, Iterable, Optional, Tuple, Union
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
 
-from aiohttp_client_cache.cache_control import (
-    DO_NOT_CACHE,
-    ExpirationPatterns,
-    ExpirationTime,
-    get_expiration,
-    get_expiration_datetime,
-)
+from aiohttp_client_cache.cache_control import CacheActions, ExpirationPatterns, ExpirationTime
 from aiohttp_client_cache.cache_keys import create_key
 from aiohttp_client_cache.docs.forge_utils import extend_init_signature
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
@@ -92,14 +86,40 @@ class CacheBackend:
         logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')  # type: ignore
         return all(cache_criteria.values())
 
-    async def get_response(self, key: str) -> Optional[CachedResponse]:
-        """Retrieve response and timestamp for `key` if it's stored in cache,
-        otherwise returns ``None```
+    async def request(
+        self,
+        method: str = None,
+        url: StrOrURL = None,
+        expire_after: ExpirationTime = None,
+        **kwargs,
+    ) -> Tuple[Optional[CachedResponse], CacheActions]:
+        """Fetch a cached response based on request info
 
         Args:
-            key: key of resource
+            method: HTTP method
+            url: Request URL
+            expire_after: Expiration time to set only for this request; overrides
+                ``CachedSession.expire_after``, and accepts all the same values.
+            kwargs: All other request arguments
         """
-        # Attempt to fetch response from the cache
+        key = self.create_key(method, url, **kwargs)
+        actions = CacheActions.from_request(
+            key,
+            url=url,
+            request_expire_after=expire_after,
+            session_expire_after=self.expire_after,
+            urls_expire_after=self.urls_expire_after,
+            cache_control=self.cache_control,
+            **kwargs,
+        )
+
+        # Skip reading from the cache, if specified by request headers
+        response = None if actions.skip_read else await self.get_response(actions.key)
+        return response, actions
+
+    async def get_response(self, key: str) -> Optional[CachedResponse]:
+        """Fetch a cached response based on a cache key"""
+        # Attempt to fetch the cached response
         logger.debug(f'Attempting to get cached response for key: {key}')
         try:
             response = await self.responses.read(key) or await self._get_redirect_response(str(key))
@@ -124,42 +144,25 @@ class CacheBackend:
         redirect_key = await self.redirects.read(key)
         return await self.responses.read(redirect_key) if redirect_key else None  # type: ignore
 
-    async def save_response(
-        self, key: str, response: ClientResponse, expire_after: ExpirationTime = None
-    ):
-        """Save response to cache
+    async def save_response(self, response: ClientResponse, actions: CacheActions):
+        """Save a response to the cache
 
         Args:
-            key: Key for this response
             response: Response to save
-            expire_after: Expiration time to set only for this request; overrides
-                ``CachedSession.expire_after``, and accepts all the same values.
+            actions: Specific cache actions to take
         """
-        expire_after = self.get_expiration(response, expire_after)
-        if not self.is_cacheable(response) or expire_after == DO_NOT_CACHE:
-            logger.debug(f'Not caching response for key: {key}')
+        actions.update_from_response(response)
+        if not self.is_cacheable(response) or actions.skip_write:
+            logger.debug(f'Not caching response for key: {actions.key}')
             return
 
-        logger.debug(f'Saving response for key: {key}')
-        expire_after = get_expiration_datetime(expire_after)
-        cached_response = await CachedResponse.from_client_response(response, expire_after)
-        await self.responses.write(key, cached_response)
+        logger.debug(f'Saving response for key: {actions.key}')
+        cached_response = await CachedResponse.from_client_response(response, actions.expires)
+        await self.responses.write(actions.key, cached_response)
 
         # Alias any redirect requests to the same cache key
         for r in response.history:
-            await self.redirects.write(self.create_key(r.method, r.url), key)
-
-    def get_expiration(
-        self, response: ClientResponse, request_expire_after: ExpirationTime = None
-    ) -> ExpirationTime:
-        """Get the appropriate expiration for the given response"""
-        return get_expiration(
-            response,
-            request_expire_after,
-            self.expire_after,
-            self.urls_expire_after,
-            self.cache_control,
-        )
+            await self.redirects.write(self.create_key(r.method, r.url), actions.key)
 
     async def clear(self):
         """Clear cache"""
