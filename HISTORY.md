@@ -1,7 +1,15 @@
 # History
 
 ## 0.4.0 (2021-TBD)
-* Add optional support for `Cache-Control: max-age` and `no-store` response headers
+* Add optional support for the following **request** headers:
+    * `Cache-Control: max-age`
+    * `Cache-Control: no-cache`
+    * `Cache-Control: no-store`
+* Add optional support for the following **response** headers:
+    * `Cache-Control: max-age`
+    * `Cache-Control: no-store`
+    * `Expires`
+* Add support for HTTP timestamps (RFC 5322) in ``expire_after`` parameters
 
 
 ## 0.3.0 (2021-04-09)
