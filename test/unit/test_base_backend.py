@@ -10,6 +10,7 @@ from aiohttp_client_cache.backends import (
     DictCache,
     get_placeholder_backend,
 )
+from aiohttp_client_cache.cache_control import CacheActions
 
 TEST_URL = 'https://test.com'
 
@@ -111,32 +112,18 @@ async def test_save_response(mock_is_cacheable):
     mock_response.history = [MagicMock(method='GET', url='test')]
     redirect_key = cache.create_key('GET', 'test')
 
-    await cache.save_response('key', mock_response)
+    await cache.save_response(mock_response, CacheActions(key='key'))
     cached_response = await cache.responses.read('key')
     assert cached_response and isinstance(cached_response, CachedResponse)
     assert await cache.redirects.read(redirect_key) == 'key'
 
 
+@skip_py37
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_save_response__not_cacheable(mock_is_cacheable):
     cache = CacheBackend()
     await cache.save_response('key', MagicMock())
     assert 'key' not in cache.responses
-
-
-@patch('aiohttp_client_cache.backends.base.get_expiration')
-def test_get_expiration(mock_get_expiration):
-    """Actual logic is in expiration module; just test to make sure it gets called correctly"""
-    urls_expire_after = {'*.site_1.com': 60}
-    cache_control = True
-    cache = CacheBackend(
-        expire_after=1,
-        urls_expire_after=urls_expire_after,
-        cache_control=cache_control,
-    )
-    response = get_mock_response()
-    cache.get_expiration(response, request_expire_after=2)
-    mock_get_expiration.assert_called_with(response, 2, 1, urls_expire_after, True)
 
 
 async def test_clear():
