@@ -93,6 +93,10 @@ class CachedResponse:
         return response
 
     @property
+    def _released(self):
+        return True
+
+    @property
     def content_disposition(self) -> Optional[ContentDisposition]:
         """Get Content-Disposition headers, if any"""
         raw = self.headers.get(hdrs.CONTENT_DISPOSITION)
@@ -149,7 +153,7 @@ class CachedResponse:
             url=URL(self.url),
             method=self.method,
             headers=self.headers,
-            real_url=URL(self.real_url),
+            real_url=URL(str(self.real_url)),
         )
 
     def get_encoding(self):
