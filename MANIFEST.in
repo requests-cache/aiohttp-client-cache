@@ -1,3 +1,9 @@
 include *.md
+include *.yml
 include LICENSE
 include aiohttp_client_cache/py.typed
+graft docs
+graft examples
+graft test
+prune docs/_*
+global-exclude *.py[co]

@@ -38,10 +38,11 @@ extras_require['dev'] = list(chain.from_iterable(extras_require.values()))
 
 setup(
     name='aiohttp-client-cache',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test*']),
     include_package_data=True,
     version=__version__,
     install_requires=['aiohttp', 'attrs', 'itsdangerous', 'python-forge', 'url-normalize'],
     extras_require=extras_require,
+    python_requires='>=3.7',
     zip_safe=False,
 )
