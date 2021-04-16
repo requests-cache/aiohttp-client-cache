@@ -77,10 +77,11 @@ Releases are built and published to pypi based on **git tags.**
 progress on major and minor releases.
 
 ## Code Layout
-Here is a brief overview of the main classes and modules:
+Here is a brief overview of the main classes and modules. See [API Reference](https://aiohttp-client-cache.readthedocs.io/en/latest/reference.html) for more complete documentation.
 * `session.CacheMixin`, `session.CachedSession`: A mixin and wrapper class, respectively, for `aiohttp.ClientSession`. There is little logic  here except wrapping `ClientSession._request()` with caching behavior.
 * `response.CachedResponse`: A wrapper class built from an `aiohttp.ClientResponse`, with additional cache-related info. This is what is serialized and persisted to the cache.
-* `backends.base.CacheBackend`: Most of the caching logic lives here, including saving and retriving responses. It contains two `BaseCache` objects for storing responses and redirects, respectively.
-* `cache_keys` and `expiration`: Utilities for creating cache keys and cache expiration, respectively
+* `backends.base.CacheBackend`: Most of the caching logic lives here, including saving and retrieving responses. It contains two `BaseCache` objects for storing responses and redirects, respectively.
 * `backends.base.BaseCache`: Base class for lower-level storage operations, overridden by individual backends.
-* Other backend implementations in `backends.*`: A backend implementation subclasses `CacheBackend` (for higher-level operations), as well as `BaseCache` (for lower-level operations).
+* Other modules under `backends.*`: Backend implementations that subclass `CacheBackend` + `BaseCache`
+* `cache_control`: Utilities for determining cache expiration and other cache actions  
+* `cache_keys`: Utilities for creating cache keys

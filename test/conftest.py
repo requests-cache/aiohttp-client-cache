@@ -1,5 +1,6 @@
 import pytest
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from logging import basicConfig, getLogger
 from os import getenv
 from tempfile import NamedTemporaryFile
@@ -24,6 +25,9 @@ HTTPBIN_FORMATS = [
     'robots.txt',
     'xml',
 ]
+
+HTTPDATE_STR = 'Fri, 16 APR 2021 21:13:00 GMT'
+HTTPDATE_DATETIME = datetime(2021, 4, 16, 21, 13, tzinfo=timezone.utc)
 
 
 # Configure logging for pytest session
@@ -56,3 +60,9 @@ async def get_tempfile_session(**kwargs) -> AsyncIterator[CachedSession]:
         cache = SQLiteBackend(cache_name=temp.name, allowed_methods=ALL_METHODS, **kwargs)
         async with CachedSession(cache=cache) as session:
             yield session
+
+
+def assert_delta_approx_equal(dt1: datetime, dt2: datetime, target_delta, threshold_seconds=2):
+    """Assert that the given datetimes are approximately ``target_delta`` seconds apart"""
+    diff_in_seconds = (dt2 - dt1).total_seconds()
+    assert abs(diff_in_seconds - target_delta) <= threshold_seconds
