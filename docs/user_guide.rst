@@ -100,17 +100,6 @@ Cache Expiration
 By default, cached responses will be stored indefinitely. You can initialize the cache with an
 ``expire_after`` value to specify how long responses will be cached.
 
-Expiration Scopes
-~~~~~~~~~~~~~~~~~
-Passing ``expire_after`` to a session's :py:class:`.CacheBackend` will set the expiration for the
-duration of that session. Expiration can also be set on a per-URL or per-request basis.
-The following order of precedence is used:
-
-1. Per-request expiration (``expire_after`` argument for :py:meth:`.CachedSession.request`)
-2. Per-URL expiration (``urls_expire_after`` argument for :py:class:`.CachedSession`)
-3. Cache-Control expiration headers (if enabled with ``cache_control`` argument for :py:class:`.CacheBackend`)
-4. Per-session expiration (``expire_after`` argument for :py:class:`.CacheBackend`)
-
 Expiration Values
 ~~~~~~~~~~~~~~~~~
 ``expire_after`` can be any of the following:
@@ -161,25 +150,33 @@ that changes infrequently, and another that never changes. Example:
 Cache-Control
 ~~~~~~~~~~~~~
 .. warning::
-    This is **not** intended to be a thorough or strict implementation of server-side HTTP caching,
+    This is **not** intended to be a thorough or strict implementation of header-based HTTP caching,
     e.g. according to RFC 2616.
 
 Optional support is included for a simplified subset of
 `Cache-Control <https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control>`_
-response headers. To enable this behavior, use the ``cache_control`` option:
+and other cache headers in both requests and responses. To enable this behavior, use the
+``cache_control`` backend option:
 
     >>> cache = SQLiteBackend(cache_control=True)
 
-**Supported headers:**
+**Supported request headers:**
 
-* ``max-age``: Used as the expiration time in seconds
-* ``no-store``: Skips writing response data to the cache
+* ``Cache-Control: max-age``: Used as the expiration time in seconds
+* ``Cache-Control: no-cache``: Skips reading response data to the cache
+* ``Cache-Control: no-store``: Skips reading and writing response data from/to the cache
+
+**Supported response headers:**
+
+* ``Cache-Control: max-age``: Used as the expiration time in seconds
+* ``Cache-Control: no-store`` Skips writing response data to the cache
+* ``Expires``: Used as an absolute expiration time
 
 **Notes:**
 
 * Unlike a browser or proxy cache, ``max-age=0`` does not currently clear previously cached responses.
-* Cache-Control directives will override ``CacheBackend.expire_after``. See
-  :ref:`user_guide:expiration scopes` for the full order of precedence.
+* If enabled, Cache-Control directives will take priority over any other ``expire_after`` value.
+  See :ref:`user_guide:expiration precedence` for the full order of precedence.
 
 Removing Expired Responses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -193,6 +190,18 @@ You can also apply a different ``expire_after`` to previously cached responses, 
 revalidate the cache with the new expiration time:
 
     >>> session.remove_expired_responses(expire_after=timedelta(days=30))
+
+Expiration Precedence
+~~~~~~~~~~~~~~~~~~~~~
+Expiration can also be set on a per-session, per-URL or per-request basis, in addition to cache
+headers. When there are multiple values provided for a given request, the following order of
+precedence is used:
+
+1. Cache-Control request headers (if enabled)
+2. Cache-Control response headers (if enabled)
+3. Per-request expiration (``expire_after`` argument for :py:meth:`.CachedSession.request`)
+4. Per-URL expiration (``urls_expire_after`` argument for :py:class:`.CachedSession`)
+5. Per-session expiration (``expire_after`` argument for :py:class:`.CacheBackend`)
 
 Cache Inspection
 ----------------

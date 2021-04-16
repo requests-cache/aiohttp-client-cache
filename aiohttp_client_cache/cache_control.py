@@ -1,18 +1,23 @@
-"""Functions for determining cache expiration based on client settings and/or cache headers"""
-from datetime import datetime, timedelta
+"""Utilities for determining cache expiration and other cache actions"""
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
 from itertools import chain
 from logging import getLogger
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
+import attr
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
-from multidict import CIMultiDictProxy
+from multidict import CIMultiDict
 
 # Value that may be set by either Cache-Control headers or CacheBackend params to disable caching
 DO_NOT_CACHE = 0
 
-# Cache-related headers, for logging/reference; not all are supported
+# Currently supported Cache-Control directives
+CACHE_DIRECTIVES = ['max-age', 'no-cache', 'no-store']
+
+# All cache-related headers, for logging/reference; not all are supported
 REQUEST_CACHE_HEADERS = [
     'Cache-Control',
     'If-Unmodified-Since',
@@ -23,61 +28,137 @@ REQUEST_CACHE_HEADERS = [
 RESPONSE_CACHE_HEADERS = ['Cache-Control', 'ETag', 'Expires', 'Age']
 
 CacheDirective = Tuple[str, Union[None, int, bool]]
-ExpirationTime = Union[None, int, float, datetime, timedelta]
+ExpirationTime = Union[None, int, float, str, datetime, timedelta]
 ExpirationPatterns = Dict[str, ExpirationTime]
 logger = getLogger(__name__)
 
 
-def get_expiration(
-    response: ClientResponse,
-    request_expire_after: ExpirationTime = None,
-    session_expire_after: ExpirationTime = None,
-    urls_expire_after: ExpirationPatterns = None,
-    cache_control: bool = False,
-) -> ExpirationTime:
-    """Get the appropriate expiration for the given response, in order of precedence:
-    1. Per-request expiration
-    2. Per-URL expiration
-    3. Cache-Control (if enabled)
-    4. Per-session expiration
+@attr.s(slots=True)
+class CacheActions:
+    """A dataclass that contains info on specific actions to take for a given cache item.
+    This is determined by a combination of CacheBackend settings and request + response headers.
+    If multiple sources are provided, they will be used in the following order of precedence:
 
+    1. Cache-Control request headers (if enabled)
+    2. Cache-Control response headers (if enabled)
+    3. Per-request expiration
+    4. Per-URL expiration
+    5. Per-session expiration
     """
-    return coalesce(
-        request_expire_after,
-        get_url_expiration(response.url, urls_expire_after),
-        get_header_expiration(response.headers, cache_control),
-        session_expire_after,
-    )
+
+    key: str = attr.ib(default=None)
+    expire_after: ExpirationTime = attr.ib(default=None)
+    skip_read: bool = attr.ib(default=False)
+    skip_write: bool = attr.ib(default=False)
+    revalidate: bool = attr.ib(default=False)  # Revalidation is not currently implemented
+
+    @classmethod
+    def from_request(
+        cls,
+        key: str,
+        cache_control: bool = False,
+        headers: Mapping = None,
+        **kwargs,
+    ):
+        """Initialize from request info and CacheBackend settings"""
+        headers = headers or {}
+        if cache_control and has_cache_headers(headers):
+            return cls.from_headers(key, headers)
+        else:
+            return cls.from_settings(key, **kwargs)
+
+    @classmethod
+    def from_headers(cls, key: str, headers: Mapping):
+        """Initialize from request headers"""
+        directives = get_cache_directives(headers)
+        do_not_cache = directives.get('max-age') == DO_NOT_CACHE
+        return cls(
+            key=key,
+            expire_after=directives.get('max-age'),
+            skip_read=do_not_cache or 'no-store' in directives or 'no-cache' in directives,
+            skip_write=do_not_cache or 'no-store' in directives,
+            revalidate=do_not_cache,
+        )
+
+    @classmethod
+    def from_settings(
+        cls,
+        key: str,
+        url: StrOrURL,
+        request_expire_after: ExpirationTime = None,
+        session_expire_after: ExpirationTime = None,
+        urls_expire_after: ExpirationPatterns = None,
+        **kwargs,
+    ):
+        """Initialize from CacheBackend settings"""
+        # Check expire_after values in order of precedence
+        expire_after = coalesce(
+            request_expire_after,
+            get_url_expiration(url, urls_expire_after),
+            session_expire_after,
+        )
+
+        do_not_cache = expire_after == DO_NOT_CACHE
+        return cls(
+            key=key,
+            expire_after=expire_after,
+            skip_read=do_not_cache,
+            skip_write=do_not_cache,
+            revalidate=do_not_cache,
+        )
+
+    @property
+    def expires(self) -> Optional[datetime]:
+        """Convert the user/header-provided expiration value to a datetime"""
+        return get_expiration_datetime(self.expire_after)
+
+    # TODO: If we add any more headers, maybe extract this + from_headers() into a separate function
+    def update_from_response(self, response: ClientResponse):
+        """Update expiration + actions based on response headers, if not previously set by request"""
+        directives = get_cache_directives(response.headers)
+        do_not_cache = directives.get('max-age') == DO_NOT_CACHE
+        self.expire_after = coalesce(
+            self.expires, directives.get('max-age'), directives.get('expires')
+        )
+        self.skip_write = self.skip_write or do_not_cache or 'no-store' in directives
+        self.revalidate = self.revalidate or do_not_cache
+
+
+def coalesce(*values: Any, default=None) -> Any:
+    """Get the first non-``None`` value in a list of values"""
+    return next((v for v in values if v is not None), default)
 
 
 def get_expiration_datetime(expire_after: ExpirationTime) -> Optional[datetime]:
-    """Convert a relative time value or delta to an absolute datetime, if it's not already"""
+    """Convert an expiration value in any supported format to an absolute datetime"""
     logger.debug(f'Determining expiration time based on: {expire_after}')
     if expire_after is None or expire_after == -1:
         return None
     elif isinstance(expire_after, datetime):
-        return expire_after
+        return to_utc(expire_after)
+    elif isinstance(expire_after, str):
+        return parse_http_date(expire_after)
 
     if not isinstance(expire_after, timedelta):
         expire_after = timedelta(seconds=expire_after)
     return datetime.utcnow() + expire_after
 
 
-def get_header_expiration(headers: CIMultiDictProxy, cache_control: bool = True) -> Optional[int]:
-    """Get expiration from cache headers (in seconds), if available. Currently only supports
-    ``max-age`` and ``no-store``.
-    """
-    if not cache_control:
-        return None
+def get_cache_directives(headers: Mapping) -> Dict:
+    """Get all Cache-Control directives, and handle multiple headers and comma-separated lists"""
+    if not headers:
+        return {}
+    if not hasattr(headers, 'getall'):
+        headers = CIMultiDict(headers)
 
-    # Get all Cache-Control directives, and handle multiple headers and/or comma-separated lists
-    cache_directives = [v.split(',') for v in headers.getall('Cache-Control', [])]
+    header_values = headers.getall('Cache-Control', [])  # type: ignore
+    cache_directives = [v.split(',') for v in header_values if v]
     cache_directives = list(chain.from_iterable(cache_directives))
-
     kv_directives = dict([split_kv_directive(value) for value in cache_directives])
-    if kv_directives.get('no-store'):
-        return DO_NOT_CACHE
-    return kv_directives.get('max-age')
+
+    if 'Expires' in headers:
+        kv_directives['expires'] = headers.getone('Expires')  # type: ignore
+    return kv_directives
 
 
 def get_url_expiration(
@@ -91,9 +172,20 @@ def get_url_expiration(
     return None
 
 
-def coalesce(*values: Any, default=None) -> Any:
-    """Get the first non-``None`` value in a list of values"""
-    return next((v for v in values if v is not None), default)
+def has_cache_headers(headers: Mapping) -> bool:
+    """Determine if headers contain cache directives **that we currently support**"""
+    headers = CIMultiDict(headers)
+    cache_control = ','.join(headers.getall('Cache-Control', []))
+    return any([d in cache_control for d in CACHE_DIRECTIVES] + [bool(headers.get('Expires'))])
+
+
+def parse_http_date(value: str) -> Optional[datetime]:
+    """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
+    try:
+        return parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        logger.debug(f'Failed to parse timestamp: {value}')
+        return None
 
 
 def split_kv_directive(header_value: str) -> CacheDirective:
@@ -106,6 +198,16 @@ def split_kv_directive(header_value: str) -> CacheDirective:
         return k, try_int(v)
     else:
         return header_value, True
+
+
+def to_utc(dt: datetime):
+    """ "All internal datetimes are UTC and timezone-naive. Convert any user/header-provided
+    datetimes to the same format.
+    """
+    if dt.tzinfo:
+        dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=None)
+    return dt
 
 
 def try_int(value: Optional[str]) -> Optional[int]:
