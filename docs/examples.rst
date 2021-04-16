@@ -27,3 +27,15 @@ Precaching site links
 
     .. literalinclude:: ../examples/precache.py
         :lines: 1,20-
+
+Logging requests
+~~~~~~~~~~~~~~~~
+.. include:: ../examples/log_requests.py
+    :start-line: 2
+    :end-line: 3
+
+.. admonition:: Example code
+    :class: toggle
+
+    .. literalinclude:: ../examples/log_requests.py
+        :lines: 1,5-
