@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from aiohttp_client_cache.backends import CacheBackend
+from aiohttp_client_cache.cache_control import CacheActions
 from aiohttp_client_cache.session import CachedSession, ClientSession
 
 pytestmark = [pytest.mark.asyncio]
@@ -16,7 +17,7 @@ except ImportError:
 @patch.object(ClientSession, '_request')
 async def test_session__cache_hit(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.get_response.return_value = AsyncMock(is_expired=False)
+    cache.request.return_value = AsyncMock(is_expired=False), CacheActions()
     session = CachedSession(cache=cache)
 
     await session.get('http://test.url')
@@ -26,7 +27,7 @@ async def test_session__cache_hit(mock_request):
 @patch.object(ClientSession, '_request')
 async def test_session__cache_expired_or_invalid(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.get_response.return_value = None
+    cache.request.return_value = None, CacheActions()
     session = CachedSession(cache=cache)
 
     await session.get('http://test.url')
@@ -36,7 +37,7 @@ async def test_session__cache_expired_or_invalid(mock_request):
 @patch.object(ClientSession, '_request')
 async def test_session__cache_miss(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.get_response.return_value = None
+    cache.request.return_value = None, CacheActions()
     session = CachedSession(cache=cache)
 
     await session.get('http://test.url')
@@ -46,7 +47,7 @@ async def test_session__cache_miss(mock_request):
 @patch.object(ClientSession, '_request')
 async def test_session__default_attrs(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.get_response.return_value = None
+    cache.request.return_value = None, CacheActions()
     session = CachedSession(cache=cache)
 
     response = await session.get('http://test.url')
