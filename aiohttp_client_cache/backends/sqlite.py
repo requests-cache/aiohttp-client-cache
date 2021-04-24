@@ -160,7 +160,7 @@ class SQLiteCache(BaseCache):
 
 
 class SQLitePickleCache(SQLiteCache):
-    """ Same as :py:class:`SqliteCache`, but pickles values before saving """
+    """Same as :py:class:`SqliteCache`, but pickles values before saving"""
 
     async def read(self, key: str) -> ResponseOrKey:
         return self.deserialize(await super().read(key))

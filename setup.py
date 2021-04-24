@@ -22,7 +22,7 @@ extras_require = {
     ],
     # Packages used for testing both locally and in CI jobs
     'test': [
-        'black==20.8b1',
+        'black==21.4b0',
         'flake8',
         'isort',
         'mypy',
@@ -41,7 +41,13 @@ setup(
     packages=find_packages(exclude=['test*']),
     include_package_data=True,
     version=__version__,
-    install_requires=['aiohttp', 'attrs', 'itsdangerous', 'python-forge', 'url-normalize'],
+    install_requires=[
+        'aiohttp[speedups]',
+        'attrs',
+        'itsdangerous',
+        'python-forge',
+        'url-normalize',
+    ],
     extras_require=extras_require,
     python_requires='>=3.7',
     zip_safe=False,
