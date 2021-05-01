@@ -85,9 +85,8 @@ or credentials. If you want to ignore specific parameters, specify them with ``i
 
 Request Headers
 ~~~~~~~~~~~~~~~
-By default, request headers are not taken into account when caching responses. In some cases,
-different headers may result in different response data, so you may want to cache them separately.
-To enable this, use ``include_headers``:
+In some cases, different headers may result in different response data, so you may want to cache
+them separately. To enable this, use ``include_headers``:
 
     >>> cache = SQLiteBackend(include_headers=True)
     >>> async with CachedSession(cache=cache) as session:
@@ -163,7 +162,7 @@ and other cache headers in both requests and responses. To enable this behavior,
 **Supported request headers:**
 
 * ``Cache-Control: max-age``: Used as the expiration time in seconds
-* ``Cache-Control: no-cache``: Skips reading response data to the cache
+* ``Cache-Control: no-cache``: Skips reading response data from the cache
 * ``Cache-Control: no-store``: Skips reading and writing response data from/to the cache
 
 **Supported response headers:**
