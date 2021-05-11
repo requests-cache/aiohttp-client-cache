@@ -1,12 +1,12 @@
 # Contributing Guide
 
 ## Dev Installation
-To set up for local development:
+To set up for local development (requires [poetry](https://python-poetry.org/docs/#installation)):
 
 ```bash
 $ git clone https://github.com/JWCook/aiohttp-client-cache
 $ cd aiohttp-client-cache
-$ pip install -Ue ".[dev]"
+$ poetry install -E backends -E docs
 ```
 
 ## Pre-commit hooks

@@ -192,7 +192,7 @@ revalidate the cache with the new expiration time:
 
 Expiration Precedence
 ~~~~~~~~~~~~~~~~~~~~~
-Expiration can also be set on a per-session, per-URL or per-request basis, in addition to cache
+Expiration can be set on a per-session, per-URL, or per-request basis, in addition to cache
 headers. When there are multiple values provided for a given request, the following order of
 precedence is used:
 
