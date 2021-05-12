@@ -29,7 +29,7 @@ Breaking changes should be expected until a `1.0` release, so version pinning is
 
 I am developing this while also maintaining [requests-cache](https://github.com/reclosedev/requests-cache),
 and my goal is to eventually have a similar (but not identical) feature set between the two libraries.
-If there is a feature you want, or if you've discovered a bug, of it you have other general feedback, please
+If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
 [create an issue](https://github.com/JWCook/aiohttp-client-cache/issues/new/choose) for it!
 
 # Quickstart
