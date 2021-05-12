@@ -1,6 +1,6 @@
 # History
 
-## 0.4.0 (2021-05-TBD)
+## 0.4.0 (2021-05-12)
 * Add optional support for the following **request** headers:
     * `Cache-Control: max-age`
     * `Cache-Control: no-cache`
@@ -13,6 +13,7 @@
 * Add a `use_temp` option to `SQLiteBackend` to use a tempfile
 * Packaging is now handled with Poetry. For users, installation still works the same. For developers,
   see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/latest/contributing.html) for details
+* Published package on [conda-forge](https://anaconda.org/conda-forge/aiohttp-client-cache)
 
 ## 0.3.0 (2021-04-09)
 [See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
