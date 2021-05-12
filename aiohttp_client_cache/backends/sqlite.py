@@ -1,7 +1,10 @@
 import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
-from os.path import expanduser, splitext
+from os import makedirs
+from os.path import abspath, basename, dirname, expanduser, isabs, join
+from pathlib import Path
+from tempfile import gettempdir
 from typing import AsyncIterable, AsyncIterator, Union
 
 import aiosqlite
@@ -20,17 +23,16 @@ class SQLiteBackend(CacheBackend):
     extension is specified)
     """
 
-    def __init__(self, cache_name: str = 'aiohttp-cache', **kwargs):
+    def __init__(self, cache_name: str = 'aiohttp-cache', use_temp: bool = False, **kwargs):
         """
         Args:
             cache_name: Database filename
+        use_temp: Store database in a temp directory (e.g., ``/tmp/http_cache.sqlite``).
+            Note: if ``cache_name`` is an absolute path, this option will be ignored.
         """
         super().__init__(cache_name=cache_name, **kwargs)
-        path, ext = splitext(cache_name)
-        cache_path = expanduser(f'{path}{ext or ".sqlite"}')
-
-        self.responses = SQLitePickleCache(cache_path, 'responses', **kwargs)
-        self.redirects = SQLiteCache(cache_path, 'redirects', **kwargs)
+        self.responses = SQLitePickleCache(cache_name, 'responses', use_temp=use_temp, **kwargs)
+        self.redirects = SQLiteCache(cache_name, 'redirects', use_temp=use_temp, **kwargs)
 
 
 class SQLiteCache(BaseCache):
@@ -45,13 +47,15 @@ class SQLiteCache(BaseCache):
     Args:
         filename: Database filename
         table_name: Table name
+        use_temp: Store database in a temp directory (e.g., ``/tmp/http_cache.sqlite``).
+            Note: if ``cache_name`` is an absolute path, this option will be ignored.
         kwargs: Additional keyword arguments for :py:func:`sqlite3.connect`
     """
 
-    def __init__(self, filename: str, table_name: str, **kwargs):
+    def __init__(self, filename: str, table_name: str, use_temp: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.connection_kwargs = get_valid_kwargs(sqlite_template, kwargs)
-        self.filename = filename
+        self.filename = _get_cache_filename(filename, use_temp)
         self.table_name = table_name
 
         self._bulk_commit = False
@@ -173,3 +177,19 @@ class SQLitePickleCache(SQLiteCache):
 
     async def write(self, key, item):
         await super().write(key, sqlite3.Binary(self.serialize(item)))
+
+
+def _get_cache_filename(filename: Union[Path, str], use_temp: bool) -> str:
+    """Get resolved path for database file"""
+    # Save to a temp directory, if specified
+    if use_temp and not isabs(filename):
+        filename = join(gettempdir(), filename)
+
+    # Expand relative and user paths (~/*), and add file extension if not specified
+    filename = abspath(expanduser(str(filename)))
+    if '.' not in basename(filename):
+        filename += '.sqlite'
+
+    # Make sure parent dirs exist
+    makedirs(dirname(filename), exist_ok=True)
+    return filename
