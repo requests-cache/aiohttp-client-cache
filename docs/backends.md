@@ -1,4 +1,4 @@
-(backends)=
+(backends)
 # Cache Backends
 
 ## Backend Classes
@@ -11,6 +11,7 @@ Several cache backends are included, which can be selected using the `cache` par
 
     aiohttp_client_cache.backends.base.CacheBackend
     aiohttp_client_cache.backends.dynamodb.DynamoDBBackend
+    aiohttp_client_cache.backends.filesystem.FileBackend
     aiohttp_client_cache.backends.mongo.MongoDBBackend
     aiohttp_client_cache.backends.redis.RedisBackend
     aiohttp_client_cache.backends.sqlite.SQLiteBackend
@@ -29,6 +30,7 @@ See {ref}`api-reference` for backend-specific usage details.
 ## Backend Cache Name
 The `cache_name` parameter will be used as follows depending on the backend:
 - DynamoDb: Table name
+- Filesystem: Cache directory
 - MongoDb: Database name
 - Redis: Namespace, meaning all keys will be prefixed with `'<cache_name>:'`
 - SQLite: Database path; user paths are allowed, e.g `~/.cache/my_cache.sqlite`
