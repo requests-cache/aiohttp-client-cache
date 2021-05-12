@@ -8,6 +8,10 @@ Install with pip:
 
     $ pip install aiohttp-client-cache
 
+Or with conda, if you prefer:
+
+    $ conda install -c conda-forge aiohttp-client-cache
+
 Requirements
 ~~~~~~~~~~~~
 * Requires python 3.7+.
