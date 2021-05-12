@@ -10,6 +10,7 @@
     * `Cache-Control: no-store`
     * `Expires`
 * Add support for HTTP timestamps (RFC 5322) in ``expire_after`` parameters
+* Add a `use_temp` option to `SQLiteBackend` to use a tempfile
 * Packaging is now handled with Poetry. For users, installation still works the same. For developers,
   see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/latest/contributing.html) for details
 
