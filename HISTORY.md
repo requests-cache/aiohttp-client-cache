@@ -1,6 +1,11 @@
 # History
 
+## 0.5.0 (2021-06-TBD)
+* Add a filesystem backend
+
 ## 0.4.0 (2021-05-12)
+[See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/3?closed=1)
+
 * Add optional support for the following **request** headers:
     * `Cache-Control: max-age`
     * `Cache-Control: no-cache`

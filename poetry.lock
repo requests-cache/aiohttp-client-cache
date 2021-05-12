@@ -43,6 +43,14 @@ python-versions = "*"
 pycares = ">=4.0.0"
 
 [[package]]
+name = "aiofiles"
+version = "0.6.0"
+description = "File support for asyncio."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "aiohttp"
 version = "3.7.4.post0"
 description = "Async http client/server framework (asyncio)"
@@ -1173,7 +1181,7 @@ docs = ["docutils", "m2r2", "Sphinx", "sphinx-autodoc-typehints", "sphinx-automo
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "cf3110dacaf1bf2064615cadeca11807d7a931d274cf0edb1c62855896f62a87"
+content-hash = "2ac93d4f2836f0b957b04f7235d01175ba5296ac5375fb3f4b909a4f698e0f78"
 
 [metadata.files]
 aioboto3 = [
@@ -1185,6 +1193,10 @@ aiobotocore = [
 aiodns = [
     {file = "aiodns-3.0.0-py3-none-any.whl", hash = "sha256:2b19bc5f97e5c936638d28e665923c093d8af2bf3aa88d35c43417fa25d136a2"},
     {file = "aiodns-3.0.0.tar.gz", hash = "sha256:946bdfabe743fceeeb093c8a010f5d1645f708a241be849e17edfb0e49e08cd6"},
+]
+aiofiles = [
+    {file = "aiofiles-0.6.0-py3-none-any.whl", hash = "sha256:bd3019af67f83b739f8e4053c6c0512a7f545b9a8d91aaeab55e6e0f9d123c27"},
+    {file = "aiofiles-0.6.0.tar.gz", hash = "sha256:e0281b157d3d5d59d803e3f4557dcc9a3dff28a4dd4829a9ff478adae50ca092"},
 ]
 aiohttp = [
     {file = "aiohttp-3.7.4.post0-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:3cf75f7cdc2397ed4442594b935a11ed5569961333d49b7539ea741be2cc79d5"},
