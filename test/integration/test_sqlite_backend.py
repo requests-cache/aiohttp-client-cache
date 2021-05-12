@@ -1,8 +1,9 @@
+import os
 import pytest
 from datetime import datetime
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, gettempdir
 
-from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLitePickleCache
+from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
 
 pytestmark = pytest.mark.asyncio
 test_data = {'key_1': 'item_1', 'key_2': datetime.now(), 'key_3': 3.141592654}
@@ -76,3 +77,10 @@ async def test_clear(cache_client):
     assert await cache_client.size() == 0
     assert {k async for k in cache_client.keys()} == set()
     assert {v async for v in cache_client.values()} == set()
+
+
+def test_use_temp():
+    relative_path = SQLiteCache('test-db', 'test-table').filename
+    temp_path = SQLiteCache('test-db', 'test-table', use_temp=True).filename
+    assert not relative_path.startswith(gettempdir())
+    assert temp_path.startswith(gettempdir())
