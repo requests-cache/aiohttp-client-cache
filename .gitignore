@@ -3,6 +3,7 @@
 *.egg
 *.egg-info
 .idea/
+.venv
 .vim/
 .vscode/
 build/

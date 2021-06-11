@@ -1,6 +1,7 @@
 import asyncio
 import pytest
 from datetime import datetime
+from sys import version_info
 
 from aioredis import create_redis_pool
 
@@ -23,7 +24,10 @@ def is_db_running():
 
 pytestmark = [
     pytest.mark.asyncio,
-    pytest.mark.skipif(not is_db_running(), reason='Redis server required for integration tests'),
+    pytest.mark.skipif(
+        version_info > (3, 9) or not is_db_running(),
+        reason='Redis server required for integration tests',
+    ),
 ]
 
 test_data = {'key_1': 'item_1', 'key_2': datetime.now(), 'key_3': 3.141592654}

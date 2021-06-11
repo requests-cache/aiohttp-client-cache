@@ -8,7 +8,7 @@
 [![PyPI - Format](https://img.shields.io/pypi/format/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 
 **aiohttp-client-cache** is an async persistent cache for [aiohttp](https://docs.aiohttp.org)
-client requests.
+client requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 
 See full documentation at https://aiohttp-client-cache.readthedocs.io
 
@@ -27,9 +27,9 @@ See full documentation at https://aiohttp-client-cache.readthedocs.io
 
 Breaking changes should be expected until a `1.0` release, so version pinning is recommended.
 
-I am developing this while also maintaining [requests-cache](https://github.com/reclosedev/requests-cache),
-and my goal is to eventually have a similar (but not identical) feature set between the two libraries.
-If there is a feature you want, or if you've discovered a bug, of it you have other general feedback, please
+My goal for this library is to eventually have a similar (but not identical) feature set as
+`requests-cache`, and also contribute new features from this library back to `requests-cache`.
+If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
 [create an issue](https://github.com/JWCook/aiohttp-client-cache/issues/new/choose) for it!
 
 # Quickstart
