@@ -57,10 +57,10 @@ docs = ["docutils", "m2r2", "Sphinx", "sphinx-autodoc-typehints", "sphinx-automo
         "sphinx-copybutton", "sphinx-material", "sphinxcontrib-apidoc"]
 
 [tool.poetry.dev-dependencies]
-black = "21.5b0"
+black = "21.6b0"
 flake8 = ">=3.9"
 isort = ">=5.8"
-mypy = ">=0.812"
+mypy = "^0.902"
 pre-commit = ">=2.12"
 pytest = ">=6.2"
 pytest-aiohttp = "^0.3"
