@@ -1,5 +1,8 @@
 # History
 
+## 0.4.1 (2021-06-TBD)
+* Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
+
 ## 0.4.0 (2021-05-12)
 * Add optional support for the following **request** headers:
     * `Cache-Control: max-age`

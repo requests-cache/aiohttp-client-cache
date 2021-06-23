@@ -61,11 +61,11 @@ class SQLiteCache(BaseCache):
         self._bulk_commit = False
         self._initialized = False
         self._connection = None
-        self._lock = asyncio.Lock()
+        self._lock = None
 
     @asynccontextmanager
     async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
-        async with self._lock:
+        async with self.lock:
             db = (
                 self._connection
                 if self._connection
@@ -78,6 +78,12 @@ class SQLiteCache(BaseCache):
             finally:
                 if not self._bulk_commit:
                     await db.close()
+
+    @property
+    def lock(self):
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     async def _init_db(self, db: aiosqlite.Connection):
         """Create table if this is the first connection opened, and set fast save if possible"""
