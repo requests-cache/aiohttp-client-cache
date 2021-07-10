@@ -1,9 +1,9 @@
 """Integration tests for behavior of CachedSession, backend classes, and storage classes"""
 import pickle
-import pytest
 from datetime import datetime
 from uuid import uuid4
 
+import pytest
 from itsdangerous.exc import BadSignature
 from itsdangerous.serializer import Serializer
 

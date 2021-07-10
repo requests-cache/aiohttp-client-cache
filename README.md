@@ -10,8 +10,6 @@
 **aiohttp-client-cache** is an async persistent cache for [aiohttp](https://docs.aiohttp.org)
 client requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 
-See full documentation at https://aiohttp-client-cache.readthedocs.io
-
 # Features
 * **Ease of use:** Use as a [drop-in replacement](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html)
   for `aiohttp.ClientSession`
@@ -21,7 +19,7 @@ See full documentation at https://aiohttp-client-cache.readthedocs.io
   and other [behavior](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html#cache-options)
 * **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html):
   SQLite, DynamoDB, MongoDB, and Redis.
-  
+
 # Development Status
 **This library is a work in progress!**
 
@@ -41,22 +39,22 @@ pip install aiohttp-client-cache
 ## Basic Usage
 Next, use [aiohttp_client_cache.CachedSession](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.session.html#aiohttp_client_cache.session.CachedSession)
 in place of [aiohttp.ClientSession](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession).
-To briefly demonstrate how to use it:                                      
-                                                                                                       
+To briefly demonstrate how to use it:
+
 **Replace this:**
 ```python
 from aiohttp import ClientSession
 
 async with ClientSession() as session:
-    await session.get('http://httpbin.org/delay/1')                                                          
-```                                                                                                    
-                                                                                                       
-**With this:**           
+    await session.get('http://httpbin.org/delay/1')
+```
+
+**With this:**
 ```python
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 
 async with CachedSession(cache=SQLiteBackend('demo_cache')) as session:
-    await session.get('http://httpbin.org/delay/1')                                                          
+    await session.get('http://httpbin.org/delay/1')
 ```
 
 The URL in this example adds a delay of 1 second, simulating a slow or rate-limited website.
@@ -77,7 +75,7 @@ cache = SQLiteBackend(
     allowed_methods=('GET', 'POST'),            # Cache requests with these HTTP methods
     include_headers=True,                       # Cache requests with different headers separately
     ignored_params=['auth_token'],              # Keep using the cached response even if this param changes
-    timeout=2.5,                                # Connection timeout for SQLite backend 
+    timeout=2.5,                                # Connection timeout for SQLite backend
 )
 ```
 

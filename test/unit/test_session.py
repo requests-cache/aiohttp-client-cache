@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.cache_control import CacheActions

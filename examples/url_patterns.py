@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # fmt: off
 """
-An example of setting expiration based on :ref:`user_guide:url patterns`
+An example of setting expiration based on {ref}`user_guide:url patterns`
 """
 import asyncio
 from datetime import timedelta

@@ -1,8 +1,8 @@
 import asyncio
-import pytest
 from datetime import datetime
 
 import aioboto3
+import pytest
 
 from aiohttp_client_cache.backends.dynamodb import DynamoDBBackend
 

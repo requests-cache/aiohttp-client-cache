@@ -1,8 +1,8 @@
 import asyncio
-import pytest
 from datetime import datetime
 from sys import version_info
 
+import pytest
 from aioredis import create_redis_pool
 
 from aiohttp_client_cache.backends.redis import DEFAULT_ADDRESS, RedisBackend, RedisCache

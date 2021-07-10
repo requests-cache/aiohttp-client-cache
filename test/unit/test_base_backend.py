@@ -1,7 +1,8 @@
 import pickle
-import pytest
 from sys import version_info
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from aiohttp_client_cache import CachedResponse
 from aiohttp_client_cache.backends import (
