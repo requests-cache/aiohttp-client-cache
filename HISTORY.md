@@ -1,6 +1,6 @@
 # History
 
-## 0.4.1 (2021-06-TBD)
+## 0.4.1 (2021-07-09)
 * Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
 
 ## 0.4.0 (2021-05-12)
