@@ -52,7 +52,11 @@ sphinx-material = { version = "*", optional = true }
 sphinxcontrib-apidoc = { version = "^0.3", optional = true }
 
 [tool.poetry.extras]
-backends = ["aioboto3", "aiobotocore", "aioredis", "aiosqlite", "motor"]
+all = ["aioboto3", "aiobotocore", "aioredis", "aiosqlite", "motor"]
+dynamodb = ["aioboto3", "aiobotocore"]
+mongodb = ["motor"]
+redis = ["aioredis"]
+sqlite = ["aiosqlite"]
 docs = ["docutils", "m2r2", "Sphinx", "sphinx-autodoc-typehints", "sphinx-automodapi",
         "sphinx-copybutton", "sphinx-material", "sphinxcontrib-apidoc"]
 

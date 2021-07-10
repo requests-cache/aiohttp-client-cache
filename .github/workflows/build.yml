@@ -51,7 +51,7 @@ jobs:
           key: venv-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: poetry install -v -E backends
+        run: poetry install -v -E all
 
       # Latest python version: Run unit tests with coverage and send to coveralls
       - name: Run unit tests with code coverage report
@@ -95,7 +95,7 @@ jobs:
           key: venv-${{ env.LATEST_PY_VERSION }}-${{ hashFiles('poetry.lock') }}
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
-        run: poetry install -v -E backends
+        run: poetry install -v -E all
 
       - name: Run style checks, type checks, and linting
         run: |
