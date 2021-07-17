@@ -1,5 +1,4 @@
 import pytest
-
 from bson.objectid import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient

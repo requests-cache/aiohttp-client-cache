@@ -1,7 +1,8 @@
 import os
-import pytest
 from datetime import datetime
 from tempfile import NamedTemporaryFile, gettempdir
+
+import pytest
 
 from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
 

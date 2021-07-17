@@ -1,10 +1,11 @@
-import pytest
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from logging import basicConfig, getLogger
 from os import getenv
 from tempfile import NamedTemporaryFile
 from typing import AsyncIterator
+
+import pytest
 
 from aiohttp_client_cache import CachedResponse, CachedSession, SQLiteBackend
 

@@ -1,7 +1,7 @@
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
+import pytest
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 

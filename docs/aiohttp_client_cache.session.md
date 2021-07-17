@@ -1,17 +1,18 @@
-session
-=======
+# session
 
-Summary
--------
+## Summary
+```{eval-rst}
 .. automodsumm:: aiohttp_client_cache.session
     :classes-only:
+```
 
-Module Contents
----------------
-.. Explicitly show inherited method docs on CachedSession instead of CachedMixin
+## Module Contents
+```{eval-rst}
 .. autoclass:: aiohttp_client_cache.session.CachedSession
     :members: _request, disabled, delete_expired_responses
     :show-inheritance:
+```
 
+```{eval-rst}
 .. autoclass:: aiohttp_client_cache.session.CacheMixin
-
+```

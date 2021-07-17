@@ -2,20 +2,18 @@
 """
 An example that fetches and caches the content of a given web page, and all links found on that page
 
-Usage: ``./precache.py <url>``
+Usage: `./precache.py <url>`
 
 Example:
-
-.. code-block:: bash
-
-    $ # Run twice and note stats before and after
-    $ ./precache.py https://www.nytimes.com
-    Found 102 links
-    Completed run in 6.195 seconds and cached 53.570 MB
-    $ ./precache.py https://www.nytimes.com
-    Found 102 links
-    Completed run in 0.436 seconds and cached 0.000 MB
-
+```bash
+$ # Run twice and note stats before and after
+$ ./precache.py https://www.nytimes.com
+Found 102 links
+Completed run in 6.195 seconds and cached 53.570 MB
+$ ./precache.py https://www.nytimes.com
+Found 102 links
+Completed run in 0.436 seconds and cached 0.000 MB
+```
 """
 import asyncio
 import re

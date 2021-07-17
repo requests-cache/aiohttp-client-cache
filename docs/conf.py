@@ -29,12 +29,13 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
-    # 'sphinx.ext.viewcode',
     'sphinx_autodoc_typehints',
     'sphinx_automodapi.automodapi',
+    'sphinx_automodapi.smart_resolver',
     'sphinx_copybutton',
+    'sphinx_inline_tabs',
     'sphinxcontrib.apidoc',
-    'm2r2',
+    'myst_parser',
 ]
 
 # Enable automatic links to other projects' Sphinx docs
@@ -50,6 +51,15 @@ intersphinx_mapping = {
     'redis': ('https://redis-py.readthedocs.io/en/stable/', None),
 }
 
+# MyST extensions
+myst_enable_extensions = [
+    'colon_fence',
+    'html_image',
+    'linkify',
+    'replacements',
+    'smartquotes',
+]
+
 # Exclude modules with manually formatted docs and documentation utility modules
 exclude_patterns = [
     '_build',
@@ -61,10 +71,11 @@ exclude_patterns = [
     'modules/aiohttp_client_cache.docs.forge_utils.rst',
 ]
 
-# Enable Google-style docstrings
+# napoleon settings
 napoleon_google_docstring = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
+napoleon_use_param = True
 
 # Strip prompt text when copying code blocks with copy button
 copybutton_prompt_text = r'>>> |\.\.\. |\$ '
@@ -72,7 +83,7 @@ copybutton_prompt_is_regexp = True
 
 # Move type hint info to function description instead of signature
 autodoc_typehints = 'description'
-set_type_checking_flag = True
+set_type_checking_flag = False
 
 # Use apidoc to auto-generate rst sources
 apidoc_excluded_paths = ['forge_utils.py']
@@ -89,26 +100,32 @@ automodsumm_inherited_members = False
 autosectionlabel_prefix_document = True
 numpydoc_show_class_members = False
 
-# HTML theme settings
-html_theme = 'sphinx_material'
+# HTML general settings
+# html_favicon = join('images', 'favicon.ico')
+html_js_files = ['collapsible_container.js']
+html_css_files = ['collapsible_container.css']
 html_show_sphinx = False
+pygments_style = 'friendly'
+pygments_dark_style = 'material'
+
+# HTML theme settings
+html_theme = 'furo'
 html_theme_options = {
-    'color_primary': 'blue',
-    'color_accent': 'light-blue',
-    'globaltoc_depth': 3,
-    'globaltoc_includehidden': False,
-    'logo_icon': '&#xe2c0',
-    'repo_url': 'https://github.com/JWCook/aiohttp-client-cache',
-    'repo_name': project,
-    'nav_title': project,
+    # 'light_css_variables': {
+    #     'color-brand-primary': '#00766c',  # MD light-blue-600; light #64d8cb | med #26a69a
+    #     'color-brand-content': '#006db3',  # MD teal-400;       light #63ccff | med #039be5
+    # },
+    # 'dark_css_variables': {
+    #     'color-brand-primary': '#64d8cb',
+    #     'color-brand-content': '#63ccff',
+    # },
+    'sidebar_hide_name': False,
 }
-html_sidebars = {'**': ['logo-text.html', 'globaltoc.html', 'localtoc.html', 'searchbox.html']}
 
 
 def setup(app):
     """Run some additional steps after the Sphinx builder is initialized"""
     app.connect('builder-inited', patch_automodapi)
-    app.add_css_file('collapsible_container.css')
 
 
 def patch_automodapi(app):
