@@ -103,7 +103,7 @@ numpydoc_show_class_members = False
 # HTML general settings
 # html_favicon = join('images', 'favicon.ico')
 html_js_files = ['collapsible_container.js']
-html_css_files = ['collapsible_container.css']
+html_css_files = ['collapsible_container.css', 'table.css']
 html_show_sphinx = False
 pygments_style = 'friendly'
 pygments_dark_style = 'material'
