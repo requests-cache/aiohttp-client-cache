@@ -138,14 +138,15 @@ def coalesce(*values: Any, default=None) -> Any:
 def get_expiration_datetime(expire_after: ExpirationTime) -> Optional[datetime]:
     """Convert an expiration value in any supported format to an absolute datetime"""
     logger.debug(f'Determining expiration time based on: {expire_after}')
+    if isinstance(expire_after, str):
+        expire_after = parse_http_date(expire_after)
     if expire_after is None or expire_after == -1:
         return None
-    elif isinstance(expire_after, datetime):
+    if isinstance(expire_after, datetime):
         return to_utc(expire_after)
-    elif isinstance(expire_after, str):
-        return parse_http_date(expire_after)
 
     if not isinstance(expire_after, timedelta):
+        assert isinstance(expire_after, (int, float))
         expire_after = timedelta(seconds=expire_after)
     return datetime.utcnow() + expire_after
 

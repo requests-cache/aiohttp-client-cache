@@ -131,7 +131,11 @@ class CachedResponse:
     @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
-        return self.expires is not None and datetime.utcnow() > self.expires
+        # If for any reason the expiration check fails, consider it expired and fetch a new response
+        try:
+            return self.expires is not None and datetime.utcnow() > self.expires
+        except (AttributeError, TypeError, ValueError):
+            return False
 
     @property
     def links(self) -> LinkMultiDict:
