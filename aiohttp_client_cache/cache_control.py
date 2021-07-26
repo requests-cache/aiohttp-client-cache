@@ -6,9 +6,9 @@ from itertools import chain
 from logging import getLogger
 from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
-import attr
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
+from attr import define, field
 from multidict import CIMultiDict
 
 # Value that may be set by either Cache-Control headers or CacheBackend params to disable caching
@@ -33,7 +33,7 @@ ExpirationPatterns = Dict[str, ExpirationTime]
 logger = getLogger(__name__)
 
 
-@attr.s(slots=True)
+@define()
 class CacheActions:
     """A dataclass that contains info on specific actions to take for a given cache item.
     This is determined by a combination of CacheBackend settings and request + response headers.
@@ -46,11 +46,12 @@ class CacheActions:
     5. Per-session expiration
     """
 
-    key: str = attr.ib(default=None)
-    expire_after: ExpirationTime = attr.ib(default=None)
-    skip_read: bool = attr.ib(default=False)
-    skip_write: bool = attr.ib(default=False)
-    revalidate: bool = attr.ib(default=False)  # Revalidation is not currently implemented
+    cache_control: bool = field(default=False)
+    expire_after: ExpirationTime = field(default=None)
+    key: str = field(default=None)
+    revalidate: bool = field(default=False)  # Note: Revalidation is not currently implemented
+    skip_read: bool = field(default=False)
+    skip_write: bool = field(default=False)
 
     @classmethod
     def from_request(
@@ -65,7 +66,7 @@ class CacheActions:
         if cache_control and has_cache_headers(headers):
             return cls.from_headers(key, headers)
         else:
-            return cls.from_settings(key, **kwargs)
+            return cls.from_settings(key, cache_control=cache_control, **kwargs)
 
     @classmethod
     def from_headers(cls, key: str, headers: Mapping):
@@ -73,6 +74,7 @@ class CacheActions:
         directives = get_cache_directives(headers)
         do_not_cache = directives.get('max-age') == DO_NOT_CACHE
         return cls(
+            cache_control=True,
             key=key,
             expire_after=directives.get('max-age'),
             skip_read=do_not_cache or 'no-store' in directives or 'no-cache' in directives,
@@ -85,6 +87,7 @@ class CacheActions:
         cls,
         key: str,
         url: StrOrURL,
+        cache_control: bool = False,
         request_expire_after: ExpirationTime = None,
         session_expire_after: ExpirationTime = None,
         urls_expire_after: ExpirationPatterns = None,
@@ -100,6 +103,7 @@ class CacheActions:
 
         do_not_cache = expire_after == DO_NOT_CACHE
         return cls(
+            cache_control=cache_control,
             key=key,
             expire_after=expire_after,
             skip_read=do_not_cache,
@@ -112,9 +116,11 @@ class CacheActions:
         """Convert the user/header-provided expiration value to a datetime"""
         return get_expiration_datetime(self.expire_after)
 
-    # TODO: If we add any more headers, maybe extract this + from_headers() into a separate function
     def update_from_response(self, response: ClientResponse):
         """Update expiration + actions based on response headers, if not previously set by request"""
+        if not self.cache_control:
+            return
+
         directives = get_cache_directives(response.headers)
         do_not_cache = directives.get('max-age') == DO_NOT_CACHE
         self.expire_after = coalesce(

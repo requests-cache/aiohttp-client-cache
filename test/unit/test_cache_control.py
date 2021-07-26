@@ -138,7 +138,7 @@ def test_update_from_response(headers, expected_expiration):
     """Test with Cache-Control response headers"""
     url = 'https://img.site.com/base/img.jpg'
     response = MagicMock(url=url, headers=CIMultiDictProxy(CIMultiDict(headers)))
-    actions = CacheActions(key='key')
+    actions = CacheActions(key='key', cache_control=True)
     actions.update_from_response(response)
 
     if expected_expiration == DO_NOT_CACHE:
@@ -146,6 +146,17 @@ def test_update_from_response(headers, expected_expiration):
     else:
         assert actions.expire_after == expected_expiration
         assert actions.skip_write is False
+
+
+def test_update_from_response__disabled():
+    """Response headers should not be used if cache_control=False"""
+    url = 'https://img.site.com/base/img.jpg'
+    headers = [('Cache-Control', 'max-age=60')]
+    response = MagicMock(url=url, headers=CIMultiDictProxy(CIMultiDict(headers)))
+
+    actions = CacheActions(key='key', cache_control=False, expire_after=30)
+    actions.update_from_response(response)
+    assert actions.expire_after == 30
 
 
 @pytest.mark.parametrize('directive', IGNORED_DIRECTIVES)
