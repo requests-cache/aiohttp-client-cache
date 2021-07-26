@@ -1,5 +1,8 @@
 # History
 
+## 0.4.2 (2021-07-26)
+* Fix handling of `CachedResponse.encoding` when the response body is `None`
+
 ## 0.4.1 (2021-07-09)
 * Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
 

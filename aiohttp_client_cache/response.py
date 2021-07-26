@@ -52,7 +52,7 @@ class CachedResponse:
     status: int = attr.ib()
     url: URL = attr.ib(converter=URL)
     version: str = attr.ib()
-    _body: Any = attr.ib(default=None)
+    _body: Any = attr.ib(default=b'')
     _links: LinkItems = attr.ib(factory=list)
     cookies: SimpleCookie = attr.ib(default=None)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
@@ -80,11 +80,12 @@ class CachedResponse:
         response.expires = expires
         response.real_url = client_response.request_info.real_url
 
-        # The encoding may be unset even if the response has been read
+        # The encoding may be unset even if the response has been read, and
+        # get_encoding() does not handle certain edge cases like an empty response body
         try:
             response.encoding = client_response.get_encoding()
-        except RuntimeError:
-            pass
+        except (RuntimeError, TypeError):
+            response.encoding = 'utf-8'
 
         if client_response.history:
             response.history = (
