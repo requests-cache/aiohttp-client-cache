@@ -14,6 +14,7 @@ async def get_test_response(client_factory, url='/', **kwargs):
     app.router.add_route('GET', '/valid_url', mock_handler)
     app.router.add_route('GET', '/json', json_mock_handler)
     app.router.add_route('GET', '/empty_content', empty_mock_handler)
+    app.router.add_route('GET', '/null_content', null_mock_handler)
     client = await client_factory(app)
     client_response = await client.get(url)
 
@@ -34,8 +35,13 @@ async def json_mock_handler(request):
     return web.Response(body=b'{"key": "value"}')
 
 
+# Note: Empty string vs null can trigger different corner cases
 async def empty_mock_handler(request):
     return web.Response(body=b' ')
+
+
+async def null_mock_handler(request):
+    return web.Response(body=None)
 
 
 async def test_basic_attrs(aiohttp_client):
@@ -127,6 +133,11 @@ async def test_json(aiohttp_client):
 
 async def test_json__empty_content(aiohttp_client):
     response = await get_test_response(aiohttp_client, '/empty_content')
+    assert await response.json() is None
+
+
+async def test_json__null_content(aiohttp_client):
+    response = await get_test_response(aiohttp_client, '/null_content')
     assert await response.json() is None
 
 
