@@ -51,7 +51,6 @@ sphinx-autodoc-typehints = { version = "^1.11", optional = true }
 sphinx-copybutton = { version = "^0.3", optional = true }
 sphinx-inline-tabs = {version = "^2021.4.11-beta.9", optional = true, python = ">=3.8"}
 sphinxcontrib-apidoc = { version = "^0.3", optional = true }
-flake8 = "^3.9.2"
 
 [tool.poetry.extras]
 all = ["aioboto3", "aiobotocore", "aioredis", "aiosqlite", "motor"]
