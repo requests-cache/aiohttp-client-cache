@@ -68,6 +68,11 @@ async def test_is_expired(aiohttp_client):
     assert response.is_expired is True
 
 
+async def test_is_expired__invalid(aiohttp_client):
+    response = await get_test_response(aiohttp_client, expires='asdf')
+    assert response.is_expired is False
+
+
 async def test_content_disposition(aiohttp_client):
     response = await get_test_response(aiohttp_client, '/valid_url')
     assert response.content_disposition.type == 'attachment'

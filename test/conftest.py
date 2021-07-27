@@ -28,7 +28,7 @@ HTTPBIN_FORMATS = [
 ]
 
 HTTPDATE_STR = 'Fri, 16 APR 2021 21:13:00 GMT'
-HTTPDATE_DATETIME = datetime(2021, 4, 16, 21, 13, tzinfo=timezone.utc)
+HTTPDATE_DATETIME = datetime(2021, 4, 16, 21, 13)
 
 
 # Configure logging for pytest session
