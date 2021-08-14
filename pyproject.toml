@@ -94,6 +94,12 @@ omit = [
     'aiohttp_client_cache/docs/*',
 ]
 
+[tool.coverage.report]
+exclude_lines = [
+    'pragma: no cover',
+    'if TYPE_CHECKING:',
+]
+
 [tool.isort]
 profile = "black"
 line_length = 100
