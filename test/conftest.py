@@ -10,6 +10,7 @@ import pytest
 from aiohttp_client_cache import CachedResponse, CachedSession, SQLiteBackend
 
 ALL_METHODS = ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+CACHE_NAME = 'pytest_cache'
 HTTPBIN_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 HTTPBIN_FORMATS = [
     'brotli',
