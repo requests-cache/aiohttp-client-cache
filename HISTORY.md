@@ -1,17 +1,23 @@
 # History
 
-## 0.4.3 (2021-07-27)
+## 0.5.0 (2021-TBD)
+* Add a filesystem backend
+
+---
+### 0.4.3 (2021-07-27)
 * Fix bug in which reponse header `Expires` was used for cache expiration even with `cache_control=False`
 * Fix bug in which HTTP dates parsed from response headers weren't converted to UTC
 * Add handling for invalid timestamps in `CachedResponse.is_expired`
 
-## 0.4.2 (2021-07-26)
+### 0.4.2 (2021-07-26)
 * Fix handling of `CachedResponse.encoding` when the response body is `None`
 
-## 0.4.1 (2021-07-09)
+### 0.4.1 (2021-07-09)
 * Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
 
 ## 0.4.0 (2021-05-12)
+[See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/3?closed=1)
+
 * Add optional support for the following **request** headers:
     * `Cache-Control: max-age`
     * `Cache-Control: no-cache`

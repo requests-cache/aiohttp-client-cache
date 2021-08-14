@@ -2,24 +2,33 @@
 import warnings
 from contextlib import asynccontextmanager
 from logging import getLogger
+from typing import TYPE_CHECKING
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
-from aiohttp_client_cache.backends import CacheBackend
+from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
 from aiohttp_client_cache.docs import copy_signature, extend_signature
 from aiohttp_client_cache.response import AnyResponse, set_response_defaults
+
+if TYPE_CHECKING:
+    MIXIN_BASE = ClientSession
+else:
+    MIXIN_BASE = object
 
 logger = getLogger(__name__)
 
 
-class CacheMixin:
+class CacheMixin(MIXIN_BASE):
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
 
     @extend_signature(ClientSession.__init__)
     def __init__(self, *, cache: CacheBackend = None, **kwargs):
-        super().__init__(**kwargs)  # type: ignore
         self.cache = cache or CacheBackend()
+
+        # Pass along any valid kwargs for ClientSession (or custom session superclass)
+        session_kwargs = get_valid_kwargs(super().__init__, kwargs)
+        super().__init__(**session_kwargs)
 
     @copy_signature(ClientSession._request)
     async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:

@@ -37,6 +37,10 @@ try:
 except ImportError as e:
     DynamoDBBackend = get_placeholder_backend(e)  # type: ignore
 try:
+    from aiohttp_client_cache.backends.filesystem import FileBackend
+except ImportError as e:
+    FileBackend = get_placeholder_backend(e)  # type: ignore
+try:
     from aiohttp_client_cache.backends.gridfs import GridFSBackend
 except ImportError as e:
     GridFSBackend = get_placeholder_backend(e)  # type: ignore
