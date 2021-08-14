@@ -2,6 +2,7 @@
 
 ## 0.5.0 (2021-TBD)
 * Add a filesystem backend
+* Add `MongoDBPickleCache.values()` method that deserializes items
 
 ---
 ### 0.4.3 (2021-07-27)

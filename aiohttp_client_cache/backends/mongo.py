@@ -85,3 +85,7 @@ class MongoDBPickleCache(MongoDBCache):
 
     async def write(self, key, item):
         await super().write(key, self.serialize(item))
+
+    async def values(self) -> AsyncIterable[ResponseOrKey]:
+        async for doc in self.collection.find({'data': {'$exists': True}}):
+            yield self.deserialize(doc['data'])

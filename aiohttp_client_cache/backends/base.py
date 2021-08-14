@@ -227,6 +227,7 @@ class CacheBackend:
 
 
 # TODO: Support yarl.URL like aiohttp does?
+# TODO: Implement __aiter__?
 class BaseCache(metaclass=ABCMeta):
     """A wrapper for lower-level cache storage operations. This is separate from
     :py:class:`.CacheBackend` to allow a single backend to contain multiple cache objects.
