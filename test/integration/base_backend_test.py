@@ -2,7 +2,7 @@
 import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import AsyncIterator, Dict, Type
+from typing import Any, AsyncIterator, Dict, Type
 from uuid import uuid4
 
 import pytest
@@ -27,7 +27,7 @@ class BaseBackendTest:
     """Base class for testing cache backend classes"""
 
     backend_class: Type[CacheBackend] = None  # type: ignore
-    init_kwargs: Dict = {}
+    init_kwargs: Dict[str, Any] = {}
 
     @asynccontextmanager
     async def init_session(self, clear=True, **kwargs) -> AsyncIterator[CachedSession]:
