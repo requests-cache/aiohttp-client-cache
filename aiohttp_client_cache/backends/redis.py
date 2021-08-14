@@ -19,6 +19,11 @@ class RedisBackend(CacheBackend):
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
         self.redirects = RedisCache(cache_name, 'redirects', address=address, **kwargs)
 
+    async def close(self):
+        """Close any active connections"""
+        await self.responses.close()
+        await self.redirects.close()
+
 
 class RedisCache(BaseCache):
     """An async interface for caching objects in Redis.
@@ -37,7 +42,7 @@ class RedisCache(BaseCache):
         self,
         namespace: str,
         collection_name: str,
-        address: str = None,
+        address: str = DEFAULT_ADDRESS,
         connection: Redis = None,
         **kwargs,
     ):
@@ -53,6 +58,12 @@ class RedisCache(BaseCache):
         if not self._connection:
             self._connection = await create_redis_pool(self.address, **self.connection_kwargs)
         return self._connection
+
+    async def close(self):
+        if self._connection:
+            self._connection.close()
+            await self._connection.wait_closed()
+            self._connection = None
 
     async def clear(self):
         connection = await self.get_connection()

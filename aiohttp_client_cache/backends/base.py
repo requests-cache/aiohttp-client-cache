@@ -225,6 +225,9 @@ class CacheBackend:
         async for r in self.responses.values():
             yield r.url  # type: ignore
 
+    async def close(self):
+        """Close any active connections, if applicable"""
+
 
 # TODO: Support yarl.URL like aiohttp does?
 # TODO: Implement __aiter__?
