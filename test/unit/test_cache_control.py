@@ -182,17 +182,17 @@ def test_get_expiration_datetime__no_expiration():
 @pytest.mark.parametrize(
     'expire_after, expected_expiration_delta',
     [
-        (datetime.utcnow(), timedelta(seconds=0)),
+        (None, timedelta(seconds=0)),
         (timedelta(seconds=60), timedelta(seconds=60)),
         (60, timedelta(seconds=60)),
         (33.3, timedelta(seconds=33.3)),
     ],
 )
 def test_get_expiration_datetime__relative(expire_after, expected_expiration_delta):
-    expires = get_expiration_datetime(expire_after)
+    expires = get_expiration_datetime(expire_after or datetime.utcnow())
     expected_expiration = datetime.utcnow() + expected_expiration_delta
     # Instead of mocking datetime (which adds some complications), check for approximate value
-    assert abs((expires - expected_expiration).total_seconds()) <= 5
+    assert abs((expires - expected_expiration).total_seconds()) < 1
 
 
 def test_get_expiration_datetime__httpdate():

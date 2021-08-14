@@ -38,6 +38,7 @@ pytestmark = [
 
 class TestRedisCache(BaseStorageTest):
     storage_class = RedisCache
+    picklable = True
 
 
 class TestRedisBackend(BaseBackendTest):

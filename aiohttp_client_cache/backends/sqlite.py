@@ -52,7 +52,9 @@ class SQLiteCache(BaseCache):
         kwargs: Additional keyword arguments for :py:func:`sqlite3.connect`
     """
 
-    def __init__(self, filename: str, table_name: str, use_temp: bool = False, **kwargs):
+    def __init__(
+        self, filename: str, table_name: str = 'aiohttp-cache', use_temp: bool = False, **kwargs
+    ):
         super().__init__(**kwargs)
         self.connection_kwargs = get_valid_kwargs(sqlite_template, kwargs)
         self.filename = _get_cache_filename(filename, use_temp)

@@ -20,7 +20,7 @@ from test.conftest import (
     httpbin,
 )
 
-pytestmark = [pytest.mark.asyncio]
+pytestmark = pytest.mark.asyncio
 
 
 class BaseBackendTest:
