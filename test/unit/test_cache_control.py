@@ -107,7 +107,6 @@ def test_init_from_settings(url, request_expire_after, expected_expiration):
 )
 def test_init_from_headers(headers, expected_expiration):
     """Test with Cache-Control request headers"""
-    url = 'https://img.site.com/base/img.jpg'
     actions = CacheActions.from_headers(key='key', headers=CIMultiDict(headers))
 
     assert actions.key == 'key'

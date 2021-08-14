@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 from logging import basicConfig, getLogger
 from os import getenv
 from tempfile import NamedTemporaryFile

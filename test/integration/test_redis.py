@@ -8,8 +8,7 @@ from aioredis import create_redis_pool
 
 from aiohttp_client_cache.backends.redis import DEFAULT_ADDRESS, RedisBackend, RedisCache
 from aiohttp_client_cache.session import CachedSession
-from test.integration.base_backend_test import BaseBackendTest
-from test.integration.base_storage_test import BaseStorageTest
+from test.integration import BaseBackendTest, BaseStorageTest
 
 
 def is_db_running():
@@ -48,4 +47,4 @@ class TestRedisBackend(BaseBackendTest):
     async def init_session(self, **kwargs) -> AsyncIterator[CachedSession]:
         async with super().init_session(**kwargs) as session:
             yield session
-        session.cache.close()
+        await session.cache.close()

@@ -3,8 +3,7 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
 from aiohttp_client_cache.backends.mongo import MongoDBBackend, MongoDBCache, MongoDBPickleCache
-from test.integration.base_backend_test import BaseBackendTest
-from test.integration.base_storage_test import BaseStorageTest
+from test.integration import BaseBackendTest, BaseStorageTest
 
 
 def is_db_running():

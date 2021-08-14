@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pytest
-from aiohttp import ClientResponseError, ClientSession, web
+from aiohttp import ClientResponseError, web
 from multidict import MultiDictProxy
 from yarl import URL
 

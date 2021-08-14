@@ -1,11 +1,10 @@
-import pickle
 from os.path import isfile
 from shutil import rmtree
 from tempfile import gettempdir
 
 from aiohttp_client_cache.backends.filesystem import FileBackend, FileCache
-from test.integration.base_backend_test import BaseBackendTest
-from test.integration.base_storage_test import CACHE_NAME, BaseStorageTest
+from test.conftest import CACHE_NAME
+from test.integration import BaseBackendTest, BaseStorageTest
 
 
 class TestFileCache(BaseStorageTest):
