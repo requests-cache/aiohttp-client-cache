@@ -1,7 +1,9 @@
+from contextlib import asynccontextmanager
 from typing import AsyncIterable, Dict
 
 import aioboto3
-from aioboto3.session import ResourceCreatorContext, Session
+from aioboto3.session import ResourceCreatorContext
+from aioboto3.session import Session as AWSSession
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
@@ -37,14 +39,23 @@ class DynamoDBBackend(CacheBackend):
                 to reuse instead of creating a new one
         """
         super().__init__(cache_name=cache_name, **kwargs)
-        if not context:
-            resource_kwargs = get_valid_kwargs(Session.resource, kwargs)
-            context = aioboto3.resource("dynamodb", **resource_kwargs)
         self.responses = DynamoDbCache(
-            cache_name, 'resp', key_attr_name, val_attr_name, create_if_not_exists, context
+            cache_name,
+            'resp',
+            key_attr_name,
+            val_attr_name,
+            create_if_not_exists,
+            context=context,
+            **kwargs,
         )
         self.redirects = DynamoDbCache(
-            cache_name, 'redir', key_attr_name, val_attr_name, create_if_not_exists, context
+            cache_name,
+            'redir',
+            key_attr_name,
+            val_attr_name,
+            create_if_not_exists,
+            context=self.responses.context,
+            **kwargs,
         )
 
 
@@ -59,10 +70,10 @@ class DynamoDbCache(BaseCache):
         self,
         table_name: str,
         namespace: str,
-        key_attr_name: str,
-        val_attr_name: str,
-        create_if_not_exists: bool,
-        context: ResourceCreatorContext,
+        key_attr_name: str = 'k',
+        val_attr_name: str = 'v',
+        create_if_not_exists: bool = False,
+        context: ResourceCreatorContext = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -71,52 +82,51 @@ class DynamoDbCache(BaseCache):
         self.key_attr_name = key_attr_name
         self.val_attr_name = val_attr_name
         self.create_if_not_exists = create_if_not_exists
-        self.context = context
+
+        resource_kwargs = get_valid_kwargs(AWSSession.resource, kwargs)
+        self.context = context or aioboto3.resource('dynamodb', **resource_kwargs)
         self._table = None
+
+    @asynccontextmanager
+    async def get_connection(self):
+        # Re-use the service resource if it's already been created
+        if self.context.cls:
+            yield self.context.cls
+        else:
+            yield await self.context.__aenter__()
 
     async def get_table(self):
         if not self._table:
-            # Re-use the service resource if it's already been created
-            if self.context.cls:
-                conn = self.context.cls
-            # otherwise create
-            else:
-                # should we try to call aexit later if we auto enter here?
-                conn = await self.context.__aenter__()
-
-            self._table = await conn.Table(self.table_name)
-            if self.create_if_not_exists:
-                try:
-                    await conn.create_table(
-                        AttributeDefinitions=[
-                            {
-                                'AttributeName': self.key_attr_name,
-                                'AttributeType': 'S',
-                            },
-                        ],
-                        TableName=self.table_name,
-                        KeySchema=[
-                            {
-                                'AttributeName': self.key_attr_name,
-                                'KeyType': 'HASH',
-                            },
-                        ],
-                        BillingMode="PAY_PER_REQUEST",
-                    )
-                    await self._table.wait_until_exists()
-                except ClientError as e:
-                    if e.response["Error"]["Code"] != "ResourceInUseException":
-                        raise
-
+            async with self.get_connection() as conn:
+                if self.create_if_not_exists:
+                    self._table = await self._create_table(conn)
+                else:
+                    self._table = await conn.Table(self.table_name)
         return self._table
+
+    async def _create_table(self, conn):
+        table = await conn.Table(self.table_name)
+
+        try:
+            await conn.create_table(
+                AttributeDefinitions=[{'AttributeName': self.key_attr_name, 'AttributeType': 'S'}],
+                TableName=self.table_name,
+                KeySchema=[{'AttributeName': self.key_attr_name, 'KeyType': 'HASH'}],
+                BillingMode="PAY_PER_REQUEST",
+            )
+            await table.wait_until_exists()
+        except ClientError as e:
+            if e.response["Error"]["Code"] != "ResourceInUseException":
+                raise
+
+        return table
 
     def _doc(self, key) -> Dict:
         return {self.key_attr_name: f'{self.namespace}:{key}'}
 
     async def _scan(self) -> AsyncIterable[Dict]:
         table = await self.get_table()
-        client = table.meta.client
-        paginator = client.get_paginator('scan')
+        paginator = table.meta.client.get_paginator('scan')
         iterator = paginator.paginate(
             TableName=table.name,
             Select='ALL_ATTRIBUTES',
@@ -160,10 +170,7 @@ class DynamoDbCache(BaseCache):
             yield item[self.key_attr_name][len_prefix:]
 
     async def size(self) -> int:
-        count = 0
-        async for item in self._scan():
-            count += 1
-        return count
+        return len([i async for i in self._scan()])
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
         async for item in self._scan():
