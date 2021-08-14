@@ -42,21 +42,21 @@ class FileCache(BaseCache):
         self.cache_dir = _get_cache_dir(cache_name, use_temp)
 
     @contextmanager
-    def _try_io(self, ignore_errors: bool = False):
+    def _try_io(self, ignore_errors: bool = True):
         """Attempt an I/O operation, and either ignore errors or re-raise them as KeyErrors"""
         try:
             yield
-        except (IOError, OSError, PickleError) as e:
+        except (IOError, OSError, PickleError):
             if not ignore_errors:
-                raise KeyError(e)
+                raise
 
     def _join(self, key):
         return join(self.cache_dir, str(key))
 
     async def clear(self):
         """Note: Currently this is a blocking operation"""
-        with self._try_io(ignore_errors=True):
-            rmtree(self.cache_dir, ignore_errors=True)
+        with self._try_io():
+            rmtree(self.cache_dir)
             makedirs(self.cache_dir)
 
     async def contains(self, key: str) -> bool:
@@ -72,7 +72,7 @@ class FileCache(BaseCache):
             await aiofiles.os.remove(self._join(key))
 
     async def write(self, key: str, value: ResponseOrKey):
-        with self._try_io():
+        with self._try_io(ignore_errors=False):
             async with aiofiles.open(self._join(key), 'wb') as f:
                 await f.write(self.serialize(value) or b'')
 

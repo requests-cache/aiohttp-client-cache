@@ -5,12 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from aiohttp_client_cache import CachedResponse
-from aiohttp_client_cache.backends import (
-    BaseCache,
-    CacheBackend,
-    DictCache,
-    get_placeholder_backend,
-)
+from aiohttp_client_cache.backends import CacheBackend, DictCache, get_placeholder_backend
 from aiohttp_client_cache.cache_control import CacheActions
 
 TEST_URL = 'https://test.com'
@@ -36,7 +31,7 @@ def get_mock_response(**kwargs):
 def test_get_placeholder_backend():
     class TestBackend:
         def __init__(self):
-            import nonexistent_module
+            import nonexistent_module  # noqa: F401
 
     try:
         TestBackend()
