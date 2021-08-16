@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 import attr
 from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
 from aiohttp.client_reqrep import ContentDisposition, MappingProxyType, RequestInfo
+from aiohttp.streams import StreamReader
 from aiohttp.typedefs import RawHeaders, StrOrURL
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
@@ -56,7 +57,7 @@ class CachedResponse:
     _links: LinkItems = attr.ib(factory=list)
     cookies: SimpleCookie = attr.ib(default=None)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
-    encoding: str = attr.ib(default=None)
+    encoding: str = attr.ib(default='utf-8')
     expires: Optional[datetime] = attr.ib(default=None)
     raw_headers: RawHeaders = attr.ib(factory=tuple)
     real_url: StrOrURL = attr.ib(default=None)
@@ -85,17 +86,13 @@ class CachedResponse:
         try:
             response.encoding = client_response.get_encoding()
         except (RuntimeError, TypeError):
-            response.encoding = 'utf-8'
+            pass
 
         if client_response.history:
             response.history = (
                 *[await cls.from_client_response(r) for r in client_response.history],
             )
         return response
-
-    @property
-    def _released(self):
-        return True
 
     @property
     def content_disposition(self) -> Optional[ContentDisposition]:
@@ -117,6 +114,7 @@ class CachedResponse:
         """Get headers as an immutable, case-insensitive multidict from raw headers"""
 
         def decode_header(header):
+            """Decode an individual (key, value) pair"""
             return (
                 header[0].decode('utf-8', 'surrogateescape'),
                 header[1].decode('utf-8', 'surrogateescape'),
@@ -146,11 +144,7 @@ class CachedResponse:
     @property
     def ok(self) -> bool:
         """Returns ``True`` if ``status`` is less than ``400``, ``False`` if not"""
-        try:
-            self.raise_for_status()
-            return True
-        except ClientResponseError:
-            return False
+        return self.status < 400
 
     @property
     def request_info(self) -> RequestInfo:
@@ -174,8 +168,8 @@ class CachedResponse:
     def raise_for_status(self):
         if self.status >= 400:
             raise ClientResponseError(
-                self.request_info,  # type: ignore  # These types are interchangeable
-                tuple(),
+                self.request_info,
+                self.history,
                 status=self.status,
                 message=self.reason,
                 headers=self.headers,
@@ -185,12 +179,39 @@ class CachedResponse:
         """Read response payload."""
         return self._body
 
-    def release(self):
-        """No-op function for compatibility with ClientResponse"""
-
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""
         return self._body.decode(encoding or self.encoding, errors=errors)
+
+    # No-op/placeholder properties and methods that don't apply to a CachedResponse, but provide
+    # compatibility with aiohttp.ClientResponse
+    # ----------
+
+    @property
+    def _released(self):
+        return True
+
+    @property
+    def connection(self):
+        return None
+
+    async def __aenter__(self) -> 'CachedResponse':
+        return self
+
+    async def close(self):
+        pass
+
+    async def wait_for_close(self):
+        pass
+
+    def release(self):
+        pass
+
+    async def start(self):
+        pass
+
+    async def terminate(self):
+        pass
 
 
 AnyResponse = Union[ClientResponse, CachedResponse]
