@@ -1,8 +1,12 @@
+# TODO: CachedResponse may be better as a non-slotted subclass of ClientResponse.
+#     Will look into this when working on issue #67.
+import asyncio
 import json
 from datetime import datetime
 from http.cookies import SimpleCookie
 from logging import getLogger
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
+from unittest.mock import Mock
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
@@ -67,18 +71,19 @@ class CachedResponse:
     @classmethod
     async def from_client_response(cls, client_response: ClientResponse, expires: datetime = None):
         """Convert a ClientResponse into a CachedReponse"""
-        # Response may not have been read yet, if fetched by something other than CachedSession
-        if not client_response._released:
-            await client_response.read()
-
         # Copy most attributes over as is
         copy_attrs = set(attr.fields_dict(cls).keys()) - EXCLUDE_ATTRS
         response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
 
-        # Set some remaining attributes individually
+        # Read response content, and reset StreamReader on original response
+        if not client_response._released:
+            await client_response.read()
         response._body = client_response._body
-        response._links = [(k, _to_str_tuples(v)) for k, v in client_response.links.items()]
+        client_response.content = CachedStreamReader(client_response._body)
+
+        # Set remaining attributes individually
         response.expires = expires
+        response.links = client_response.links
         response.real_url = client_response.request_info.real_url
 
         # The encoding may be unset even if the response has been read, and
@@ -93,6 +98,10 @@ class CachedResponse:
                 *[await cls.from_client_response(r) for r in client_response.history],
             )
         return response
+
+    @property
+    def content(self) -> StreamReader:
+        return CachedStreamReader(self._body)
 
     @property
     def content_disposition(self) -> Optional[ContentDisposition]:
@@ -140,6 +149,10 @@ class CachedResponse:
         """Convert stored links into the format returned by :attr:`ClientResponse.links`"""
         items = [(k, _to_url_multidict(v)) for k, v in self._links]
         return MultiDictProxy(MultiDict([(k, MultiDictProxy(v)) for k, v in items]))
+
+    @links.setter
+    def links(self, value: Mapping):
+        self._links = [(k, _to_str_tuples(v)) for k, v in value.items()]
 
     @property
     def ok(self) -> bool:
@@ -212,6 +225,20 @@ class CachedResponse:
 
     async def terminate(self):
         pass
+
+
+class CachedStreamReader(StreamReader):
+    """A StreamReader loaded from previously consumed response content. This feeds cached data into
+    the stream so it can support all the same behavior as the original stream: async iteration,
+    chunked reads, etc.
+    """
+
+    def __init__(self, body: bytes = None):
+        body = body or b''
+        protocol = Mock(_reading_paused=False)
+        super().__init__(protocol, limit=len(body), loop=asyncio.get_event_loop())
+        self.feed_data(body)
+        self.feed_eof()
 
 
 AnyResponse = Union[ClientResponse, CachedResponse]

@@ -93,6 +93,7 @@ directory = 'test-reports'
 branch = true
 source = ['aiohttp_client_cache']
 omit = [
+    'aiohttp_client_cache/__init__.py',
     'aiohttp_client_cache/backends/__init__.py',
     'aiohttp_client_cache/backends/gridfs.py',
     'aiohttp_client_cache/docs/*',

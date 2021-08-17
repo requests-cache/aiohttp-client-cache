@@ -91,6 +91,18 @@ class BaseBackendTest:
 
         assert not from_cache(response_1) and from_cache(response_2)
 
+    async def test_streaming_requests(self):
+        """Test that streaming requests work both for the original and cached responses"""
+        async with self.init_session() as session:
+            for _ in range(2):
+                response = await session.get(httpbin('stream-bytes/64'))
+                lines = [line async for line in response.content]
+                assert len(b''.join(lines)) == 64
+
+            # Test some additional methods on the cached response (which can be re-read)
+            chunks = [c async for c in response.content.iter_chunked(2)]
+            assert len(b''.join(chunks)) == 64
+
     @pytest.mark.parametrize(
         'request_headers, expected_expiration',
         [
