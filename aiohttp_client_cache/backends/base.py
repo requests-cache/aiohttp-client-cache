@@ -200,24 +200,24 @@ class CacheBackend:
         for key in keys_to_delete:
             await self.delete(key)
 
-    def create_key(self, *args, **kwargs):
+    def create_key(self, method: str, url: StrOrURL, **kwargs):
         """Create a unique cache key based on request details"""
         return create_key(
-            *args,
+            method,
+            url,
             include_headers=self.include_headers,
             ignored_params=self.ignored_params,
             **kwargs,
         )
 
-    async def delete_url(self, url: StrOrURL):
-        """Delete cached response associated with `url`, along with its history (if applicable).
-        Works only for GET requests.
-        """
-        await self.delete(self.create_key('GET', url))
+    async def delete_url(self, url: StrOrURL, method: str = 'GET', **kwargs):
+        """Delete cached response associated with `url`, along with its history (if applicable)"""
+        key = self.create_key(url=url, method=method, **kwargs)
+        await self.delete(key)
 
-    async def has_url(self, url: StrOrURL) -> bool:
-        """Returns `True` if cache has `url`, `False` otherwise. Works only for GET request urls"""
-        key = self.create_key('GET', url)
+    async def has_url(self, url: StrOrURL, method: str = 'GET', **kwargs) -> bool:
+        """Returns `True` if cache has `url`, `False` otherwise"""
+        key = self.create_key(method=method, url=url, **kwargs)
         return await self.responses.contains(str(key)) or await self.redirects.contains(str(key))
 
     async def get_urls(self) -> AsyncIterable[str]:
