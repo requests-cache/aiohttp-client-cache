@@ -12,7 +12,7 @@ Several cache backends are included, which can be selected using the `cache` par
     aiohttp_client_cache.backends.base.CacheBackend
     aiohttp_client_cache.backends.dynamodb.DynamoDBBackend
     aiohttp_client_cache.backends.filesystem.FileBackend
-    aiohttp_client_cache.backends.mongo.MongoDBBackend
+    aiohttp_client_cache.backends.mongodb.MongoDBBackend
     aiohttp_client_cache.backends.redis.RedisBackend
     aiohttp_client_cache.backends.sqlite.SQLiteBackend
 ```

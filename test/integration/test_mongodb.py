@@ -2,7 +2,7 @@ import pytest
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 
-from aiohttp_client_cache.backends.mongo import MongoDBBackend, MongoDBCache, MongoDBPickleCache
+from aiohttp_client_cache.backends.mongodb import MongoDBBackend, MongoDBCache, MongoDBPickleCache
 from test.integration import BaseBackendTest, BaseStorageTest
 
 
