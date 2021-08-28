@@ -1,7 +1,7 @@
 """Functions for creating keys used for cache requests"""
 import hashlib
 from collections.abc import Mapping
-from typing import Dict, Iterable, Tuple
+from typing import Any, Dict, Iterable, Tuple
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest
@@ -64,6 +64,10 @@ def normalize_url_params(url, params: Dict = None) -> Tuple[str, Dict]:
     return url, params
 
 
-def encode_dict(data):
+def encode_dict(data: Any) -> bytes:
+    if isinstance(data, bytes):
+        return data
+    elif not isinstance(data, Mapping):
+        return str(data).encode()
     item_pairs = [f'{k}={v}' for k, v in sorted((data or {}).items())]
     return '&'.join(item_pairs).encode()

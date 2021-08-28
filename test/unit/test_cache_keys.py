@@ -1,11 +1,11 @@
+"""The cache_keys module is mostly covered indirectly via other tests.
+This just contains tests for some extra edge cases not covered elsewhere.
+"""
 import pytest
 
 from aiohttp_client_cache.cache_keys import create_key
 
-CACHE_KEY = '3da7c84fefc3f40e3223de763c16d5804e50f5b4b2bc8ff3f033e99c4640ac1b'
 
-
-# All of the following variations should produce the same cache key
 @pytest.mark.parametrize(
     'url, params',
     [
@@ -21,4 +21,14 @@ CACHE_KEY = '3da7c84fefc3f40e3223de763c16d5804e50f5b4b2bc8ff3f033e99c4640ac1b'
     ],
 )
 def test_normalize_url_params(url, params):
-    assert create_key('GET', url, params=params) == CACHE_KEY
+    """All of these variations should produce the same cache key"""
+    cache_key = '247bdad30a3ccdcafc39a8bd2712ec79789d7b8aafce330a19dc0ddd680e9477'
+    assert create_key('GET', url, params=params) == cache_key
+
+
+@pytest.mark.parametrize('field', ['data', 'json'])
+@pytest.mark.parametrize('body', [{'foo': 'bar'}, '{"foo": "bar"}', b'{"foo": "bar"}'])
+def test_encode_request_body(body, field):
+    """Request body should be handled correctly whether it's a dict or already serialized"""
+    cache_key = create_key('GET', 'https://example.com', **{field: body})
+    assert isinstance(cache_key, str)
