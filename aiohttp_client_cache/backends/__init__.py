@@ -41,11 +41,7 @@ try:
 except ImportError as e:
     FileBackend = get_placeholder_backend(e)  # type: ignore
 try:
-    from aiohttp_client_cache.backends.gridfs import GridFSBackend
-except ImportError as e:
-    GridFSBackend = get_placeholder_backend(e)  # type: ignore
-try:
-    from aiohttp_client_cache.backends.mongo import MongoDBBackend
+    from aiohttp_client_cache.backends.mongodb import MongoDBBackend
 except ImportError as e:
     MongoDBBackend = get_placeholder_backend(e)  # type: ignore
 try:

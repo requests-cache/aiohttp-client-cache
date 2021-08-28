@@ -1,7 +1,7 @@
 # History
 
 ## 0.5.0 (2021-TBD)
-[See all issues & PRs for v0.4](https://github.com/JWCook/aiohttp-client-cache/milestone/4?closed=1)
+[See all issues & PRs for v0.5](https://github.com/JWCook/aiohttp-client-cache/milestone/4?closed=1)
 
 * Add a filesystem backend
 * Add support for streaming requests
