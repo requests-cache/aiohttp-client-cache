@@ -6,6 +6,7 @@
 * Add `MongoDBPickleCache.values()` method that deserializes items
 * Allow `BaseCache.has_url()` and `delete_url()` to take all the same parameters as `create_key()`
 * Improve normalization for variations of URLs & request parameters
+* Fix handling of request body when it has already been serialized
 
 ---
 ### 0.4.3 (2021-07-27)
