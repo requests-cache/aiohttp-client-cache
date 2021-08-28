@@ -175,7 +175,14 @@ async def test_read(aiohttp_client):
     assert await response.read() == b'404: Not Found'
 
 
-async def test_no_op(aiohttp_client):
+async def test_no_ops(aiohttp_client):
     # Just make sure CachedResponse doesn't explode if extra ClientResponse methods are called
     response = await get_test_response(aiohttp_client)
+
+    await response.start()
     response.release()
+    await response.close()
+    await response.wait_for_close()
+    await response.terminate()
+    assert response.connection is None
+    assert response._released is True
