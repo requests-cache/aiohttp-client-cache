@@ -34,7 +34,7 @@ class CacheMixin(MIXIN_BASE):
     async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         # Attempt to fetch cached response; if missing or expired, fetch new one
-        response, actions = await self.cache.request(method=method, url=str_or_url, **kwargs)
+        response, actions = await self.cache.request(method, str_or_url, **kwargs)
         if response:
             return response
         else:

@@ -1,7 +1,7 @@
 """Functions for creating keys used for cache requests"""
 import hashlib
 from collections.abc import Mapping
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Tuple
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from aiohttp import ClientRequest
@@ -21,15 +21,16 @@ def create_key(
     **kwargs,
 ) -> str:
     """Create a unique cache key based on request details"""
+    norm_url, params = normalize_url_params(url, params)
+
     if ignored_params:
-        url, params = split_url_params(url, params)
         params = filter_ignored_params(params, ignored_params)
         data = filter_ignored_params(data, ignored_params)
         json = filter_ignored_params(json, ignored_params)
 
     key = hashlib.sha256()
     key.update(method.upper().encode())
-    key.update(str(url_normalize(str(url))).encode())
+    key.update(norm_url.encode())
     key.update(encode_dict(params))
     key.update(encode_dict(data))
     key.update(encode_dict(json))
@@ -41,20 +42,24 @@ def create_key(
     return key.hexdigest()
 
 
-def filter_ignored_params(data, ignored_params):
+def filter_ignored_params(data, ignored_params: Iterable[str]):
     """Remove any ignored params from an object, if it's dict-like"""
     if not isinstance(data, Mapping) or not ignored_params:
         return data
     return {k: v for k, v in data.items() if k not in ignored_params}
 
 
-def split_url_params(url, params):
+def normalize_url_params(url, params: Dict = None) -> Tuple[str, Dict]:
     """Strip off any request params manually added to URL and add to `params`"""
-    u = urlparse(url)
-    if u.query:
-        query = parse_qsl(u.query)
+    params = params or {}
+    url = url_normalize(str(url))
+    tokens = urlparse(url)
+    if tokens.query:
+        query = parse_qsl(tokens.query)
         params.update(query)
-        url = urlunparse((u.scheme, u.netloc, u.path, u.params, [], u.fragment))
+        url = urlunparse(
+            (tokens.scheme, tokens.netloc, tokens.path, tokens.params, '', tokens.fragment)
+        )
 
     return url, params
 

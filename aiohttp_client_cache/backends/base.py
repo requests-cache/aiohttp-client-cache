@@ -88,8 +88,8 @@ class CacheBackend:
 
     async def request(
         self,
-        method: str = None,
-        url: StrOrURL = None,
+        method: str,
+        url: StrOrURL,
         expire_after: ExpirationTime = None,
         **kwargs,
     ) -> Tuple[Optional[CachedResponse], CacheActions]:
