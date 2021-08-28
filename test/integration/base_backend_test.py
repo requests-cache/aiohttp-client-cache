@@ -100,7 +100,11 @@ class BaseBackendTest:
                 assert len(b''.join(lines)) == 64
 
             # Test some additional methods on the cached response (which can be re-read)
+            chunks = [c async for (c, _) in response.content.iter_chunks()]
+            assert len(b''.join(chunks)) == 64
             chunks = [c async for c in response.content.iter_chunked(2)]
+            assert len(b''.join(chunks)) == 64
+            chunks = [c async for c in response.content.iter_any()]
             assert len(b''.join(chunks)) == 64
 
     @pytest.mark.parametrize(
