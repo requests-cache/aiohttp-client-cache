@@ -4,6 +4,8 @@
 * Add a filesystem backend
 * Add `RedisBackend.close()` method 
 * Add `MongoDBPickleCache.values()` method that deserializes items
+* Allow `BaseCache.has_url()` and `delete_url()` to take all the same parameters as `create_key()`
+* Improve normalization for variations of URLs & request parameters
 
 ---
 ### 0.4.3 (2021-07-27)

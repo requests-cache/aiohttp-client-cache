@@ -160,28 +160,28 @@ async def test_delete_expired_responses():
 async def test_delete_url():
     cache = CacheBackend()
     mock_response = await CachedResponse.from_client_response(get_mock_response())
-    cache_key = cache.create_key('GET', TEST_URL)
+    cache_key = cache.create_key('GET', TEST_URL, params={'param': 'value'})
 
     await cache.responses.write(cache_key, mock_response)
     assert await cache.responses.size() == 1
-    await cache.delete_url(TEST_URL)
+    await cache.delete_url(TEST_URL, params={'param': 'value'})
     assert await cache.responses.size() == 0
 
 
 async def test_has_url():
     cache = CacheBackend()
     mock_response = await CachedResponse.from_client_response(get_mock_response())
-    cache_key = cache.create_key('GET', TEST_URL)
+    cache_key = cache.create_key('GET', TEST_URL, params={'param': 'value'})
 
     await cache.responses.write(cache_key, mock_response)
-    assert await cache.has_url(TEST_URL)
+    assert await cache.has_url(TEST_URL, params={'param': 'value'})
     assert not await cache.has_url('https://test.com/some_other_path')
 
 
 @skip_py37
 @patch('aiohttp_client_cache.backends.base.create_key')
 async def test_create_key(mock_create_key):
-    """Actual logic is in expiration module; just test to make sure it gets called correctly"""
+    """Actual logic is in cache_keys module; just test to make sure it gets called correctly"""
     headers = {'key': 'value'}
     ignored_params = ['ignored']
     cache = CacheBackend(include_headers=True, ignored_params=ignored_params)
