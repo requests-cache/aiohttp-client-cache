@@ -19,6 +19,7 @@ from yarl import URL
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
     '_body',
+    '_content',
     '_links',
     'created_at',
     'encoding',
@@ -58,6 +59,7 @@ class CachedResponse:
     url: URL = attr.ib(converter=URL)
     version: str = attr.ib()
     _body: Any = attr.ib(default=b'')
+    _content: StreamReader = attr.ib(default=None)
     _links: LinkItems = attr.ib(factory=list)
     cookies: SimpleCookie = attr.ib(default=None)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
@@ -101,7 +103,9 @@ class CachedResponse:
 
     @property
     def content(self) -> StreamReader:
-        return CachedStreamReader(self._body)
+        if self._content is None:
+            self._content = CachedStreamReader(self._body)
+        return self._content
 
     @property
     def content_disposition(self) -> Optional[ContentDisposition]:
@@ -191,6 +195,10 @@ class CachedResponse:
     async def read(self) -> bytes:
         """Read response payload."""
         return self._body
+
+    def reset(self):
+        """Reset the stream reader to re-read a streamed response"""
+        self._content = None
 
     async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
         """Read response payload and decode"""
