@@ -53,7 +53,7 @@ Documentation is automatically built and published by Readthedocs whenever code 
 `main` branch.
 
 Sometimes, there are differences in the Readthedocs build environment that can cause builds to
-succeed locally but fail remotely. To help debug this, you can use the 
+succeed locally but fail remotely. To help debug this, you can use the
 [readthedocs/build](https://github.com/readthedocs/readthedocs-docker-images) container to build
 the docs. A configured build container is included in `docker-compose.yml` to simplify this.
 
@@ -83,5 +83,5 @@ Here is a brief overview of the main classes and modules. See [API Reference](ht
 * `backends.base.CacheBackend`: Most of the caching logic lives here, including saving and retrieving responses. It contains two `BaseCache` objects for storing responses and redirects, respectively.
 * `backends.base.BaseCache`: Base class for lower-level storage operations, overridden by individual backends.
 * Other modules under `backends.*`: Backend implementations that subclass `CacheBackend` + `BaseCache`
-* `cache_control`: Utilities for determining cache expiration and other cache actions  
+* `cache_control`: Utilities for determining cache expiration and other cache actions
 * `cache_keys`: Utilities for creating cache keys

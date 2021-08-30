@@ -65,6 +65,7 @@ requests will return the cached response near-instantly.
 Several options are available to customize caching behavior. This example demonstrates a few of them:
 
 ```python
+# fmt: off
 from aiohttp_client_cache import SQLiteBackend
 
 cache = SQLiteBackend(
@@ -72,7 +73,7 @@ cache = SQLiteBackend(
     expire_after=60*60,                         # By default, cached responses expire in an hour
     urls_expire_after={'*.fillmurray.com': -1}, # Requests for any subdomain on this site will never expire
     allowed_codes=(200, 418),                   # Cache responses with these status codes
-    allowed_methods=('GET', 'POST'),            # Cache requests with these HTTP methods
+    allowed_methods=['GET', 'POST'],            # Cache requests with these HTTP methods
     include_headers=True,                       # Cache requests with different headers separately
     ignored_params=['auth_token'],              # Keep using the cached response even if this param changes
     timeout=2.5,                                # Connection timeout for SQLite backend

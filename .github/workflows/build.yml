@@ -102,4 +102,3 @@ jobs:
           isort --check --diff .
           flake8 aiohttp_client_cache test
           mypy .
-
