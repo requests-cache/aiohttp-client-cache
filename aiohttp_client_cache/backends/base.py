@@ -72,19 +72,23 @@ class CacheBackend:
         self.include_headers = include_headers
         self.ignored_params = set(ignored_params or [])
 
-    def is_cacheable(self, response: Union[AnyResponse, None]) -> bool:
+    def is_cacheable(
+        self, response: Union[AnyResponse, None], actions: CacheActions = None
+    ) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
             return False
+
         cache_criteria = {
-            'allowed method': response.method in self.allowed_methods,
-            'allowed status': response.status in self.allowed_codes,
-            'not disabled': not self.disabled,
-            'not expired': not getattr(response, 'is_expired', False),
-            'not filtered': self.filter_fn(response),
+            'disabled cache': self.disabled,
+            'disabled method': str(response.method) not in self.allowed_methods,
+            'disabled status': response.status not in self.allowed_codes,
+            'disabled by filter': not self.filter_fn(response),
+            'disabled by headers or expiration params': actions and actions.skip_write,
+            'expired': getattr(response, 'is_expired', False),
         }
         logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')  # type: ignore
-        return all(cache_criteria.values())
+        return not any(cache_criteria.values())
 
     async def request(
         self,
@@ -152,7 +156,7 @@ class CacheBackend:
             actions: Specific cache actions to take
         """
         actions.update_from_response(response)
-        if not self.is_cacheable(response) or actions.skip_write:
+        if not self.is_cacheable(response, actions):
             logger.debug(f'Not caching response for key: {actions.key}')
             return
 
