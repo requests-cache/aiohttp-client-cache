@@ -73,6 +73,9 @@ class CachedResponse:
     @classmethod
     async def from_client_response(cls, client_response: ClientResponse, expires: datetime = None):
         """Convert a ClientResponse into a CachedReponse"""
+        if isinstance(client_response, cls):
+            return client_response
+
         # Copy most attributes over as is
         copy_attrs = set(attr.fields_dict(cls).keys()) - EXCLUDE_ATTRS
         response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
@@ -106,6 +109,10 @@ class CachedResponse:
         if self._content is None:
             self._content = CachedStreamReader(self._body)
         return self._content
+
+    @content.setter
+    def content(self, value: StreamReader):
+        self._content = value
 
     @property
     def content_disposition(self) -> Optional[ContentDisposition]:
