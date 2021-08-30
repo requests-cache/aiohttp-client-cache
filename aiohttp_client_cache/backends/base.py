@@ -37,7 +37,7 @@ class CacheBackend:
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
         ignored_params: Iterable = None,
-        cache_control: bool = True,
+        cache_control: bool = False,
         filter_fn: Callable = lambda r: True,
         **kwargs,
     ):

@@ -133,7 +133,7 @@ class BaseBackendTest:
             ({'Expires': HTTPDATE_STR, 'Cache-Control': 'max-age=360'}, 360),
         ],
     )
-    async def test_cache_control_expiration(self, request_headers, expected_expiration):
+    async def test_cache_control__expiration(self, request_headers, expected_expiration):
         """Test cache headers for both requests and responses. The `/cache/{seconds}` endpoint returns
         Cache-Control headers, which should be used unless request headers are sent.
         """
@@ -148,8 +148,18 @@ class BaseBackendTest:
         else:
             assert_delta_approx_equal(now, response.expires, expected_expiration)
 
-    async def test_request_skip_cache_read(self):
-        """no-cache request header should skip reading, but still write to the cache"""
+    async def test_request__cache_control_disabled(self):
+        """By default, no-cache request headers should be ignored"""
+        async with self.init_session() as session:
+            headers = {'Cache-Control': 'no-cache'}
+            await session.get(httpbin('get'), headers=headers)
+            response = await session.get(httpbin('get'), headers=headers)
+            assert response.from_cache is True
+
+    async def test_request__skip_cache_read(self):
+        """With cache_control=True, no-cache request header should skip reading, but still write to
+        the cache
+        """
         async with self.init_session(cache_control=True) as session:
             headers = {'Cache-Control': 'no-cache'}
             await session.get(httpbin('get'), headers=headers)
@@ -160,7 +170,7 @@ class BaseBackendTest:
             assert (await session.get(httpbin('get'))).from_cache is True
 
     @pytest.mark.parametrize('directive', ['max-age=0', 'no-store'])
-    async def test_request_skip_cache_read_write(self, directive):
+    async def test_request__skip_cache_read_write(self, directive):
         """max-age=0 and no-store request headers should skip both reading from and writing to the cache"""
         async with self.init_session(cache_control=True) as session:
             headers = {'Cache-Control': directive}
@@ -173,7 +183,7 @@ class BaseBackendTest:
             await session.get(httpbin('get'))
             assert (await session.get(httpbin('get'))).from_cache is True
 
-    async def test_response_skip_cache_write(self):
+    async def test_response__skip_cache_write(self):
         """max-age=0 response header should skip writing to the cache"""
         async with self.init_session(cache_control=True) as session:
             await session.get(httpbin('cache/0'))
@@ -182,12 +192,12 @@ class BaseBackendTest:
             assert response.from_cache is False
             assert await session.cache.responses.size() == 0
 
-    async def test_serializer_pickle(self):
+    async def test_serializer__pickle(self):
         """Without a secret key, plain pickle should be used"""
         async with self.init_session() as session:
             assert session.cache.responses._serializer == pickle
 
-    async def test_serializer_itsdangerous(self):
+    async def test_serializer__itsdangerous(self):
         """With a secret key, itsdangerous should be used"""
         secret_key = str(uuid4())
         async with self.init_session(secret_key=secret_key) as session:
