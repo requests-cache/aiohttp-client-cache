@@ -40,7 +40,6 @@ class CacheMixin(MIXIN_BASE):
         else:
             logger.debug(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
-            await new_response.read()
             await self.cache.save_response(new_response, actions)
             return set_response_defaults(new_response)
 

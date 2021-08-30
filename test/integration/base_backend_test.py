@@ -117,6 +117,13 @@ class BaseBackendTest:
             assert len(await response.content.readany()) == 64
             assert await response.content.readany() == b''
 
+    async def test_streaming_request__ignored(self):
+        """If a streaming request is filtered out (expire_after=0), its body should be readable as usual"""
+        async with self.init_session(expire_after=0) as session:
+            response = await session.get(httpbin('stream-bytes/64'))
+            lines = [line async for line in response.content]
+            assert len(b''.join(lines)) == 64
+
     @pytest.mark.parametrize(
         'request_headers, expected_expiration',
         [
@@ -190,8 +197,7 @@ class BaseBackendTest:
             await session.cache.responses.write('key', 'value')
             assert (await session.cache.responses.read('key')) == 'value'
 
-        # Without the same signing key, the item shouldn't be considered safe to deserialize
-        # cache = SQLiteBackend(cache_name=session.cache.name, secret_key='a different key')
-        async with self.init_session(secret_key='a different key', clear=False) as session_2:
+            # Without the same signing key, the item shouldn't be considered safe to deserialize
+            session.cache.responses._serializer.secret_keys = ['a different key']
             with pytest.raises(BadSignature):
-                await session_2.cache.responses.read('key')
+                await session.cache.responses.read('key')
