@@ -10,6 +10,7 @@
 * Allow `BaseCache.has_url()` and `delete_url()` to take all the same parameters as `create_key()`
 * Improve normalization for variations of URLs & request parameters
 * Fix handling of request body when it has already been serialized
+* Fix bug enabling Cache-Control support by default
 * Add some missing no-op methods to `CachedResponse` for compatibility with `ClientResponse`
 
 ---
