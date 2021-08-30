@@ -22,7 +22,7 @@ async def log_requests():
     """Context manager that mocks and logs all non-cached requests"""
 
     async def mock_response(*args, **kwargs):
-        return CachedResponse('GET', 'url', 200, 'url', None)
+        return CachedResponse(method='GET', reason='OK', status=200, url='url', version='1.1')
 
     with patch.object(ClientSession, '_request', side_effect=mock_response) as mock_request:
         async with CachedSession(cache=SQLiteBackend('cache-test.sqlite')) as session:
