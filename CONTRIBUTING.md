@@ -10,25 +10,65 @@ $ poetry install -E backends -E docs
 ```
 
 ## Pre-commit hooks
-[Pre-commit](https://github.com/pre-commit/pre-commit) config is uncluded to run the same checks
-locally that are run in CI jobs by GitHub Actions. This is optional but recommended.
+CI jobs will run code style checks, type checks, linting, etc. If you would like to run these same
+checks locally, you can use [pre-commit](https://github.com/pre-commit/pre-commit).
+This is optional but recommended.
+
+To install pre-commit hooks:
 ```bash
-$ pre-commit install --config .github/pre-commit.yml
+pre-commit install
 ```
 
-To uninstall:
+To manually run checks on all files:
 ```bash
-$ pre-commit uninstall
+pre-commit run --all-files
+# Alternative alias with nox:
+nox -e lint
 ```
 
-## Integration Tests
-Local databases are required to run integration tests, and docker-compose config is included to make
-this easier. First, [install docker](https://docs.docker.com/get-docker/) and
-[install docker-compose](https://docs.docker.com/compose/install/).
+To disable pre-commit hooks:
+```bash
+pre-commit uninstall
+```
+
+## Testing
+### Test Layout
+Tests are divided into unit and integration tests:
+* Unit tests can be run without any additional setup, and **don't depend on any external services**
+* Integration tests **depend on additional services**, which are easiest to run using Docker
+    (see Integration Tests section below)
+
+### Running Tests
+* Run `pytest` to run all tests
+* Run `pytest test/unit` to run only unit tests
+* Run `pytest test/integration` to run only integration tests
+
+For CI jobs (including PRs), these tests will be run for each supported python version.
+You can use [nox](https://nox.thea.codes) to do this locally, if needed:
+```bash
+nox -e test
+```
+
+Or to run tests for a specific python version:
+```bash
+nox -e test-3.10
+```
+
+To generate a coverage report:
+```bash
+nox -e cov
+```
+
+See `nox --list` for a ful list of available commands.
+
+### Integration Test Containers
+A live web server and backend databases are required to run integration tests, and docker-compose
+config is included to make this easier. First, [install docker](https://docs.docker.com/get-docker/)
+and [install docker-compose](https://docs.docker.com/compose/install/).
 
 Then, run:
 ```bash
-$ docker-compose up -d
+docker-compose up -d
 pytest test/integration
 ```
 
@@ -37,7 +77,7 @@ pytest test/integration
 
 To build the docs locally:
 ```bash
-$ make -C docs html
+$ nox -e docs
 ```
 
 To preview:
@@ -53,7 +93,7 @@ Documentation is automatically built and published by Readthedocs whenever code 
 `main` branch.
 
 Sometimes, there are differences in the Readthedocs build environment that can cause builds to
-succeed locally but fail remotely. To help debug this, you can use the 
+succeed locally but fail remotely. To help debug this, you can use the
 [readthedocs/build](https://github.com/readthedocs/readthedocs-docker-images) container to build
 the docs. A configured build container is included in `docker-compose.yml` to simplify this.
 
@@ -68,7 +108,8 @@ Here are some general guidelines for submitting a pull request:
 
 - If the changes are trivial, just briefly explain the changes in the PR description.
 - Otherwise, please submit an issue describing the proposed change prior to submitting a PR.
-- Please add unit test coverage and updated docs (if applicable) for your changes.
+- Add unit test coverage for your changes
+- If your changes add or modify user-facing behavior, add documentation describing those changes
 - Submit the PR to be merged into the `main` branch.
 
 ## Releases
@@ -83,5 +124,5 @@ Here is a brief overview of the main classes and modules. See [API Reference](ht
 * `backends.base.CacheBackend`: Most of the caching logic lives here, including saving and retrieving responses. It contains two `BaseCache` objects for storing responses and redirects, respectively.
 * `backends.base.BaseCache`: Base class for lower-level storage operations, overridden by individual backends.
 * Other modules under `backends.*`: Backend implementations that subclass `CacheBackend` + `BaseCache`
-* `cache_control`: Utilities for determining cache expiration and other cache actions  
+* `cache_control`: Utilities for determining cache expiration and other cache actions
 * `cache_keys`: Utilities for creating cache keys

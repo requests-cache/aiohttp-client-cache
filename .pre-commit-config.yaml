@@ -24,10 +24,12 @@ repos:
     rev: 3.9.2
     hooks:
       - id: flake8
-  # - repo: https://github.com/luismayta/pre-commit-mypy
-  #   rev: 0.1.1
+  # TODO: Inconsistent results with pre-commit; works as expected with just mypy
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v0.910
   #   hooks:
   #     - id: mypy
+  #       additional_dependencies: [types-aiofiles]
   - repo: https://github.com/yunojuno/pre-commit-xenon
     rev: v0.1
     hooks:

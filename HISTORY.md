@@ -1,11 +1,11 @@
 # History
 
-## 0.5.0 (2021-TBD)
+## 0.5.0 (2021-09-TBD)
 [See all issues & PRs for v0.5](https://github.com/JWCook/aiohttp-client-cache/milestone/4?closed=1)
 
 * Add a filesystem backend
 * Add support for streaming requests
-* Add `RedisBackend.close()` method 
+* Add `RedisBackend.close()` method
 * Add `MongoDBPickleCache.values()` method that deserializes items
 * Allow `BaseCache.has_url()` and `delete_url()` to take all the same parameters as `create_key()`
 * Improve normalization for variations of URLs & request parameters
@@ -25,7 +25,7 @@
 * Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
 
 ## 0.4.0 (2021-05-12)
-[See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/3?closed=1)
+[See all issues & PRs for v0.4](https://github.com/JWCook/aiohttp-client-cache/milestone/3?closed=1)
 
 * Add optional support for the following **request** headers:
     * `Cache-Control: max-age`

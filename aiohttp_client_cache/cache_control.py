@@ -181,8 +181,8 @@ def get_url_expiration(
 
 def has_cache_headers(headers: Mapping) -> bool:
     """Determine if headers contain cache directives **that we currently support**"""
-    headers = CIMultiDict(headers)
-    cache_control = ','.join(headers.getall('Cache-Control', []))
+    ci_headers = CIMultiDict(headers)
+    cache_control = ','.join(ci_headers.getall('Cache-Control', []))
     return any([d in cache_control for d in CACHE_DIRECTIVES] + [bool(headers.get('Expires'))])
 
 

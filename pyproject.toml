@@ -64,19 +64,23 @@ docs = ["furo", "linkify-it-py", "myst-parser", "sphinx", "sphinx-automodapi",
         "sphinx-autodoc-typehints", "sphinx-copybutton", "sphinx-inline-tabs", "sphinxcontrib-apidoc"]
 
 [tool.poetry.dev-dependencies]
-black = "21.6b0"
-flake8 = ">=3.9"
-isort = ">=5.8"
-mypy = "^0.902"
-pre-commit = ">=2.12"
+# For unit + integration tests
 pytest = ">=6.2"
 pytest-aiohttp = "^0.3"
 pytest-asyncio = "^0.14"
 pytest-clarity = "^1.0"
 pytest-cov = "^2.11"
 pytest-xdist = "^2.3"
-sphinx-autobuild = ">=2021.3.14"
+
+# For linting, type checking etc.; additional tools are managed by pre-commit
+mypy = "^0.910"
+pre-commit = ">=2.12"
 types-aiofiles = ">=0.1.7"
+
+# For convenience in local development
+nox = "^2021.6.12"
+nox-poetry = "^0.8.6"
+sphinx-autobuild = ">=2021.3.14"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

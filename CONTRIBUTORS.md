@@ -8,3 +8,4 @@ And thanks to the following individuals for contributing to `aiohttp-client-cach
 * [Andrew Kursar](https://github.com/akursar)
 * [Joe Bergeron](https://github.com/Jophish)
 * [Fredrik Bergroth](https://github.com/fbergroth)
+* [AIGeneratedUsername](https://github.com/AIGeneratedUsername)

@@ -156,7 +156,7 @@ class CachedResponse:
             return False
 
     @property
-    def links(self) -> LinkMultiDict:
+    def links(self) -> MultiDictProxy:
         """Convert stored links into the format returned by :attr:`ClientResponse.links`"""
         items = [(k, _to_url_multidict(v)) for k, v in self._links]
         return MultiDictProxy(MultiDict([(k, MultiDictProxy(v)) for k, v in items]))
