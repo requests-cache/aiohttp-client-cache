@@ -22,8 +22,10 @@ from aiohttp_client_cache.cache_keys import create_key
 )
 def test_normalize_url_params(url, params):
     """All of these variations should produce the same cache key"""
+    original_params = params.copy() if params is not None else params
     cache_key = '247bdad30a3ccdcafc39a8bd2712ec79789d7b8aafce330a19dc0ddd680e9477'
     assert create_key('GET', url, params=params) == cache_key
+    assert original_params == params  # Make sure we didn't modify the original dict
 
 
 @pytest.mark.parametrize('field', ['data', 'json'])

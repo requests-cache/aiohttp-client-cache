@@ -51,7 +51,7 @@ def filter_ignored_params(data, ignored_params: Iterable[str]):
 
 def normalize_url_params(url, params: Dict = None) -> Tuple[str, Dict]:
     """Strip off any request params manually added to URL and add to `params`"""
-    params = params or {}
+    params = params.copy() if params else {}
     url = url_normalize(str(url))
     tokens = urlparse(url)
     if tokens.query:
