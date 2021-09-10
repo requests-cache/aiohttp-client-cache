@@ -81,4 +81,3 @@ def lint(session):
     """Run linters and code formatters via pre-commit"""
     cmd = 'pre-commit run --all-files'
     session.run(*cmd.split(' '))
-    session.run('mypy', '.')
