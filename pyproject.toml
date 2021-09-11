@@ -19,8 +19,11 @@ include = [
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
+    'Framework :: AsyncIO',
+    'Framework :: aiohttp',
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 
 [tool.poetry.urls]
