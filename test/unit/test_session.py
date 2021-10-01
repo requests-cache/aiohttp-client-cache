@@ -38,7 +38,8 @@ async def test_session__init_posarg():
 @patch.object(ClientSession, '_request')
 async def test_session__cache_hit(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.request.return_value = AsyncMock(is_expired=False), CacheActions()
+    response = AsyncMock(is_expired=False, url=URL('https://test.com'))
+    cache.request.return_value = response, CacheActions()
     session = CachedSession(cache=cache)
 
     await session.get('http://test.url')
