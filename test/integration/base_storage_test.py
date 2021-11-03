@@ -53,6 +53,17 @@ class BaseStorageTest:
 
         assert await cache.read('do_not_delete') == 'value'
 
+    async def test_bulk_delete(self):
+        cache = await self.init_cache()
+        await cache.write('do_not_delete', 'value')
+        for k, v in self.test_data.items():
+            await cache.write(k, v)
+
+        await cache.bulk_delete(self.test_data.keys())
+
+        for k in self.test_data.keys():
+            assert await cache.contains(k) is False
+
     async def test_keys_values(self):
         cache = await self.init_cache()
         assert [k async for k in cache.keys()] == []

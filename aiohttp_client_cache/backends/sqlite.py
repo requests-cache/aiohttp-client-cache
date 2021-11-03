@@ -135,6 +135,13 @@ class SQLiteCache(BaseCache):
             row = await cursor.fetchone()
             return bool(row[0]) if row else False
 
+    async def bulk_delete(self, keys: set):
+        async with self.get_connection(autocommit=True) as db:
+            placeholders = ", ".join("?" for _ in keys)
+            await db.execute(
+                f'DELETE FROM `{self.table_name}` WHERE key IN ({placeholders})', tuple(keys)
+            )
+
     async def delete(self, key: str):
         async with self.get_connection(autocommit=True) as db:
             await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))

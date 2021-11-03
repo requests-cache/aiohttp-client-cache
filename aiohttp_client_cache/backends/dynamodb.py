@@ -137,6 +137,13 @@ class DynamoDbCache(BaseCache):
             for item in result['Items']:
                 yield item
 
+    async def bulk_delete(self, keys: set) -> None:
+        table = await self.get_table()
+        async with table.batch_writer() as dynamo_writer:
+            for key in keys:
+                doc = self._doc(key)
+                await dynamo_writer.delete_item(Key=doc)
+
     async def delete(self, key: str) -> None:
         doc = self._doc(key)
         table = await self.get_table()
