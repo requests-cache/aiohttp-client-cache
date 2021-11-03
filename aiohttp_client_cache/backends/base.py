@@ -339,7 +339,7 @@ class DictCache(BaseCache, UserDict):
 
     async def bulk_delete(self, keys: set):
         for key in keys:
-            self.delete(key)
+            await self.delete(key)
 
     async def delete(self, key: str):
         try:
