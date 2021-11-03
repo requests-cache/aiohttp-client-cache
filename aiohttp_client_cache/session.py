@@ -2,7 +2,7 @@
 import warnings
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
@@ -23,11 +23,17 @@ class CacheMixin(MIXIN_BASE):
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
 
     @extend_signature(ClientSession.__init__)
-    def __init__(self, *, cache: CacheBackend = None, **kwargs):
+    def __init__(
+        self,
+        base_url: Optional[StrOrURL] = None,
+        *,
+        cache: CacheBackend = None,
+        **kwargs,
+    ):
         self.cache = cache or CacheBackend()
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
-        session_kwargs = get_valid_kwargs(super().__init__, kwargs)
+        session_kwargs = get_valid_kwargs(super().__init__, {**kwargs, 'base_url': base_url})
         super().__init__(**session_kwargs)
 
     @copy_signature(ClientSession._request)

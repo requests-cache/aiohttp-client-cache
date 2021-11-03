@@ -78,6 +78,7 @@ pytest-xdist = "^2.3"
 # For linting, type checking etc.; additional tools are managed by pre-commit
 mypy = "^0.910"
 pre-commit = ">=2.12"
+tomli = ">=1.2"
 types-aiofiles = ">=0.1.7"
 
 # For convenience in local development
