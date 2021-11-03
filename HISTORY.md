@@ -1,5 +1,8 @@
 # History
 
+## 0.5.2 (2021-11-03)
+* Fix compatibility with aiohttp 3.8
+
 ## 0.5.1 (2021-09-10)
 * Fix issue with request params duplicated from request URL
 
