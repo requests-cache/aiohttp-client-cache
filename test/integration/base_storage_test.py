@@ -64,6 +64,10 @@ class BaseStorageTest:
         for k in self.test_data.keys():
             assert await cache.contains(k) is False
 
+    async def test_bulk_delete_ignores_nonexistent_keys(self):
+        cache = await self.init_cache()
+        await cache.bulk_delete(self.test_data.keys())
+
     async def test_keys_values(self):
         cache = await self.init_cache()
         assert [k async for k in cache.keys()] == []
