@@ -3,6 +3,13 @@
 # 0.6.0 (Unreleased)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
 * Update session cookies after fetching cached responses with cookies
+* Add support for additional request parameter types that `aiohttp` accepts:
+  * Strings
+  * `(key, value)` sequences
+  * Non-`dict` `Mapping` objects
+* Fix URL normalization for `MultiDict` objects with duplicate keys
+  * E.g., so  `http://url.com?foo=bar&foo=baz` is cached separately from `http://url.com?foo=bar`
+* Update `ignored_params` to also apply to headers (if `include_headers=True`)
 
 ## 0.5.2 (2021-11-03)
 * Fix compatibility with aiohttp 3.8
