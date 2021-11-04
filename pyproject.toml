@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohttp-client-cache"
-version = "0.5.2"
+version = "0.6.0"
 description = "Persistent cache for aiohttp requests"
 authors = ["Jordan Cook"]
 license = "MIT License"

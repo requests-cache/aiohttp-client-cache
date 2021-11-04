@@ -1,5 +1,8 @@
 # History
 
+# 0.6.0 (Unreleased)
+* Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
+
 ## 0.5.2 (2021-11-03)
 * Fix compatibility with aiohttp 3.8
 

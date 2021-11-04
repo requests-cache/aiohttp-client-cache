@@ -179,15 +179,15 @@ and other cache headers in both requests and responses. To enable this behavior,
 ### Removing Expired Responses
 For better performance, expired responses won't be removed immediately, but will be removed
 (or replaced) the next time they are requested. To manually clear all expired responses, use
-{py:meth}`.CachedSession.remove_expired_responses`:
+{py:meth}`.CachedSession.delete_expired_responses`:
 ```python
->>> session.remove_expired_responses()
+>>> session.delete_expired_responses()
 ```
 
 You can also apply a different `expire_after` to previously cached responses, which will
 revalidate the cache with the new expiration time:
 ```python
->>> session.remove_expired_responses(expire_after=timedelta(days=30))
+>>> session.delete_expired_responses(expire_after=timedelta(days=30))
 ```
 
 ### Expiration Precedence
