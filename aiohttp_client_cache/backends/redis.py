@@ -74,6 +74,11 @@ class RedisCache(BaseCache):
         connection = await self.get_connection()
         return await connection.hexists(self.hash_key, key)
 
+    async def bulk_delete(self, keys: set):
+        """Requires redis version >=2.4"""
+        connection = await self.get_connection()
+        await connection.hdel(self.hash_key, *keys)
+
     async def delete(self, key: str):
         connection = await self.get_connection()
         await connection.hdel(self.hash_key, key)

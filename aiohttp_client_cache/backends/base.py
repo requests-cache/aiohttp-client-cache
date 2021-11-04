@@ -174,6 +174,10 @@ class CacheBackend:
         await self.responses.clear()
         await self.redirects.clear()
 
+    async def bulk_delete(self, keys: set):
+        for key in keys:
+            await self.delete(key)
+
     async def delete(self, key: str):
         """Delete a response from the cache, along with its history (if applicable)"""
 
@@ -201,8 +205,7 @@ class CacheBackend:
                 keys_to_delete.add(key)
 
         logger.debug(f'Deleting {len(keys_to_delete)} expired cache entries')
-        for key in keys_to_delete:
-            await self.delete(key)
+        await self.bulk_delete(keys_to_delete)
 
     def create_key(self, method: str, url: StrOrURL, **kwargs):
         """Create a unique cache key based on request details"""
@@ -295,6 +298,10 @@ class BaseCache(metaclass=ABCMeta):
         """Delete an item from the cache. Does not raise an error if the item is missing."""
 
     @abstractmethod
+    async def bulk_delete(self, keys: set):
+        """Delete item(s) from the cache. Does not raise an error if the item is missing."""
+
+    @abstractmethod
     def keys(self) -> AsyncIterable[str]:
         """Get all keys stored in the cache"""
 
@@ -329,6 +336,10 @@ CacheBackend = extend_init_signature(BaseCache)(CacheBackend)  # type: ignore
 
 class DictCache(BaseCache, UserDict):
     """Simple in-memory storage that wraps a dict with the :py:class:`.BaseStorage` interface"""
+
+    async def bulk_delete(self, keys: set):
+        for key in keys:
+            await self.delete(key)
 
     async def delete(self, key: str):
         try:

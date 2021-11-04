@@ -67,6 +67,10 @@ class FileCache(BaseCache):
             async with aiofiles.open(self._join(key), 'rb') as f:
                 return self.deserialize(await f.read())
 
+    async def bulk_delete(self, keys: set):
+        for key in keys:
+            await self.delete(key)
+
     async def delete(self, key: str):
         with self._try_io():
             await aiofiles.os.remove(self._join(key))
