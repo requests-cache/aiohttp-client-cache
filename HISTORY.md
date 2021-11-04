@@ -2,6 +2,7 @@
 
 # 0.6.0 (Unreleased)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
+* Update session cookies after fetching cached responses with cookies
 
 ## 0.5.2 (2021-11-03)
 * Fix compatibility with aiohttp 3.8

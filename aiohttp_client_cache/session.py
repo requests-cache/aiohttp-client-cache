@@ -42,6 +42,9 @@ class CacheMixin(MIXIN_BASE):
         # Attempt to fetch cached response; if missing or expired, fetch new one
         response, actions = await self.cache.request(method, str_or_url, **kwargs)
         if response:
+            self._cookie_jar.update_cookies(response.cookies, response.url)
+            for redirect in response.history:
+                self._cookie_jar.update_cookies(redirect.cookies, redirect.url)
             return response
         else:
             logger.debug(f'Cached response not found; making request to {str_or_url}')
