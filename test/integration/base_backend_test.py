@@ -54,17 +54,19 @@ class BaseBackendTest:
                 assert not from_cache(response_1) and from_cache(response_2)
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
-    @pytest.mark.parametrize('field', ['params', 'data', 'json'])
+    @pytest.mark.parametrize('field', ['params', 'data', 'json', 'headers'])
     async def test_all_methods__ignore_parameters(self, field, method):
         """Test all relevant combinations of methods and data fields. Requests with different request
         params, data, or json should not be cached under different keys based on an ignored param.
         """
-        params_1 = {'ignored': 1, 'not ignored': 1}
-        params_2 = {'ignored': 2, 'not ignored': 1}
-        params_3 = {'ignored': 2, 'not ignored': 2}
+        params_1 = {'ignored': 'value1', 'not ignored': 'value1'}
+        params_2 = {'ignored': 'value2', 'not ignored': 'value1'}
+        params_3 = {'ignored': 'value2', 'not ignored': 'value2'}
         url = httpbin(method.lower())
 
-        async with self.init_session(ignored_params=['ignored']) as session:
+        async with self.init_session(
+            allowed_codes=(200, 400), ignored_params=['ignored'], include_headers=True
+        ) as session:
             response_1 = await session.request(method, url, **{field: params_1})
             response_2 = await session.request(method, url, **{field: params_1})
             response_3 = await session.request(method, url, **{field: params_2})

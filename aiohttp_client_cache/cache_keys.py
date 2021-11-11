@@ -1,18 +1,20 @@
 """Functions for creating keys used for cache requests"""
 import hashlib
 from collections.abc import Mapping
-from typing import Any, Dict, Iterable, Tuple
-from urllib.parse import parse_qsl, urlparse, urlunparse
+from typing import Any, Dict, Iterable, Sequence, Union
 
-from aiohttp import ClientRequest
 from aiohttp.typedefs import StrOrURL
+from multidict import MultiDict
 from url_normalize import url_normalize
+from yarl import URL
+
+RequestParams = Union[Mapping, Sequence, str]
 
 
 def create_key(
     method: str,
     url: StrOrURL,
-    params: Dict = None,
+    params: RequestParams = None,
     data: Dict = None,
     json: Dict = None,
     headers: Dict = None,
@@ -21,24 +23,23 @@ def create_key(
     **kwargs,
 ) -> str:
     """Create a unique cache key based on request details"""
-    norm_url, params = normalize_url_params(url, params)
-
+    # Normalize and filter all relevant pieces of request data
+    norm_url = normalize_url_params(url, params)
     if ignored_params:
-        params = filter_ignored_params(params, ignored_params)
+        filtered_params = filter_ignored_params(norm_url.query, ignored_params)
+        norm_url = norm_url.with_query(filtered_params)
+        headers = filter_ignored_params(headers, ignored_params)
         data = filter_ignored_params(data, ignored_params)
         json = filter_ignored_params(json, ignored_params)
 
+    # Create a hash based on the normalized and filtered request
     key = hashlib.sha256()
     key.update(method.upper().encode())
-    key.update(norm_url.encode())
-    key.update(encode_dict(params))
+    key.update(str(norm_url).encode())
     key.update(encode_dict(data))
     key.update(encode_dict(json))
-
-    if include_headers and headers is not None and headers != ClientRequest.DEFAULT_HEADERS:
-        for name, value in sorted(headers.items()):
-            key.update(name.encode())
-            key.update(value.encode())
+    if include_headers:
+        key.update(encode_dict(headers))
     return key.hexdigest()
 
 
@@ -46,25 +47,27 @@ def filter_ignored_params(data, ignored_params: Iterable[str]):
     """Remove any ignored params from an object, if it's dict-like"""
     if not isinstance(data, Mapping) or not ignored_params:
         return data
-    return {k: v for k, v in data.items() if k not in ignored_params}
+    return MultiDict(((k, v) for k, v in data.items() if k not in ignored_params))
 
 
-def normalize_url_params(url, params: Dict = None) -> Tuple[str, Dict]:
-    """Strip off any request params manually added to URL and add to `params`"""
-    params = params.copy() if params else {}
-    url = url_normalize(str(url))
-    tokens = urlparse(url)
-    if tokens.query:
-        query = parse_qsl(tokens.query)
-        params.update(query)
-        url = urlunparse(
-            (tokens.scheme, tokens.netloc, tokens.path, tokens.params, '', tokens.fragment)
-        )
+def normalize_url_params(url: StrOrURL, params: RequestParams = None) -> URL:
+    """Normalize any combination of request parameter formats that aiohttp accepts"""
+    if isinstance(url, str):
+        url = URL(url)
 
-    return url, params
+    # Handle `params` argument, and combine with URL query string if it exists
+    if params:
+        norm_params = MultiDict(url.query)
+        norm_params.extend(url.with_query(params).query)
+        url = url.with_query(norm_params)
+
+    # Apply additional normalization and convert back to URL object
+    return URL(url_normalize(str(url)))
 
 
 def encode_dict(data: Any) -> bytes:
+    if not data:
+        return b''
     if isinstance(data, bytes):
         return data
     elif not isinstance(data, Mapping):

@@ -74,3 +74,23 @@ async def test_session__default_attrs(mock_request):
 
     response = await session.get('http://test.url')
     assert response.from_cache is False and response.is_expired is False
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {'param': 'value'},  # Dict of strings
+        {'param': 4.2},  # Dict of floats
+        (('param', 'value'),),  # Tuple of (key, value) pairs
+        'param',  # string
+    ],
+)
+@patch.object(ClientSession, '_request')
+async def test_all_param_types(mock_request, params) -> None:
+    """Ensure that CachedSession.request() acceepts all the same parameter types as aiohttp"""
+    cache = MagicMock(spec=CacheBackend)
+    cache.request.return_value = None, CacheActions()
+    session = CachedSession(cache=cache)
+
+    response = await session.get('http://test.url', params=params)
+    assert response.from_cache is False
