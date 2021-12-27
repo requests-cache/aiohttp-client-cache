@@ -10,8 +10,8 @@ repository = "https://github.com/JWCook/aiohttp-client-cache"
 keywords = ["aiohttp", "async", "asyncio", "cache", "cache-backends", "client", "http",
             "persistence", "requests", "sqlite", "redis", "mongodb", "dynamodb"]
 include = [
-    { path = "*.md" },
-    { path = "*.yml" },
+    { path = "*.md", format = "sdist" },
+    { path = "*.yml", format = "sdist" },
     { path = "aiohttp_client_cache/py.typed" },
     { path = "docs", format = "sdist" },
     { path = "examples", format = "sdist" },
