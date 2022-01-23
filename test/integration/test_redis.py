@@ -45,7 +45,7 @@ class TestRedisBackend(BaseBackendTest):
     backend_class = RedisBackend
 
     @asynccontextmanager
-    async def init_session(self, **kwargs) -> AsyncIterator[CachedSession]:
+    async def init_session(self, **kwargs) -> AsyncIterator[CachedSession]:  # type: ignore
         async with super().init_session(**kwargs) as session:
             yield session
         await session.cache.close()
