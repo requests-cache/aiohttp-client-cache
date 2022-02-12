@@ -1,7 +1,7 @@
 from typing import AsyncIterable
 
 import aioredis
-from aioredis import Redis, Connection
+from aioredis import Connection, Redis
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.docs import extend_init_signature, redis_template
@@ -16,6 +16,11 @@ class RedisBackend(CacheBackend):
     """
 
     def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
+        """
+        Args:
+            cache_name: Used as a namespace (prefix for hash key)
+            address: Redis server URI
+        """
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
         self.redirects = RedisCache(cache_name, 'redirects', address=address, **kwargs)

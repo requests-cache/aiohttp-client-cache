@@ -83,6 +83,7 @@ copybutton_prompt_is_regexp = True
 
 # Move type hint info to function description instead of signature
 autodoc_typehints = 'description'
+always_document_param_types = True
 set_type_checking_flag = False
 
 # Use apidoc to auto-generate rst sources
