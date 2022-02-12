@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import asynccontextmanager
-from sys import version_info
 from typing import AsyncIterator
 
 import pytest
@@ -23,14 +22,15 @@ def is_db_running():
     try:
         asyncio.run(get_db_info())
         return True
-    except OSError:
+    except OSError as e:
+        print(e)
         return False
 
 
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
-        version_info >= (3, 10) or not is_db_running(),
+        not is_db_running(),
         reason='Redis server required for integration tests',
     ),
 ]
