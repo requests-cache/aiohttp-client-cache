@@ -1,6 +1,7 @@
 from typing import AsyncIterable
 
-from aioredis import Redis, create_redis_pool
+import aioredis
+from aioredis import Connection, Redis
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.docs import extend_init_signature, redis_template
@@ -15,6 +16,11 @@ class RedisBackend(CacheBackend):
     """
 
     def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
+        """
+        Args:
+            cache_name: Used as a namespace (prefix for hash key)
+            address: Redis server URI
+        """
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
         self.redirects = RedisCache(cache_name, 'redirects', address=address, **kwargs)
@@ -33,7 +39,7 @@ class RedisCache(BaseCache):
         collection_name: name of the hash map stored in redis
         connection: An existing connection object to reuse instead of creating a new one
         address: Address of Redis server
-        kwargs: Additional keyword arguments for :py:class:`redis.Redis`
+        kwargs: Additional keyword arguments for :py:class:`aioredis.Redis`
 
     Note: The hash key name on the redis server will be ``namespace:collection_name``.
     """
@@ -50,19 +56,18 @@ class RedisCache(BaseCache):
         super().__init__(**kwargs)
         self.address = address
         self._connection = connection
-        self.connection_kwargs = get_valid_kwargs(create_redis_pool, kwargs)
+        self.connection_kwargs = get_valid_kwargs(Connection.__init__, kwargs)
         self.hash_key = f'{namespace}:{collection_name}'
 
     async def get_connection(self):
         """Lazy-initialize redis connection"""
         if not self._connection:
-            self._connection = await create_redis_pool(self.address, **self.connection_kwargs)
+            self._connection = await aioredis.from_url(self.address, **self.connection_kwargs)
         return self._connection
 
     async def close(self):
         if self._connection:
-            self._connection.close()
-            await self._connection.wait_closed()
+            await self._connection.close()
             self._connection = None
 
     async def clear(self):

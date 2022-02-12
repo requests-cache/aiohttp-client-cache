@@ -17,7 +17,7 @@ conda install -c conda-forge aiohttp-client-cache
 - You may need additional dependencies depending on which backend you want to use. To install with
   extra dependencies for all supported {ref}`backends`:
   ```bash
-  pip install aiohttp-client-cache[backends]
+  pip install aiohttp-client-cache[all]
   ```
 
 ### Optional Setup Steps

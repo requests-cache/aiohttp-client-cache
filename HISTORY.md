@@ -1,6 +1,9 @@
 # History
 
-# 0.6.0 (2022-02-12)
+## 0.6.1 (Unreleased)
+* Migrate to aioredis 2.0
+
+## 0.6.0 (2022-02-12)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
 * Update session cookies after fetching cached responses with cookies
 * Update session cookies after fetching cached responses with _redirects_ with cookies
@@ -12,10 +15,10 @@
   * E.g., so  `http://url.com?foo=bar&foo=baz` is cached separately from `http://url.com?foo=bar`
 * Update `ignored_params` to also apply to headers (if `include_headers=True`)
 
-## 0.5.2 (2021-11-03)
+### 0.5.2 (2021-11-03)
 * Fix compatibility with aiohttp 3.8
 
-## 0.5.1 (2021-09-10)
+### 0.5.1 (2021-09-10)
 * Fix issue with request params duplicated from request URL
 
 ## 0.5.0 (2021-09-01)

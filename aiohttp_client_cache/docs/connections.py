@@ -4,8 +4,7 @@
 * Type annotations
 * Argument docs
 """
-from ssl import SSLContext
-from typing import Any, Callable, Tuple, Type, Union
+from typing import Any, Mapping, Optional, Type, Union
 
 try:
     from botocore.client import Config
@@ -13,10 +12,9 @@ except ImportError:
     Config = Any  # type: ignore
 
 try:
-    from aioredis import Redis
-    from aioredis.abc import AbcConnection, AbcPool
+    from aioredis import ConnectionPool, Redis
 except ImportError:
-    Redis = AbcConnection = AbcPool = Any  # type: ignore
+    Redis = ConnectionPool = Any  # type: ignore
 
 
 def dynamodb_template(
@@ -74,41 +72,34 @@ def mongo_template(
 
 
 def redis_template(
-    address: Union[str, Tuple[str]] = 'redis://localhost',
-    db: int = None,
-    password: Union[str, bytes] = None,
-    ssl: SSLContext = None,
-    encoding: str = None,
-    commands_factory: Callable = Redis,
-    minsize: int = 1,
-    maxsize: int = 10,
-    parser: Callable = None,
-    timeout: float = None,
-    connection_cls=None,
-    loop=None,
+    db: Union[str, int] = 0,
+    password: Optional[str] = None,
+    socket_timeout: Optional[float] = None,
+    socket_connect_timeout: Optional[float] = None,
+    socket_keepalive: bool = False,
+    socket_keepalive_options: Optional[Mapping[int, Union[int, bytes]]] = None,
+    socket_type: int = 0,
+    retry_on_timeout: bool = False,
+    encoding: str = "utf-8",
+    encoding_errors: str = "strict",
+    decode_responses: bool = False,
+    socket_read_size: int = 65536,
+    health_check_interval: float = 0,
+    client_name: Optional[str] = None,
+    username: Optional[str] = None,
 ):
-    """Template function for :py:func:`aioredis.create_redis_pool`
+    """Template function for :py:func:`aioredis.from_url` (which passes kwargs to
+    :py:class:`aioredis.Connection`)
 
     Args:
-        address: An address where to connect. Can be a (host, port) tuple, unix domain socket path
-            string, or a Redis URI string.
-        db: Redis database index to switch to when connected.
-        password: Password to use if Redis server instance requires authorization.
-        ssl: SSL context that is passed through to :py:func:`asyncio.BaseEventLoop.create_connection`.
-        encoding: Codec to use for response decoding.
-        commands_factory: A factory accepting single parameter – object implementing
-            :py:class:`aioredis.abc.AbcConnection` interface and returning an instance providing
-            high-level interface to Redis
-        minsize: Minimum number of connections to initialize and keep in pool.
-        maxsize: Maximum number of connections that can be created in pool.
-        parser: Protocol parser class. Can be used to set custom protocol reader; expected same
-            interface as ``hiredis.Reader``.
-        timeout: Max time to open a connection, otherwise raise :py:exc:`asyncio.TimeoutError` exception.
-        pool_cls: Can be used to instantiate custom pool class. This argument must be a subclass of
-            :py:class:`aioredis.abc.AbcPool`.
-        connection_cls: Can be used to make pool instantiate custom connection classes.
-            This argument must be a subclass of :py:class:`aioredis.abc.AbcConnection`.
-        loop: An optional event loop instance (uses :py:func:`asyncio.get_event_loop` if not specified).
+        db: Redis database index to switch to when connected
+        username: Username to use if Redis server instance requires authorization
+        password: Password to use if Redis server instance requires authorization
+        decode_responses: Enable response decoding
+        encoding: Codec to use for response decoding
+        socket_timeout: Timeout for a dropped connection, in seconds
+        socket_connect_timeout: Timeout for a initial connection, in seconds
+        retry_on_timeout: Retry when the connection times out
     """
 
 

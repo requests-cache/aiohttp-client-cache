@@ -2,8 +2,8 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
+import aioredis
 import pytest
-from aioredis import create_redis_pool
 
 from aiohttp_client_cache.backends.redis import DEFAULT_ADDRESS, RedisBackend, RedisCache
 from aiohttp_client_cache.session import CachedSession
@@ -14,10 +14,9 @@ def is_db_running():
     """Test if a Redis server is running locally on the default port"""
 
     async def get_db_info():
-        client = await create_redis_pool(DEFAULT_ADDRESS)
+        client = await aioredis.from_url(DEFAULT_ADDRESS)
         await client.info()
-        client.close()
-        await client.wait_closed()
+        await client.close()
 
     try:
         asyncio.run(get_db_info())
