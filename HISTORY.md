@@ -1,8 +1,9 @@
 # History
 
-# 0.6.0 (Unreleased)
+# 0.6.0 (2022-02-12)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
 * Update session cookies after fetching cached responses with cookies
+* Update session cookies after fetching cached responses with _redirects_ with cookies
 * Add support for additional request parameter types that `aiohttp` accepts:
   * Strings
   * `(key, value)` sequences
