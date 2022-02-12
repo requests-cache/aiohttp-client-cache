@@ -194,6 +194,16 @@ class BaseBackendTest:
             assert response.from_cache is False
             assert await session.cache.responses.size() == 0
 
+    async def test_cookies_with_redirect(self):
+
+        async with self.init_session(cache_control=True) as session:
+            await session.get('http://httpbin.org/cookies/set?test_cookie=value')
+            session.cookie_jar.clear()
+            await session.get('http://httpbin.org/cookies/set?test_cookie=value')
+
+        cookies = session.cookie_jar.filter_cookies('http://httpbin.org')
+        assert cookies['test_cookie'].value == 'value'
+
     async def test_serializer__pickle(self):
         """Without a secret key, plain pickle should be used"""
         async with self.init_session() as session:

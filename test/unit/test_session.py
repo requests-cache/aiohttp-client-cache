@@ -1,3 +1,4 @@
+from http.cookies import SimpleCookie
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -94,3 +95,20 @@ async def test_all_param_types(mock_request, params) -> None:
 
     response = await session.get('http://test.url', params=params)
     assert response.from_cache is False
+
+
+@patch.object(ClientSession, '_request')
+async def test_session__cookies(mock_request):
+    cache = MagicMock(spec=CacheBackend)
+    response = AsyncMock(
+        is_expired=False,
+        url=URL('https://test.com'),
+        cookies=SimpleCookie({'test_cookie': 'value'}),
+    )
+    cache.request.return_value = response, CacheActions()
+    session = CachedSession(cache=cache)
+
+    session.cookie_jar.clear()
+    await session.get('http://test.url')
+    cookies = session.cookie_jar.filter_cookies('https://test.com')
+    assert cookies['test_cookie'].value == 'value'
