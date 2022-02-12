@@ -86,6 +86,10 @@ nox = "^2021.6.12"
 nox-poetry = "^0.8.6"
 sphinx-autobuild = ">=2021.3.14"
 
+# Workarounds for possible dependency issues with importlib-metadata (3.7 only)
+typing-extensions = {version = "^4.0", python = "3.7"}
+zipp = {version = "^3.7", python = "3.7"}
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
