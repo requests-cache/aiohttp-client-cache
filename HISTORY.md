@@ -1,7 +1,8 @@
 # History
 
-## 0.6.1 (Unreleased)
+## 0.6.1 (2022-02-13)
 * Migrate to aioredis 2.0
+* Fix issue with restoring empty session cookies
 
 ## 0.6.0 (2022-02-12)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`

@@ -39,13 +39,16 @@ class CacheMixin(MIXIN_BASE):
     @copy_signature(ClientSession._request)
     async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
-        # Attempt to fetch cached response; if missing or expired, fetch new one
+        # Attempt to fetch cached response
         response, actions = await self.cache.request(method, str_or_url, **kwargs)
+
+        # Restore any cached cookies to the session
         if response:
-            self._cookie_jar.update_cookies(response.cookies, response.url)
+            self.cookie_jar.update_cookies(response.cookies or {}, response.url)
             for redirect in response.history:
-                self._cookie_jar.update_cookies(redirect.cookies, redirect.url)
+                self.cookie_jar.update_cookies(redirect.cookies or {}, redirect.url)
             return response
+        # If the response was missing or expired, send and cache a new request
         else:
             logger.debug(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
