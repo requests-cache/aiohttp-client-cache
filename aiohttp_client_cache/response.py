@@ -61,7 +61,7 @@ class CachedResponse:
     _body: Any = attr.ib(default=b'')
     _content: StreamReader = attr.ib(default=None)
     _links: LinkItems = attr.ib(factory=list)
-    cookies: SimpleCookie = attr.ib(default=None)
+    cookies: SimpleCookie = attr.ib(factory=SimpleCookie)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
     encoding: str = attr.ib(default='utf-8')
     expires: Optional[datetime] = attr.ib(default=None)

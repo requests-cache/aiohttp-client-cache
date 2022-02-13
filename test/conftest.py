@@ -33,7 +33,7 @@ HTTPDATE_DATETIME = datetime(2021, 4, 16, 21, 13)
 
 
 # Configure logging for pytest session
-basicConfig(level='INFO')
+basicConfig(level='ERROR')
 getLogger('aiohttp_client_cache').setLevel('DEBUG')
 
 
