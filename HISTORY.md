@@ -1,5 +1,8 @@
 # History
 
+## 0.7.0 (Unreleased)
+* Add compatibility with aioboto3 0.9+
+
 ## 0.6.1 (2022-02-13)
 * Migrate to aioredis 2.0
 * Fix issue with restoring empty session cookies

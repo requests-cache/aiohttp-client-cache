@@ -84,7 +84,7 @@ class DynamoDbCache(BaseCache):
         self.create_if_not_exists = create_if_not_exists
 
         resource_kwargs = get_valid_kwargs(AWSSession.resource, kwargs)
-        self.context = context or aioboto3.resource('dynamodb', **resource_kwargs)
+        self.context = context or aioboto3.Session().resource('dynamodb', **resource_kwargs)
         self._table = None
 
     @asynccontextmanager

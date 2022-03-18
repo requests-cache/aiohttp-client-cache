@@ -19,7 +19,8 @@ def is_dynamodb_running():
     """Test if a DynamoDB service is running locally"""
 
     async def check_dynamodb():
-        async with aioboto3.resource('dynamodb', **resource_kwargs) as resource:
+        session = aioboto3.Session()
+        async with session.resource('dynamodb', **resource_kwargs) as resource:
             client = resource.meta.client
             await client.describe_limits()
 
