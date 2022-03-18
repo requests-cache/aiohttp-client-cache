@@ -227,10 +227,10 @@ True 2021-01-01 18:00:00 2021-01-02 18:00:00 False
 ```
 
 ### Cache Contents
-You can use {py:meth}`.CachedSession.cache.urls` to see all URLs currently in the cache:
+You can use {py:meth}`.CachedSession.cache.get_urls` to see all URLs currently in the cache:
 ```python
->>> session = CachedSession(cache=SQLiteCache())
->>> print(session.cache.urls)
+>>> async for url in session.cache.get_urls():
+...     print(url)
 ['https://httpbin.org/get', 'https://httpbin.org/stream/100']
 ```
 
