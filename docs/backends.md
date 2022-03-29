@@ -19,10 +19,9 @@ Several cache backends are included, which can be selected using the `cache` par
 
 Usage example:
 ```python
->>> from aiohttp_client_cache import CachedSession
->>> from aiohttp_client_cache.backends.redis import RedisCache
+>>> from aiohttp_client_cache import CachedSession, RedisBackend
 >>>
->>> async with CachedSession(cache=RedisCache()) as session:
+>>> async with CachedSession(cache=RedisBackend()) as session:
 ...      await session.get('http://httpbin.org/get')
 ```
 
