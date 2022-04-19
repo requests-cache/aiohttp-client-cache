@@ -6,7 +6,6 @@ import pytest
 
 from aiohttp_client_cache import CachedResponse
 from aiohttp_client_cache.backends import CacheBackend, DictCache, get_placeholder_backend
-from aiohttp_client_cache.cache_control import CacheActions
 
 TEST_URL = 'https://test.com'
 
@@ -101,25 +100,27 @@ async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
 
 
 @skip_py37
-@patch.object(CacheBackend, 'is_cacheable', return_value=True)
-async def test_save_response(mock_is_cacheable):
+async def test_save_response():
     cache = CacheBackend()
     mock_response = get_mock_response()
     mock_response.history = [MagicMock(method='GET', url='test')]
     redirect_key = cache.create_key('GET', 'test')
 
-    await cache.save_response(mock_response, CacheActions(key='key'))
+    await cache.save_response(mock_response, 'key')
     cached_response = await cache.responses.read('key')
     assert cached_response and isinstance(cached_response, CachedResponse)
     assert await cache.redirects.read(redirect_key) == 'key'
 
 
 @skip_py37
-@patch.object(CacheBackend, 'is_cacheable', return_value=False)
-async def test_save_response__not_cacheable(mock_is_cacheable):
+async def test_save_response__manual_save():
+    """Manually save a response with no cache key provided"""
     cache = CacheBackend()
-    await cache.save_response('key', MagicMock())
-    assert 'key' not in cache.responses
+    mock_response = get_mock_response()
+
+    await cache.save_response(mock_response)
+    cached_response = [r async for r in cache.responses.values()][0]
+    assert cached_response and isinstance(cached_response, CachedResponse)
 
 
 async def test_clear():
