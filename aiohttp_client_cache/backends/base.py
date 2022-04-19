@@ -1,6 +1,7 @@
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
+from datetime import datetime
 from logging import getLogger
 from typing import AsyncIterable, Callable, Iterable, Optional, Tuple, Union
 
@@ -148,25 +149,23 @@ class CacheBackend:
         redirect_key = await self.redirects.read(key)
         return await self.responses.read(redirect_key) if redirect_key else None  # type: ignore
 
-    async def save_response(self, response: ClientResponse, actions: CacheActions):
+    async def save_response(
+        self, response: ClientResponse, cache_key: str = None, expires: datetime = None
+    ):
         """Save a response to the cache
 
         Args:
             response: Response to save
-            actions: Specific cache actions to take
+            cache_key: Cache key to use for the response; will be generated if not provided
+            expires: Expiration time to set for the response
         """
-        actions.update_from_response(response)
-        if not self.is_cacheable(response, actions):
-            logger.debug(f'Not caching response for key: {actions.key}')
-            return
-
-        logger.debug(f'Saving response for key: {actions.key}')
-        cached_response = await CachedResponse.from_client_response(response, actions.expires)
-        await self.responses.write(actions.key, cached_response)
+        cache_key = cache_key or self.create_key(response.method, response.url)
+        cached_response = await CachedResponse.from_client_response(response, expires)
+        await self.responses.write(cache_key, cached_response)
 
         # Alias any redirect requests to the same cache key
         for r in response.history:
-            await self.redirects.write(self.create_key(r.method, r.url), actions.key)
+            await self.redirects.write(self.create_key(r.method, r.url), cache_key)
 
     async def clear(self):
         """Clear cache"""

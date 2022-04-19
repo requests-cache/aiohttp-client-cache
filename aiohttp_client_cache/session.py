@@ -52,7 +52,9 @@ class CacheMixin(MIXIN_BASE):
         else:
             logger.debug(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
-            await self.cache.save_response(new_response, actions)
+            actions.update_from_response(new_response)
+            if self.cache.is_cacheable(new_response, actions):
+                await self.cache.save_response(new_response, actions.key, actions.expires)
             return set_response_defaults(new_response)
 
     @asynccontextmanager

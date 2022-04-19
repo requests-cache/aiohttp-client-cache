@@ -1,6 +1,7 @@
 # History
 
 ## 0.7.0 (Unreleased)
+* Support manually saving a response to the cache with `CachedSession.cache.save_response()`
 * Add compatibility with aioboto3 0.9+
 
 ## 0.6.1 (2022-02-13)
