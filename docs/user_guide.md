@@ -43,7 +43,7 @@ below for config details):
 
 Caching can be temporarily disabled with {py:meth}`.CachedSession.disabled`:
 ```python
->>> with session.disabled():
+>>> async with session.disabled():
 ...     await session.get('http://httpbin.org/get')
 ```
 
