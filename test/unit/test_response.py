@@ -27,6 +27,8 @@ async def mock_handler(request):
         headers={
             'Link': '<https://example.com>; rel="preconnect"',
             'Content-Disposition': 'attachment; name="test-param"; filename="img.jpg"',
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Length': '12',
         },
     )
 
@@ -102,8 +104,16 @@ async def test_headers(aiohttp_client):
 
     assert b'Content-Type' in raw_headers and b'Content-Length' in raw_headers
     assert 'Content-Type' in response.headers and 'Content-Length' in response.headers
+    assert response._headers == response.headers
     with pytest.raises(TypeError):
         response.headers['key'] = 'value'
+
+
+async def test_headers__mixin_attributes(aiohttp_client):
+    response = await get_test_response(aiohttp_client, '/valid_url')
+    assert response.charset == 'utf-8'
+    assert response.content_length == 12
+    assert response.content_type == 'text/plain'
 
 
 async def test_headers__case_insensitive_multidict(aiohttp_client):
