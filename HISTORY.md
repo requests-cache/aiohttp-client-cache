@@ -1,14 +1,20 @@
 # History
 
 ## 0.7.0 (Unreleased)
+[See all issues & PRs for v0.7](https://github.com/JWCook/aiohttp-client-cache/milestone/6?closed=1)
 * Support manually saving a response to the cache with `CachedSession.cache.save_response()`
 * Add compatibility with aioboto3 0.9+
+* Add `CachedSession` properties derived from headers:
+  * `charset`
+  * `content_length`
+  * `content_type`
 
 ## 0.6.1 (2022-02-13)
 * Migrate to aioredis 2.0
 * Fix issue with restoring empty session cookies
 
 ## 0.6.0 (2022-02-12)
+[See all issues & PRs for v0.6](https://github.com/JWCook/aiohttp-client-cache/milestone/5?closed=1)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
 * Update session cookies after fetching cached responses with cookies
 * Update session cookies after fetching cached responses with _redirects_ with cookies

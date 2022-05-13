@@ -11,6 +11,7 @@ from unittest.mock import Mock
 import attr
 from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
 from aiohttp.client_reqrep import ContentDisposition, MappingProxyType, RequestInfo
+from aiohttp.helpers import HeadersMixin
 from aiohttp.streams import StreamReader
 from aiohttp.typedefs import RawHeaders, StrOrURL
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
@@ -47,7 +48,7 @@ logger = getLogger(__name__)
 
 
 @attr.s(slots=True)
-class CachedResponse:
+class CachedResponse(HeadersMixin):
     """A dataclass containing cached response information, used for serialization.
     It will mostly behave the same as a :py:class:`aiohttp.ClientResponse` that has been read,
     with some additional cache-related info.
@@ -128,6 +129,10 @@ class CachedResponse:
     @property
     def from_cache(self):
         return True
+
+    @property
+    def _headers(self) -> CIMultiDictProxy[str]:
+        return self.headers
 
     @property
     def headers(self) -> CIMultiDictProxy[str]:

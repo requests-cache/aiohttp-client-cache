@@ -12,6 +12,7 @@ venv/
 
 # Test / coverage reports
 .coverage
+.coverage.*
 .mypy_cache/
 .tox
 test-reports/
