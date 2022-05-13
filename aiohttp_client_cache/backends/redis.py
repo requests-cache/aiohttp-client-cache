@@ -1,7 +1,6 @@
 from typing import AsyncIterable
 
-import aioredis
-from aioredis import Connection, Redis
+from redis.asyncio import Connection, Redis, from_url
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.docs import extend_init_signature, redis_template
@@ -12,7 +11,7 @@ DEFAULT_ADDRESS = 'redis://localhost'
 @extend_init_signature(CacheBackend, redis_template)
 class RedisBackend(CacheBackend):
     """Async cache backend for `Redis <https://redis.io>`_
-    (requires `aioredis <https://aioredis.readthedocs.io>`_)
+    (requires `predis-py <https://redis-py.readthedocs.io>`_)
     """
 
     def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
@@ -62,7 +61,7 @@ class RedisCache(BaseCache):
     async def get_connection(self):
         """Lazy-initialize redis connection"""
         if not self._connection:
-            self._connection = await aioredis.from_url(self.address, **self.connection_kwargs)
+            self._connection = await from_url(self.address, **self.connection_kwargs)
         return self._connection
 
     async def close(self):
