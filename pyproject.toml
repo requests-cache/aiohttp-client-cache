@@ -41,9 +41,9 @@ url-normalize = "^1.4"
 aioboto3 = { version = ">=9.0", optional = true }
 aiobotocore = {version = ">=2.0", optional = true }
 aiofiles = { version = ">=0.6.0", optional = true }
-aioredis = { version = ">=2.0", optional = true }
 aiosqlite = { version = ">=0.16", optional = true }
 motor = { version = ">=2.0", optional = true }
+redis = { version = ">=4.2", optional = true }
 
 # Documentation dependencies needed for Readthedocs builds
 furo = {version = ">=2022.1.2", optional = true}
@@ -57,11 +57,11 @@ sphinx-inline-tabs = {version = "^2022.1.2b11", optional = true, python = ">=3.8
 sphinxcontrib-apidoc = { version = "^0.3", optional = true }
 
 [tool.poetry.extras]
-all = ["aioboto3", "aiobotocore", "aiofiles", "aioredis", "aiosqlite", "motor"]
+all = ["aioboto3", "aiobotocore", "aiofiles", "aiosqlite", "motor", "redis"]
 dynamodb = ["aioboto3", "aiobotocore"]
 filesystem = ["aiofiles"]
 mongodb = ["motor"]
-redis = ["aioredis"]
+redis = ["redis"]
 sqlite = ["aiosqlite"]
 docs = ["furo", "linkify-it-py", "myst-parser", "sphinx", "sphinx-automodapi",
         "sphinx-autodoc-typehints", "sphinx-copybutton", "sphinx-inline-tabs", "sphinxcontrib-apidoc"]

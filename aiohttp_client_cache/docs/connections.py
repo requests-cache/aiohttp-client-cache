@@ -4,17 +4,10 @@
 * Type annotations
 * Argument docs
 """
-from typing import Any, Mapping, Optional, Type, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Type, Union
 
-try:
+if TYPE_CHECKING:
     from botocore.client import Config
-except ImportError:
-    Config = Any  # type: ignore
-
-try:
-    from aioredis import ConnectionPool, Redis
-except ImportError:
-    Redis = ConnectionPool = Any  # type: ignore
 
 
 def dynamodb_template(
@@ -26,7 +19,7 @@ def dynamodb_template(
     aws_access_key_id: str = None,
     aws_secret_access_key: str = None,
     aws_session_token: str = None,
-    config: Config = None,
+    config: 'Config' = None,
 ):
     """Template function for :py:meth:`boto3.session.Session.resource`
 
@@ -88,8 +81,8 @@ def redis_template(
     client_name: Optional[str] = None,
     username: Optional[str] = None,
 ):
-    """Template function for :py:func:`aioredis.from_url` (which passes kwargs to
-    :py:class:`aioredis.Connection`)
+    """Template function for :py:func:`redis.asyncio.from_url` (which passes kwargs to
+    :py:class:`redis.asyncio.Connection`)
 
     Args:
         db: Redis database index to switch to when connected

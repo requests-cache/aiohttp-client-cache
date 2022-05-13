@@ -42,7 +42,6 @@ extensions = [
 intersphinx_mapping = {
     'aioboto3': ('https://aioboto3.readthedocs.io/en/latest/', None),
     'aiohttp': ('https://docs.aiohttp.org/en/stable/', None),
-    'aioredis': ('https://aioredis.readthedocs.io/en/stable/', None),
     'aiosqlite': ('https://aiosqlite.omnilib.dev/en/latest/', None),
     'botocore': ('http://botocore.readthedocs.io/en/latest/', None),
     'motor': ('https://motor.readthedocs.io/en/stable/', None),
