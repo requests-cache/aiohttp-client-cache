@@ -1,5 +1,5 @@
-import pickle
 import inspect
+import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from datetime import datetime
@@ -85,7 +85,11 @@ class CacheBackend:
             'disabled cache': self.disabled,
             'disabled method': str(response.method) not in self.allowed_methods,
             'disabled status': response.status not in self.allowed_codes,
-            'disabled by filter': not (await self.filter_fn(response) if inspect.iscoroutinefunction(self.filter_fn) else self.filter_fn(response)),
+            'disabled by filter': not (
+                await self.filter_fn(response)
+                if inspect.iscoroutinefunction(self.filter_fn)
+                else self.filter_fn(response)
+            ),
             'disabled by headers or expiration params': actions and actions.skip_write,
             'expired': getattr(response, 'is_expired', False),
         }

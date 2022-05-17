@@ -1,5 +1,5 @@
-import pickle
 import asyncio
+import pickle
 from sys import version_info
 from unittest.mock import MagicMock, patch
 
@@ -26,6 +26,7 @@ def get_mock_response(**kwargs):
     }
     response_kwargs.update(kwargs)
     return MagicMock(spec=CachedResponse, **response_kwargs)
+
 
 def test_get_placeholder_backend():
     class TestBackend:
@@ -248,12 +249,7 @@ async def test_is_cacheable_inspect(method, status, disabled, expired, body, exp
 
         return json_resp['success']
 
-    mock_response = get_mock_response(
-        method=method,
-        status=status,
-        is_expired=expired,
-        _body=body
-    )
+    mock_response = get_mock_response(method=method, status=status, is_expired=expired, _body=body)
 
     cache = CacheBackend()
     cache.filter_fn = filter

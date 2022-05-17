@@ -60,6 +60,7 @@ async def test_basic_attrs(aiohttp_client):
     assert response.history == tuple()
     assert response._released is True
 
+
 @mock.patch('aiohttp_client_cache.response.datetime')
 async def test_is_expired(mock_datetime, aiohttp_client):
     mock_datetime.utcnow = mock.Mock(return_value=datetime.utcnow())
