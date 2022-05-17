@@ -12,3 +12,6 @@ And thanks to the following individuals for contributing to `aiohttp-client-cach
 * [Kirk Hansen](https://github.com/kirkhansen)
 * [AIGeneratedUsername](https://github.com/AIGeneratedUsername)
 * [layday](https://github.com/layday)
+* [ Avatar
+Damian Fajfer](https://github.com/fajfer)
+* [Ilias Tsatiris](https://github.com/iliastsa)
