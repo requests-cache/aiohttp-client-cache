@@ -230,6 +230,7 @@ async def test_is_cacheable(method, status, disabled, expired, filter_return, ex
     assert await cache.is_cacheable(mock_response) is expected_result
 
 
+@skip_py37
 @pytest.mark.parametrize(
     'method, status, disabled, expired, body, expected_result',
     [

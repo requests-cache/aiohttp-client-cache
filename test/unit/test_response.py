@@ -5,7 +5,6 @@ from unittest import mock
 import pytest
 from aiohttp import ClientResponseError, web
 from multidict import MultiDictProxy
-from requests import patch
 from yarl import URL
 
 from aiohttp_client_cache.response import CachedResponse, RequestInfo
