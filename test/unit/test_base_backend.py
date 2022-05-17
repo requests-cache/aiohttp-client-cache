@@ -1,4 +1,3 @@
-import asyncio
 import pickle
 from sys import version_info
 from unittest.mock import MagicMock, patch
