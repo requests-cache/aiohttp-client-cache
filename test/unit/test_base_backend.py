@@ -227,4 +227,30 @@ async def test_is_cacheable(method, status, disabled, expired, filter_return, ex
     cache = CacheBackend()
     cache.filter_fn = lambda x: filter_return
     cache.disabled = disabled
-    assert cache.is_cacheable(mock_response) is expected_result
+    assert await cache.is_cacheable(mock_response) is expected_result
+
+
+@skip_py37
+@pytest.mark.parametrize(
+    'method, status, disabled, expired, body, expected_result',
+    [
+        ('GET', 200, False, False, '{"content": "...", "success": true}', True),
+        ('DELETE', 200, True, False, '{"content": "...", "success": true}', False),
+        ('DELETE', 200, True, False, '{"content": "...", "success": false}', False),
+        ('DELETE', 200, False, False, '{"content": "...", "success": true}', False),
+        ('GET', 200, True, False, '{"content": "...", "success": false}', False),
+        ('GET', 200, False, True, '{"content": "...", "success": true}', False),
+    ],
+)
+async def test_is_cacheable_inspect(method, status, disabled, expired, body, expected_result):
+    async def filter(resp):
+        json_resp = await resp.json()
+
+        return json_resp['success']
+
+    mock_response = get_mock_response(method=method, status=status, is_expired=expired, _body=body)
+
+    cache = CacheBackend()
+    cache.filter_fn = filter
+    cache.disabled = disabled
+    assert await cache.is_cacheable(mock_response) is expected_result

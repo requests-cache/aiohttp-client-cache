@@ -9,6 +9,7 @@
   * `charset`
   * `content_length`
   * `content_type`
+* Add support for async filter functions
 
 ## 0.6.1 (2022-02-13)
 * Migrate to aioredis 2.0

@@ -1,3 +1,4 @@
+import inspect
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
@@ -73,7 +74,7 @@ class CacheBackend:
         self.include_headers = include_headers
         self.ignored_params = set(ignored_params or [])
 
-    def is_cacheable(
+    async def is_cacheable(
         self, response: Union[AnyResponse, None], actions: CacheActions = None
     ) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
@@ -84,7 +85,11 @@ class CacheBackend:
             'disabled cache': self.disabled,
             'disabled method': str(response.method) not in self.allowed_methods,
             'disabled status': response.status not in self.allowed_codes,
-            'disabled by filter': not self.filter_fn(response),
+            'disabled by filter': not (
+                await self.filter_fn(response)
+                if inspect.iscoroutinefunction(self.filter_fn)
+                else self.filter_fn(response)
+            ),
             'disabled by headers or expiration params': actions and actions.skip_write,
             'expired': getattr(response, 'is_expired', False),
         }
@@ -134,7 +139,7 @@ class CacheBackend:
         if not response:
             logger.debug('No cached response found')
         # If the item is expired or filtered out, delete it from the cache
-        elif not self.is_cacheable(response):  # type: ignore
+        elif not await self.is_cacheable(response):  # type: ignore
             logger.debug('Cached response expired; deleting')
             response = None
             await self.delete(key)

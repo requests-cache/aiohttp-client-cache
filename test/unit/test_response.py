@@ -1,5 +1,5 @@
-import asyncio
 from datetime import datetime, timedelta
+from unittest import mock
 
 import pytest
 from aiohttp import ClientResponseError, web
@@ -60,13 +60,17 @@ async def test_basic_attrs(aiohttp_client):
     assert response._released is True
 
 
-async def test_is_expired(aiohttp_client):
-    expires = datetime.utcnow() + timedelta(seconds=0.02)
+@mock.patch('aiohttp_client_cache.response.datetime')
+async def test_is_expired(mock_datetime, aiohttp_client):
+    mock_datetime.utcnow = mock.Mock(return_value=datetime.utcnow())
+    expires = mock_datetime.utcnow() + timedelta(seconds=0.02)
+
     response = await get_test_response(aiohttp_client, expires=expires)
 
     assert response.expires == expires
     assert response.is_expired is False
-    await asyncio.sleep(0.02)
+
+    mock_datetime.utcnow.return_value += timedelta(0.02)
     assert response.is_expired is True
 
 
