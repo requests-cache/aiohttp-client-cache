@@ -1,8 +1,8 @@
 # aiohttp-client-cache
 
-[![Build status](https://github.com/JWCook/aiohttp-client-cache/workflows/Build/badge.svg)](https://github.com/JWCook/aiohttp-client-cache/actions)
+[![Build status](https://github.com/requests-cache/aiohttp-client-cache/workflows/Build/badge.svg)](https://github.com/requests-cache/aiohttp-client-cache/actions)
 [![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/stable?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/latest/)
-[![Coverage](https://codecov.io/gh/JWCook/aiohttp-client-cache/branch/main/graph/badge.svg?token=I6PNLYTILM)](https://codecov.io/gh/JWCook/aiohttp-client-cache)
+[![Codecov](https://codecov.io/gh/requests-cache/aiohttp-client-cache/branch/main/graph/badge.svg?token=I6PNLYTILM)](https://codecov.io/gh/requests-cache/aiohttp-client-cache)
 [![PyPI](https://img.shields.io/pypi/v/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 [![Conda](https://img.shields.io/conda/vn/conda-forge/aiohttp-client-cache?color=blue)](https://anaconda.org/conda-forge/aiohttp-client-cache)
 [![PyPI - Python Versions](https://img.shields.io/pypi/pyversions/aiohttp-client-cache)](https://pypi.org/project/aiohttp-client-cache)
@@ -29,7 +29,7 @@ Breaking changes should be expected until a `1.0` release, so version pinning is
 My goal for this library is to eventually have a similar (but not identical) feature set as
 `requests-cache`, and also contribute new features from this library back to `requests-cache`.
 If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
-[create an issue](https://github.com/JWCook/aiohttp-client-cache/issues/new/choose) for it!
+[create an issue](https://github.com/requests-cache/aiohttp-client-cache/issues/new/choose) for it!
 
 # Quickstart
 First, install with pip (python 3.7+ required):

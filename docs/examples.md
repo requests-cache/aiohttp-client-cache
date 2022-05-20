@@ -1,7 +1,7 @@
 # Examples
 Following are some complete examples to demonstrate some of the features of aiohttp-client-cache.
 These can also be found in the
-[examples/](https://github.com/JWCook/aiohttp-client-cache/tree/main/examples) folder on GitHub.
+[examples/](https://github.com/requests-cache/aiohttp-client-cache/tree/main/examples) folder on GitHub.
 
 ## Expiration based on URL patterns
 ```{include} ../examples/url_patterns.py

@@ -1,7 +1,7 @@
 # History
 
 ## 0.7.0 (Unreleased)
-[See all issues & PRs for v0.7](https://github.com/JWCook/aiohttp-client-cache/milestone/6?closed=1)
+[See all issues & PRs for v0.7](https://github.com/requests-cache/aiohttp-client-cache/milestone/6?closed=1)
 * Support manually saving a response to the cache with `CachedSession.cache.save_response()`
 * Add compatibility with aioboto3 0.9+
 * Migrate to redis-py 4.2+ (merged with aioredis)
@@ -10,13 +10,14 @@
   * `content_length`
   * `content_type`
 * Add support for async filter functions
+* Move repo to [requests-cache](https://github.com/requests-cache) organization
 
 ## 0.6.1 (2022-02-13)
 * Migrate to aioredis 2.0
 * Fix issue with restoring empty session cookies
 
 ## 0.6.0 (2022-02-12)
-[See all issues & PRs for v0.6](https://github.com/JWCook/aiohttp-client-cache/milestone/5?closed=1)
+[See all issues & PRs for v0.6](https://github.com/requests-cache/aiohttp-client-cache/milestone/5?closed=1)
 * Add a `bulk_delete()` method for all backends to improve performance of `delete_expired_responses()`
 * Update session cookies after fetching cached responses with cookies
 * Update session cookies after fetching cached responses with _redirects_ with cookies
@@ -35,7 +36,7 @@
 * Fix issue with request params duplicated from request URL
 
 ## 0.5.0 (2021-09-01)
-[See all issues & PRs for v0.5](https://github.com/JWCook/aiohttp-client-cache/milestone/4?closed=1)
+[See all issues & PRs for v0.5](https://github.com/requests-cache/aiohttp-client-cache/milestone/4?closed=1)
 
 * Add a filesystem backend
 * Add support for streaming requests
@@ -60,7 +61,7 @@
 * Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
 
 ## 0.4.0 (2021-05-12)
-[See all issues & PRs for v0.4](https://github.com/JWCook/aiohttp-client-cache/milestone/3?closed=1)
+[See all issues & PRs for v0.4](https://github.com/requests-cache/aiohttp-client-cache/milestone/3?closed=1)
 
 * Add optional support for the following **request** headers:
     * `Cache-Control: max-age`
@@ -77,7 +78,7 @@
 * Published package on [conda-forge](https://anaconda.org/conda-forge/aiohttp-client-cache)
 
 ## 0.3.0 (2021-04-09)
-[See all issues & PRs for v0.3](https://github.com/JWCook/aiohttp-client-cache/milestone/2?closed=1)
+[See all issues & PRs for v0.3](https://github.com/requests-cache/aiohttp-client-cache/milestone/2?closed=1)
 
 * Add async implementation of DynamoDb backend
 * Add support for expiration for individual requests
@@ -95,7 +96,7 @@
 * Add user guide, more examples, and other project docs
 
 ## 0.2.0 (2021-02-28)
-[See all issues & PRs for v0.2](https://github.com/JWCook/aiohttp-client-cache/milestone/1?closed=1)
+[See all issues & PRs for v0.2](https://github.com/requests-cache/aiohttp-client-cache/milestone/1?closed=1)
 
 * Refactor SQLite backend to use `aiosqlite` for async cache operations
 * Refactor MongoDB backend to use `motor` for async cache operations

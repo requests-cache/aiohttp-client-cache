@@ -4,7 +4,7 @@
 To set up for local development (requires [poetry](https://python-poetry.org/docs/#installation)):
 
 ```bash
-$ git clone https://github.com/JWCook/aiohttp-client-cache
+$ git clone https://github.com/requests-cache/aiohttp-client-cache
 $ cd aiohttp-client-cache
 $ poetry install -E backends -E docs
 ```
@@ -114,7 +114,7 @@ Here are some general guidelines for submitting a pull request:
 
 ## Releases
 Releases are built and published to pypi based on **git tags.**
-[Milestones](https://github.com/JWCook/aiohttp-client-cache/milestones) will be used to track
+[Milestones](https://github.com/requests-cache/aiohttp-client-cache/milestones) will be used to track
 progress on major and minor releases.
 
 ## Code Layout
