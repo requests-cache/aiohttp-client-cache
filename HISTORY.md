@@ -1,19 +1,19 @@
 # History
 
-## 0.7.0 (Unreleased)
+## 0.7.0 (2022-05-21)
 [See all issues & PRs for v0.7](https://github.com/requests-cache/aiohttp-client-cache/milestone/6?closed=1)
 * Support manually saving a response to the cache with `CachedSession.cache.save_response()`
 * Add compatibility with aioboto3 0.9+
 * Migrate to redis-py 4.2+ (merged with aioredis)
 * Add missing `aiosqlite` dependency for filesystem backend
-* Add missing `CachedSession` properties derived from headers:
+* Add missing `CachedResponse` properties derived from headers:
   * `charset`
   * `content_length`
   * `content_type`
 * Add support for async filter functions
 * Move repo to [requests-cache](https://github.com/requests-cache) organization
 
-## 0.6.1 (2022-02-13)
+### 0.6.1 (2022-02-13)
 * Migrate to aioredis 2.0
 * Fix issue with restoring empty session cookies
 
