@@ -5,6 +5,7 @@
 * Support manually saving a response to the cache with `CachedSession.cache.save_response()`
 * Add compatibility with aioboto3 0.9+
 * Migrate to redis-py 4.2+ (merged with aioredis)
+* Add missing `aiosqlite` dependency for filesystem backend
 * Add missing `CachedSession` properties derived from headers:
   * `charset`
   * `content_length`

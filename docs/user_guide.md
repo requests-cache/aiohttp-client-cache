@@ -253,14 +253,15 @@ responses they redirect to.
 
 ### Custom Response Filtering
 If you need more advanced behavior for determining what to cache, you can provide a custom filtering
-function via the `filter_fn` param. This can by any function that takes a {py:class}`aiohttp.ClientResponse`
-object and returns a boolean indicating whether or not that response should be cached. It will be applied
-to both new responses (on write) and previously cached responses (on read). Example:
+function via the `filter_fn` param. This can by any function or coroutine that takes a
+{py:class}`aiohttp.ClientResponse` object and returns a boolean indicating whether or not that
+response should be cached. It will be applied to both new responses (on write) and previously cached
+responses (on read). Example:
 ```python
 >>> from sys import getsizeof
 >>> from aiohttp_client_cache import CachedSession, SQLiteCache
 >>>
->>> def filter_by_size(response):
+>>> async def filter_by_size(response):
 >>>     """Don't cache responses with a body over 1 MB"""
 >>>     return getsizeof(response._body) <= 1024 * 1024
 >>>
