@@ -205,7 +205,7 @@ async def test_create_key(mock_create_key):
     mock_create_key.assert_called_with(
         'GET',
         'https://test.com',
-        include_headers=True,
+        match_headers=True,
         ignored_params=set(ignored_params),
         headers=headers,
     )

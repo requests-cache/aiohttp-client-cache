@@ -229,7 +229,7 @@ class CacheBackend:
         return create_key(
             method,
             url,
-            include_headers=self.include_headers,
+            match_headers=self.include_headers,
             ignored_params=self.ignored_params,
             **kwargs,
         )
