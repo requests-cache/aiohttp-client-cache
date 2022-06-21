@@ -68,6 +68,7 @@ docs = ["furo", "linkify-it-py", "myst-parser", "sphinx", "sphinx-automodapi",
 
 [tool.poetry.dev-dependencies]
 # For unit + integration tests
+brotli = ">=1.0"
 pytest = ">=6.2"
 pytest-aiohttp = "^0.3"
 pytest-asyncio = "^0.14"
@@ -75,16 +76,12 @@ pytest-clarity = "^1.0"
 pytest-cov = "^2.11"
 pytest-xdist = "^2.3"
 
-# For linting, type checking etc.; additional tools are managed by pre-commit
-mypy = "^0.910"
-pre-commit = ">=2.12"
-tomli = ">=1.2"
-types-aiofiles = ">=0.1.7"
-
-# For convenience in local development
+# For convenience in local development; additional tools are managed by pre-commit
 nox = "^2022.1.7"
 nox-poetry = "^0.8.6"
+pre-commit = ">=2.12"
 sphinx-autobuild = ">=2021.3.14"
+types-aiofiles = ">=0.1.7"
 
 # Workarounds for possible dependency issues with importlib-metadata (3.7 only)
 typing-extensions = {version = "^4.0", python = "3.7"}

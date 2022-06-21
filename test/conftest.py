@@ -1,6 +1,6 @@
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
-from logging import basicConfig, getLogger
 from os import getenv
 from tempfile import NamedTemporaryFile
 from typing import AsyncIterator
@@ -33,8 +33,8 @@ HTTPDATE_DATETIME = datetime(2021, 4, 16, 21, 13)
 
 
 # Configure logging for pytest session
-basicConfig(level='ERROR')
-getLogger('aiohttp_client_cache').setLevel('DEBUG')
+logging.basicConfig(level='INFO')
+# logging.getLogger('aiohttp_client_cache').setLevel('DEBUG')
 
 
 def from_cache(*responses) -> bool:

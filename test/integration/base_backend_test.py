@@ -1,4 +1,5 @@
 """Common tests to run for all backends"""
+import asyncio
 import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -13,6 +14,7 @@ from aiohttp_client_cache import CacheBackend, CachedSession
 from test.conftest import (
     ALL_METHODS,
     CACHE_NAME,
+    HTTPBIN_FORMATS,
     HTTPBIN_METHODS,
     HTTPDATE_STR,
     assert_delta_approx_equal,
@@ -75,6 +77,27 @@ class BaseBackendTest:
 
         assert not from_cache(response_1) and from_cache(response_2)
         assert from_cache(response_3) and not from_cache(response_4)
+
+    async def test_delete_expired_responses(self):
+        async with self.init_session(expire_after=1) as session:
+
+            # Populate the cache with several responses that should expire immediately
+            for response_format in HTTPBIN_FORMATS:
+                await session.get(httpbin(response_format))
+            await session.get(httpbin('redirect/1'))
+            await asyncio.sleep(1)
+
+            # Cache a response and some redirects, which should be the only non-expired cache items
+            session.cache.expire_after = -1
+            await session.get(httpbin('get'))
+            await session.get(httpbin('redirect/3'))
+            assert await session.cache.redirects.size() == 4
+            await session.cache.delete_expired_responses()
+
+            assert await session.cache.responses.size() == 2
+            assert await session.cache.redirects.size() == 3
+            assert not await session.cache.has_url(httpbin('redirect/1'))
+            assert not any([await session.cache.has_url(httpbin(f)) for f in HTTPBIN_FORMATS])
 
     @pytest.mark.parametrize('n_redirects', range(1, 5))
     @pytest.mark.parametrize('endpoint', ['redirect', 'absolute-redirect', 'relative-redirect'])
