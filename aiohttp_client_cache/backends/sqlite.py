@@ -1,10 +1,10 @@
-import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
 from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
+from threading import RLock
 from typing import AsyncIterable, AsyncIterator, Union
 
 import aiosqlite
@@ -63,40 +63,34 @@ class SQLiteCache(BaseCache):
         self._bulk_commit = False
         self._initialized = False
         self._connection = None
-        self._lock = None
+        self._lock = RLock()
 
     @asynccontextmanager
     async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
-        async with self.lock:
-            db = (
-                self._connection
-                if self._connection
-                else await aiosqlite.connect(self.filename, **self.connection_kwargs)
-            )
-            try:
-                yield await self._init_db(db)
-                if autocommit and not self._bulk_commit:
-                    await db.commit()
-            finally:
-                if not self._bulk_commit:
-                    await db.close()
-
-    @property
-    def lock(self):
-        if self._lock is None:
-            self._lock = asyncio.Lock()
-        return self._lock
+        db = (
+            self._connection
+            if self._connection
+            else await aiosqlite.connect(self.filename, **self.connection_kwargs)
+        )
+        try:
+            yield await self._init_db(db)
+            if autocommit and not self._bulk_commit:
+                await db.commit()
+        finally:
+            if not self._bulk_commit:
+                await db.close()
 
     async def _init_db(self, db: aiosqlite.Connection):
         """Create table if this is the first connection opened, and set fast save if possible"""
-        if not self._bulk_commit:
-            await db.execute('PRAGMA synchronous = 0;')
-        if not self._initialized:
-            await db.execute(
-                f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
-            )
-            self._initialized = True
-        return db
+        with self._lock:
+            if not self._bulk_commit:
+                await db.execute('PRAGMA synchronous = 0;')
+            if not self._initialized:
+                await db.execute(
+                    f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
+                )
+                self._initialized = True
+            return db
 
     @asynccontextmanager
     async def bulk_commit(self):
@@ -122,10 +116,11 @@ class SQLiteCache(BaseCache):
             self._connection = None
 
     async def clear(self):
-        async with self.get_connection(autocommit=True) as db:
-            await db.execute(f'DROP TABLE `{self.table_name}`')
-            await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
-            await db.execute('VACUUM')
+        with self._lock:
+            async with self.get_connection(autocommit=True) as db:
+                await db.execute(f'DROP TABLE `{self.table_name}`')
+                await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
+                await db.execute('VACUUM')
 
     async def contains(self, key: str) -> bool:
         async with self.get_connection() as db:
