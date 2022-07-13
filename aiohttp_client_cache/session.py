@@ -8,7 +8,8 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
-from aiohttp_client_cache.docs import copy_signature, extend_signature
+from aiohttp_client_cache.cache_control import ExpirationTime
+from aiohttp_client_cache.docs import extend_signature
 from aiohttp_client_cache.response import AnyResponse, set_response_defaults
 
 if TYPE_CHECKING:
@@ -36,11 +37,15 @@ class CacheMixin(MIXIN_BASE):
         session_kwargs = get_valid_kwargs(super().__init__, {**kwargs, 'base_url': base_url})
         super().__init__(**session_kwargs)
 
-    @copy_signature(ClientSession._request)
-    async def _request(self, method: str, str_or_url: StrOrURL, **kwargs) -> AnyResponse:
+    @extend_signature(ClientSession._request)
+    async def _request(
+        self, method: str, str_or_url: StrOrURL, expire_after: ExpirationTime = None, **kwargs
+    ) -> AnyResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         # Attempt to fetch cached response
-        response, actions = await self.cache.request(method, str_or_url, **kwargs)
+        response, actions = await self.cache.request(
+            method, str_or_url, expire_after=expire_after, **kwargs
+        )
 
         # Restore any cached cookies to the session
         if response:

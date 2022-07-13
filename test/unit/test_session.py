@@ -68,6 +68,17 @@ async def test_session__cache_miss(mock_request):
 
 
 @patch.object(ClientSession, '_request')
+async def test_session__request_expire_after(mock_request):
+    cache = MagicMock(spec=CacheBackend)
+    cache.request.return_value = None, CacheActions()
+    session = CachedSession(cache=cache)
+
+    await session.get('http://test.url', expire_after=10)
+    assert mock_request.called is True
+    assert 'expire_after' not in mock_request.call_args
+
+
+@patch.object(ClientSession, '_request')
 async def test_session__default_attrs(mock_request):
     cache = MagicMock(spec=CacheBackend)
     cache.request.return_value = None, CacheActions()
