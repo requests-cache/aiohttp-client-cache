@@ -78,6 +78,18 @@ class BaseBackendTest:
         assert not from_cache(response_1) and from_cache(response_2)
         assert from_cache(response_3) and not from_cache(response_4)
 
+    async def test_request__expire_after(self):
+        async with self.init_session() as session:
+            await session.get(httpbin('get'), expire_after=1)
+            response = await session.get(httpbin('get'), expire_after=1)
+            assert response.from_cache is True
+
+            # After 1 second, the response should be expired, and a new one should be fetched
+            await asyncio.sleep(1)
+            response = await session.get(httpbin('get'), expire_after=1)
+            print(response.expires)
+            assert response.from_cache is False
+
     async def test_delete_expired_responses(self):
         async with self.init_session(expire_after=1) as session:
 
