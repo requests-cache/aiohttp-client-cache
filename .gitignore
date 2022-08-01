@@ -8,6 +8,7 @@
 .vscode/
 build/
 dist/
+downloads/
 venv/
 
 # Test / coverage reports
