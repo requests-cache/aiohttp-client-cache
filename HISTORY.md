@@ -1,5 +1,8 @@
 # History
 
+## 0.7.3 (2022-07-31)
+* Remove upper version constraint for `attrs` dependency
+
 ## 0.7.2 (2022-07-13)
 * Fix `TypeError` bug when using `expire_after` param with `CachedSession._request()`
 
