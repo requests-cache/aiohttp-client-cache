@@ -3,7 +3,7 @@ from typing import AsyncIterable
 from redis.asyncio import Connection, Redis, from_url
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.docs import extend_init_signature, redis_template
+from aiohttp_client_cache.signatures import extend_init_signature, redis_template
 
 DEFAULT_ADDRESS = 'redis://localhost'
 

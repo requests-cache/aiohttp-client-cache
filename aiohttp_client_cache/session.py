@@ -9,8 +9,8 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
 from aiohttp_client_cache.cache_control import ExpirationTime
-from aiohttp_client_cache.docs import extend_signature
 from aiohttp_client_cache.response import AnyResponse, set_response_defaults
+from aiohttp_client_cache.signatures import extend_signature
 
 if TYPE_CHECKING:
     MIXIN_BASE = ClientSession
