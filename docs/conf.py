@@ -65,9 +65,7 @@ exclude_patterns = [
     'modules/aiohttp_client_cache.rst',
     'modules/aiohttp_client_cache.backends.rst',
     'modules/aiohttp_client_cache.session.rst',
-    'modules/aiohttp_client_cache.docs.rst',
-    'modules/aiohttp_client_cache.docs.connections.rst',
-    'modules/aiohttp_client_cache.docs.forge_utils.rst',
+    'modules/aiohttp_client_cache.signatures.rst',
 ]
 
 # napoleon settings
