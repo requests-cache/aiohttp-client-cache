@@ -1,5 +1,8 @@
 # History
 
+## 0.8.0 (Unreleased)
+* Fix `AttributeError` when using a response cached with an older version of `attrs`
+
 ## 0.7.3 (2022-07-31)
 * Remove upper version constraint for `attrs` dependency
 

@@ -75,7 +75,7 @@ class CacheBackend:
         self.ignored_params = set(ignored_params or [])
 
     async def is_cacheable(
-        self, response: Union[AnyResponse, None], actions: CacheActions = None
+        self, response: Optional[AnyResponse], actions: CacheActions = None
     ) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
@@ -133,7 +133,10 @@ class CacheBackend:
         logger.debug(f'Attempting to get cached response for key: {key}')
         try:
             response = await self.responses.read(key) or await self._get_redirect_response(str(key))
-        except (AttributeError, KeyError, TypeError, pickle.PickleError):
+            # Catch "quiet" deserialization errors due to upgrading attrs
+            if response is not None:
+                assert response.method  # type: ignore
+        except (AssertionError, AttributeError, KeyError, TypeError, pickle.PickleError):
             response = None
 
         if not response:
