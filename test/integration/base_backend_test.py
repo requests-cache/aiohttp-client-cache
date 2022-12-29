@@ -20,6 +20,7 @@ from test.conftest import (
     assert_delta_approx_equal,
     from_cache,
     httpbin,
+    skip_37,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -34,13 +35,13 @@ class BaseBackendTest:
     @asynccontextmanager
     async def init_session(self, clear=True, **kwargs) -> AsyncIterator[CachedSession]:
         kwargs.setdefault('allowed_methods', ALL_METHODS)
-        # kwargs.setdefault('serializer', 'pickle')
         cache = self.backend_class(CACHE_NAME, **self.init_kwargs, **kwargs)
         if clear:
             await cache.clear()
 
         async with CachedSession(cache=cache, **self.init_kwargs, **kwargs) as session:
             yield session
+            await session.cache.close()
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
     @pytest.mark.parametrize('field', ['params', 'data', 'json'])
@@ -77,6 +78,18 @@ class BaseBackendTest:
 
         assert not from_cache(response_1) and from_cache(response_2)
         assert from_cache(response_3) and not from_cache(response_4)
+
+    @skip_37
+    async def test_gather(self):
+        urls = [httpbin(f'get?page={i}') for i in range(1000)]
+        async with self.init_session() as session:
+            tasks = [asyncio.create_task(session.get(url)) for url in urls]
+            responses = await asyncio.gather(*tasks)
+            assert all([r.from_cache is False for r in responses])
+
+            tasks = [asyncio.create_task(session.get(url)) for url in urls]
+            responses = await asyncio.gather(*tasks)
+            assert all([r.from_cache is True for r in responses])
 
     async def test_request__expire_after(self):
         async with self.init_session() as session:
@@ -232,11 +245,11 @@ class BaseBackendTest:
     async def test_cookies_with_redirect(self):
 
         async with self.init_session(cache_control=True) as session:
-            await session.get('http://httpbin.org/cookies/set?test_cookie=value')
+            await session.get(httpbin('cookies/set?test_cookie=value'))
             session.cookie_jar.clear()
-            await session.get('http://httpbin.org/cookies/set?test_cookie=value')
+            await session.get(httpbin('cookies/set?test_cookie=value'))
 
-        cookies = session.cookie_jar.filter_cookies('http://httpbin.org')
+        cookies = session.cookie_jar.filter_cookies(httpbin())
         assert cookies['test_cookie'].value == 'value'
 
     async def test_serializer__pickle(self):

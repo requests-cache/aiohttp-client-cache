@@ -1,11 +1,11 @@
+import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
 from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
-from threading import RLock
-from typing import AsyncIterable, AsyncIterator, Union
+from typing import AsyncIterable, AsyncIterator, Optional, Union
 
 import aiosqlite
 
@@ -18,7 +18,6 @@ class SQLiteBackend(CacheBackend):
     """Async cache backend for `SQLite <https://www.sqlite.org>`_
     (requires `aiosqlite <https://aiosqlite.omnilib.dev>`_)
 
-    Reading is fast, saving is a bit slower. It can store a large amount of data with low memory usage.
     The path to the database file will be ``<cache_name>`` (or ``<cache_name>.sqlite`` if no file
     extension is specified)
 
@@ -42,6 +41,9 @@ class SQLiteBackend(CacheBackend):
             cache_name, 'responses', use_temp=use_temp, fast_save=fast_save, **kwargs
         )
         self.redirects = SQLiteCache(cache_name, 'redirects', use_temp=use_temp, **kwargs)
+
+    async def close(self):
+        await self.responses.close()
 
 
 class SQLiteCache(BaseCache):
@@ -76,41 +78,31 @@ class SQLiteCache(BaseCache):
         self.table_name = table_name
 
         self._bulk_commit = False
-        self._initialized = False
-        self._connection = None
-        self._lock = RLock()
+        self._connection: Optional[aiosqlite.Connection] = None
+        self._lock = asyncio.Lock()
 
     @asynccontextmanager
-    async def get_connection(self, autocommit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
-        db = (
-            self._connection
-            if self._connection
-            else await aiosqlite.connect(self.filename, **self.connection_kwargs)
-        )
-        try:
-            yield await self._init_db(db)
-            if autocommit and not self._bulk_commit:
-                await db.commit()
-        finally:
-            if not self._bulk_commit:
-                await db.close()
+    async def get_connection(self, commit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
+        async with self._lock:
+            if self._connection is None:
+                self._connection = await aiosqlite.connect(self.filename, **self.connection_kwargs)
+                await self._init_db()
+        yield self._connection
+        if commit and not self._bulk_commit:
+            await self._connection.commit()
 
-    async def _init_db(self, db: aiosqlite.Connection):
-        """Create table if this is the first connection opened, and set fast save if possible"""
-        with self._lock:
-            if self.fast_save and not self._bulk_commit:
-                await db.execute('PRAGMA synchronous = 0;')
-            if not self._initialized:
-                await db.execute(
-                    f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
-                )
-                self._initialized = True
-            return db
+    async def _init_db(self):
+        """Initialize the database, if it hasn't already been"""
+        if self.fast_save:
+            await self._connection.execute('PRAGMA synchronous = 0;')
+        await self._connection.execute(
+            f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
+        )
+        return self._connection
 
     @asynccontextmanager
     async def bulk_commit(self):
-        """
-        Context manager used to speedup insertion of big number of records
+        """Contextmanager to more efficiently write a large number of records at once
 
         Example:
 
@@ -120,22 +112,27 @@ class SQLiteCache(BaseCache):
             ...         await cache.write(f'key_{i}', str(i))
 
         """
-        self._bulk_commit = True
-        self._connection = await aiosqlite.connect(self.filename, **self.connection_kwargs)
+        async with self._lock:
+            self._bulk_commit = True
         try:
             yield
             await self._connection.commit()
         finally:
-            self._bulk_commit = False
-            await self._connection.close()
-            self._connection = None
+            async with self._lock:
+                self._bulk_commit = False
 
     async def clear(self):
-        with self._lock:
-            async with self.get_connection(autocommit=True) as db:
-                await db.execute(f'DROP TABLE `{self.table_name}`')
-                await db.execute(f'CREATE TABLE `{self.table_name}` (key PRIMARY KEY, value)')
-                await db.execute('VACUUM')
+        async with self.get_connection(commit=True) as db, self._lock:
+            await db.execute(f'DROP TABLE `{self.table_name}`')
+            await db.execute('VACUUM')
+            await self._init_db()
+
+    async def close(self):
+        """Close any open connections"""
+        async with self._lock:
+            if self._connection is not None:
+                await self._connection.close()
+                self._connection = None
 
     async def contains(self, key: str) -> bool:
         async with self.get_connection() as db:
@@ -146,14 +143,14 @@ class SQLiteCache(BaseCache):
             return bool(row[0]) if row else False
 
     async def bulk_delete(self, keys: set):
-        async with self.get_connection(autocommit=True) as db:
+        async with self.get_connection(commit=True) as db:
             placeholders = ", ".join("?" for _ in keys)
             await db.execute(
                 f'DELETE FROM `{self.table_name}` WHERE key IN ({placeholders})', tuple(keys)
             )
 
     async def delete(self, key: str):
-        async with self.get_connection(autocommit=True) as db:
+        async with self.get_connection(commit=True) as db:
             await db.execute(f'DELETE FROM `{self.table_name}` WHERE key=?', (key,))
 
     async def keys(self) -> AsyncIterable[str]:
@@ -181,7 +178,7 @@ class SQLiteCache(BaseCache):
                     yield row[0]
 
     async def write(self, key: str, item: Union[ResponseOrKey, sqlite3.Binary]):
-        async with self.get_connection(autocommit=True) as db:
+        async with self.get_connection(commit=True) as db:
             await db.execute(
                 f'INSERT OR REPLACE INTO `{self.table_name}` (key,value) VALUES (?,?)',
                 (key, item),

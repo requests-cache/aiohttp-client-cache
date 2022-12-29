@@ -1,18 +1,14 @@
 import os
-from sys import version_info
 from tempfile import gettempdir
 from unittest.mock import patch
 
 import pytest
 
 from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
-from test.conftest import CACHE_NAME
+from test.conftest import CACHE_NAME, skip_37
 from test.integration import BaseBackendTest, BaseStorageTest
 
 pytestmark = pytest.mark.asyncio
-skip_37 = pytest.mark.skipif(
-    version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+'
-)
 
 
 class TestSQLiteCache(BaseStorageTest):
@@ -72,6 +68,14 @@ class TestSQLiteCache(BaseStorageTest):
         mock_sqlite.connect = AsyncMock()
         cache = await self.init_cache(timeout=0.5, invalid_kwarg='???')
         mock_sqlite.connect.assert_called_with(cache.filename, timeout=0.5)
+
+    async def test_close(self):
+        cache = await self.init_cache()
+        async with cache.get_connection():
+            pass
+        await cache.close()
+        await cache.close()  # Closing again should be a no-op
+        assert cache._connection is None
 
     # TODO: Tests for unimplemented features
     # async def test_chunked_bulk_delete(self):

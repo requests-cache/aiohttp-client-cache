@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
 from os import getenv
+from sys import version_info
 from tempfile import NamedTemporaryFile
 from typing import AsyncIterator
 
@@ -37,12 +38,17 @@ logging.basicConfig(level='INFO')
 # logging.getLogger('aiohttp_client_cache').setLevel('DEBUG')
 
 
+skip_37 = pytest.mark.skipif(
+    version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+'
+)
+
+
 def from_cache(*responses) -> bool:
     """Indicate whether one or more responses came from the cache"""
     return all([isinstance(response, CachedResponse) for response in responses])
 
 
-def httpbin(path):
+def httpbin(path: str = ''):
     """Get the url for either a local or remote httpbin instance"""
     base_url = getenv('HTTPBIN_URL', 'http://localhost:80/')
     return base_url + path

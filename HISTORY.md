@@ -1,6 +1,7 @@
 # History
 
 ## 0.8.0 (Unreleased)
+* Lazily initialize and reuse SQLite connection objects
 * Fix `AttributeError` when using a response cached with an older version of `attrs`
 * Add `fast_save` option for SQLite backend (`PRAGMA` setting to improve write performance, with
   some tradeoffs)
@@ -12,7 +13,7 @@
 * Fix `TypeError` bug when using `expire_after` param with `CachedSession._request()`
 
 ## 0.7.1 (2022-06-22)
-* Use `threading.RLock` for locking `SQLiteCache.init_db()` and `clear()`
+* Fix possible deadlock with `SQLiteCache.init_db()` and `clear()`
 
 ## 0.7.0 (2022-05-21)
 [See all issues & PRs for v0.7](https://github.com/requests-cache/aiohttp-client-cache/milestone/6?closed=1)
