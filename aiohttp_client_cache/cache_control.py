@@ -58,7 +58,7 @@ class CacheActions:
         cls,
         key: str,
         cache_control: bool = False,
-        headers: Mapping = None,
+        headers: Optional[Mapping] = None,
         **kwargs,
     ):
         """Initialize from request info and CacheBackend settings"""
@@ -90,7 +90,7 @@ class CacheActions:
         cache_control: bool = False,
         request_expire_after: ExpirationTime = None,
         session_expire_after: ExpirationTime = None,
-        urls_expire_after: ExpirationPatterns = None,
+        urls_expire_after: Optional[ExpirationPatterns] = None,
         **kwargs,
     ):
         """Initialize from CacheBackend settings"""
@@ -169,7 +169,7 @@ def get_cache_directives(headers: Mapping) -> Dict:
 
 
 def get_url_expiration(
-    url: StrOrURL, urls_expire_after: ExpirationPatterns = None
+    url: StrOrURL, urls_expire_after: Optional[ExpirationPatterns] = None
 ) -> ExpirationTime:
     """Check for a matching per-URL expiration, if any"""
     for pattern, expire_after in (urls_expire_after or {}).items():

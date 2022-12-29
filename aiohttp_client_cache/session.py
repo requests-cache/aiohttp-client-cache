@@ -28,7 +28,7 @@ class CacheMixin(MIXIN_BASE):
         self,
         base_url: Optional[StrOrURL] = None,
         *,
-        cache: CacheBackend = None,
+        cache: Optional[CacheBackend] = None,
         **kwargs,
     ):
         self.cache = cache or CacheBackend()

@@ -34,11 +34,11 @@ class CacheBackend:
         self,
         cache_name: str = 'aiohttp-cache',
         expire_after: ExpirationTime = -1,
-        urls_expire_after: ExpirationPatterns = None,
+        urls_expire_after: Optional[ExpirationPatterns] = None,
         allowed_codes: tuple = (200,),
         allowed_methods: tuple = ('GET', 'HEAD'),
         include_headers: bool = False,
-        ignored_params: Iterable = None,
+        ignored_params: Optional[Iterable] = None,
         cache_control: bool = False,
         filter_fn: Callable = lambda r: True,
         **kwargs,
@@ -75,7 +75,7 @@ class CacheBackend:
         self.ignored_params = set(ignored_params or [])
 
     async def is_cacheable(
-        self, response: Optional[AnyResponse], actions: CacheActions = None
+        self, response: Optional[AnyResponse], actions: Optional[CacheActions] = None
     ) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
@@ -158,7 +158,10 @@ class CacheBackend:
         return await self.responses.read(redirect_key) if redirect_key else None  # type: ignore
 
     async def save_response(
-        self, response: ClientResponse, cache_key: str = None, expires: datetime = None
+        self,
+        response: ClientResponse,
+        cache_key: Optional[str] = None,
+        expires: Optional[datetime] = None,
     ):
         """Save a response to the cache
 
@@ -252,7 +255,7 @@ class BaseCache(metaclass=ABCMeta):
 
     def __init__(
         self,
-        secret_key: Union[Iterable, str, bytes] = None,
+        secret_key: Union[Iterable, str, bytes, None] = None,
         salt: Union[str, bytes] = b'aiohttp-client-cache',
         serializer=None,
         **kwargs,
