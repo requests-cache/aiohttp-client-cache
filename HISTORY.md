@@ -2,6 +2,8 @@
 
 ## 0.8.0 (Unreleased)
 * Fix `AttributeError` when using a response cached with an older version of `attrs`
+* Add `fast_save` option for SQLite backend (`PRAGMA` setting to improve write performance, with
+  some tradeoffs)
 
 ## 0.7.3 (2022-07-31)
 * Remove upper version constraint for `attrs` dependency
