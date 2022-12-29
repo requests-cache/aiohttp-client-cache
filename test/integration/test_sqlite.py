@@ -1,3 +1,4 @@
+import asyncio
 import os
 from tempfile import gettempdir
 from unittest.mock import patch
@@ -42,6 +43,26 @@ class TestSQLiteCache(BaseStorageTest):
         values = {v async for v in cache.values()}
         assert keys == {f'key_{i}' for i in range(n_items)}
         assert values == {f'value_{i}' for i in range(n_items)}
+
+    @skip_37
+    @patch('aiohttp_client_cache.backends.sqlite.aiosqlite')
+    async def test_concurrent_bulk_commit(self, mock_sqlite):
+        """Multiple concurrent bulk commits should not interfere with each other"""
+        from unittest.mock import AsyncMock
+
+        mock_connection = AsyncMock()
+        mock_sqlite.connect = AsyncMock(return_value=mock_connection)
+        cache = await self.init_cache()
+
+        async def bulk_commit_items(n_items):
+            async with cache.bulk_commit():
+                for i in range(n_items):
+                    await cache.write(f'key_{n_items}_{i}', f'value_{i}')
+
+        assert mock_connection.commit.call_count == 1
+        tasks = [asyncio.create_task(bulk_commit_items(n)) for n in [10, 100, 1000, 10000]]
+        await asyncio.gather(*tasks)
+        assert mock_connection.commit.call_count == 5
 
     async def test_fast_save(self):
         cache_1 = await self.init_cache(index=1, fast_save=True)

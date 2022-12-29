@@ -1,6 +1,7 @@
 import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
@@ -11,6 +12,8 @@ import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.signatures import extend_init_signature, sqlite_template
+
+bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
 
 
 @extend_init_signature(CacheBackend, sqlite_template)
@@ -77,7 +80,6 @@ class SQLiteCache(BaseCache):
         self.filename = _get_cache_filename(filename, use_temp)
         self.table_name = table_name
 
-        self._bulk_commit = False
         self._connection: Optional[aiosqlite.Connection] = None
         self._lock = asyncio.Lock()
 
@@ -88,7 +90,7 @@ class SQLiteCache(BaseCache):
                 self._connection = await aiosqlite.connect(self.filename, **self.connection_kwargs)
                 await self._init_db()
         yield self._connection
-        if commit and not self._bulk_commit:
+        if commit and not bulk_commit_var.get():
             await self._connection.commit()
 
     async def _init_db(self):
@@ -112,14 +114,12 @@ class SQLiteCache(BaseCache):
             ...         await cache.write(f'key_{i}', str(i))
 
         """
-        async with self._lock:
-            self._bulk_commit = True
+        bulk_commit_var.set(True)
         try:
             yield
             await self._connection.commit()
         finally:
-            async with self._lock:
-                self._bulk_commit = False
+            bulk_commit_var.set(False)
 
     async def clear(self):
         async with self.get_connection(commit=True) as db, self._lock:
