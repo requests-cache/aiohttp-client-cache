@@ -21,17 +21,26 @@ class SQLiteBackend(CacheBackend):
     Reading is fast, saving is a bit slower. It can store a large amount of data with low memory usage.
     The path to the database file will be ``<cache_name>`` (or ``<cache_name>.sqlite`` if no file
     extension is specified)
+
+    Args:
+        cache_name: Database filename
+    use_temp: Store database in a temp directory (e.g., ``/tmp/http_cache.sqlite``).
+        Note: if ``cache_name`` is an absolute path, this option will be ignored.
+    fast_save: Increas cache write performance, but with the possibility of data loss. See
+        `pragma: synchronous <http://www.sqlite.org/pragma.html#pragma_synchronous>`_ for details.
     """
 
-    def __init__(self, cache_name: str = 'aiohttp-cache', use_temp: bool = False, **kwargs):
-        """
-        Args:
-            cache_name: Database filename
-        use_temp: Store database in a temp directory (e.g., ``/tmp/http_cache.sqlite``).
-            Note: if ``cache_name`` is an absolute path, this option will be ignored.
-        """
+    def __init__(
+        self,
+        cache_name: str = 'aiohttp-cache',
+        use_temp: bool = False,
+        fast_save: bool = False,
+        **kwargs,
+    ):
         super().__init__(cache_name=cache_name, **kwargs)
-        self.responses = SQLitePickleCache(cache_name, 'responses', use_temp=use_temp, **kwargs)
+        self.responses = SQLitePickleCache(
+            cache_name, 'responses', use_temp=use_temp, fast_save=fast_save, **kwargs
+        )
         self.redirects = SQLiteCache(cache_name, 'redirects', use_temp=use_temp, **kwargs)
 
 
@@ -53,10 +62,16 @@ class SQLiteCache(BaseCache):
     """
 
     def __init__(
-        self, filename: str, table_name: str = 'aiohttp-cache', use_temp: bool = False, **kwargs
+        self,
+        filename: str,
+        table_name: str = 'aiohttp-cache',
+        use_temp: bool = False,
+        fast_save: bool = False,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.connection_kwargs = get_valid_kwargs(sqlite_template, kwargs)
+        self.fast_save = fast_save
         self.filename = _get_cache_filename(filename, use_temp)
         self.table_name = table_name
 
@@ -83,7 +98,7 @@ class SQLiteCache(BaseCache):
     async def _init_db(self, db: aiosqlite.Connection):
         """Create table if this is the first connection opened, and set fast save if possible"""
         with self._lock:
-            if not self._bulk_commit:
+            if self.fast_save and not self._bulk_commit:
                 await db.execute('PRAGMA synchronous = 0;')
             if not self._initialized:
                 await db.execute(
