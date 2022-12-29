@@ -140,7 +140,7 @@ def copy_docstrings(target_function: Callable, *template_functions: Callable) ->
     return target_function
 
 
-def _split_docstring(docstring: str = None) -> Tuple[str, str, str]:
+def _split_docstring(docstring: Optional[str] = None) -> Tuple[str, str, str]:
     """Split a docstring into the following sections, if present:
 
     * Function summary
@@ -176,14 +176,14 @@ def _combine_args_sections(*args_sections: str) -> str:
 
 
 def dynamodb_template(
-    region_name: str = None,
-    api_version: str = None,
+    region_name: Optional[str] = None,
+    api_version: Optional[str] = None,
     use_ssl: bool = True,
-    verify: Union[bool, str] = None,
-    endpoint_url: str = None,
-    aws_access_key_id: str = None,
-    aws_secret_access_key: str = None,
-    aws_session_token: str = None,
+    verify: Union[bool, str] = True,
+    endpoint_url: Optional[str] = None,
+    aws_access_key_id: Optional[str] = None,
+    aws_secret_access_key: Optional[str] = None,
+    aws_session_token: Optional[str] = None,
     config: 'Config' = None,
 ):
     """Template function for :py:meth:`boto3.session.Session.resource`
@@ -264,9 +264,9 @@ def redis_template(
 def sqlite_template(
     timeout: float = 5.0,
     detect_types: int = 0,
-    isolation_level: str = None,
+    isolation_level: Optional[str] = None,
     check_same_thread: bool = True,
-    factory: Type = None,
+    factory: Optional[Type] = None,
     cached_statements: int = 100,
     uri: bool = False,
 ):

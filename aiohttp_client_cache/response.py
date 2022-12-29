@@ -72,7 +72,9 @@ class CachedResponse(HeadersMixin):
     last_used: datetime = attr.ib(factory=datetime.utcnow)
 
     @classmethod
-    async def from_client_response(cls, client_response: ClientResponse, expires: datetime = None):
+    async def from_client_response(
+        cls, client_response: ClientResponse, expires: Optional[datetime] = None
+    ):
         """Convert a ClientResponse into a CachedReponse"""
         if isinstance(client_response, cls):
             return client_response
@@ -253,7 +255,7 @@ class CachedStreamReader(StreamReader):
     chunked reads, etc.
     """
 
-    def __init__(self, body: bytes = None):
+    def __init__(self, body: Optional[bytes] = None):
         body = body or b''
         protocol = Mock(_reading_paused=False)
         super().__init__(protocol, limit=len(body), loop=asyncio.get_event_loop())

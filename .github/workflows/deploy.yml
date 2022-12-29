@@ -19,15 +19,14 @@ env:
 jobs:
   # Deploy stable builds on tags only, and pre-release builds from manual trigger ("workflow_dispatch")
   release:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ env.LATEST_PY_VERSION }}
-      - uses: snok/install-poetry@v1.2
+      - uses: snok/install-poetry@v1.3
         with:
-          version: 1.2.0a2
           virtualenvs-in-project: true
 
       - name: Set pre-release version

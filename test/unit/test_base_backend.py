@@ -100,6 +100,20 @@ async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
 
 
 @skip_py37
+@patch.object(DictCache, 'read', return_value=object())
+async def test_get_response__quiet_serde_error(mock_read):
+    """Test for a quiet deserialization error in which no errors are raised but attributes are
+    missing
+    """
+    cache = CacheBackend()
+    mock_response = get_mock_response()
+    await cache.responses.write('request-key', mock_response)
+
+    response = await cache.get_response('request-key')
+    assert response is None
+
+
+@skip_py37
 async def test_save_response():
     cache = CacheBackend()
     mock_response = get_mock_response()
