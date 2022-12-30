@@ -1,6 +1,6 @@
 # History
 
-## 0.8.0 (Unreleased)
+## 0.8.0 (2022-12-29)
 * Lazily initialize and reuse SQLite connection objects
 * Fix `AttributeError` when using a response cached with an older version of `attrs`
 * Fix concurrent usage of `SQLiteCache.bulk_commit()`
