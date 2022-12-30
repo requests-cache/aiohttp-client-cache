@@ -1,18 +1,15 @@
+import asyncio
 import os
-from sys import version_info
 from tempfile import gettempdir
 from unittest.mock import patch
 
 import pytest
 
 from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
-from test.conftest import CACHE_NAME
+from test.conftest import CACHE_NAME, skip_37
 from test.integration import BaseBackendTest, BaseStorageTest
 
 pytestmark = pytest.mark.asyncio
-skip_37 = pytest.mark.skipif(
-    version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+'
-)
 
 
 class TestSQLiteCache(BaseStorageTest):
@@ -47,6 +44,26 @@ class TestSQLiteCache(BaseStorageTest):
         assert keys == {f'key_{i}' for i in range(n_items)}
         assert values == {f'value_{i}' for i in range(n_items)}
 
+    @skip_37
+    @patch('aiohttp_client_cache.backends.sqlite.aiosqlite')
+    async def test_concurrent_bulk_commit(self, mock_sqlite):
+        """Multiple concurrent bulk commits should not interfere with each other"""
+        from unittest.mock import AsyncMock
+
+        mock_connection = AsyncMock()
+        mock_sqlite.connect = AsyncMock(return_value=mock_connection)
+        cache = await self.init_cache()
+
+        async def bulk_commit_items(n_items):
+            async with cache.bulk_commit():
+                for i in range(n_items):
+                    await cache.write(f'key_{n_items}_{i}', f'value_{i}')
+
+        assert mock_connection.commit.call_count == 1
+        tasks = [asyncio.create_task(bulk_commit_items(n)) for n in [10, 100, 1000, 10000]]
+        await asyncio.gather(*tasks)
+        assert mock_connection.commit.call_count == 5
+
     async def test_fast_save(self):
         cache_1 = await self.init_cache(index=1, fast_save=True)
         cache_2 = await self.init_cache(index=2, fast_save=True)
@@ -72,6 +89,14 @@ class TestSQLiteCache(BaseStorageTest):
         mock_sqlite.connect = AsyncMock()
         cache = await self.init_cache(timeout=0.5, invalid_kwarg='???')
         mock_sqlite.connect.assert_called_with(cache.filename, timeout=0.5)
+
+    async def test_close(self):
+        cache = await self.init_cache()
+        async with cache.get_connection():
+            pass
+        await cache.close()
+        await cache.close()  # Closing again should be a no-op
+        assert cache._connection is None
 
     # TODO: Tests for unimplemented features
     # async def test_chunked_bulk_delete(self):

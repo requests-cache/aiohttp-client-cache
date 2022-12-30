@@ -4,6 +4,7 @@
 * All other commands: the current environment will be used instead of creating new ones
 """
 from os.path import join
+from pathlib import Path
 from shutil import rmtree
 
 import nox
@@ -12,20 +13,22 @@ from nox_poetry import session
 nox.options.reuse_existing_virtualenvs = True
 nox.options.sessions = ['lint', 'cov']
 
+DOCS_DIR = Path('docs')
 LIVE_DOCS_PORT = 8181
 LIVE_DOCS_IGNORE = ['*.pyc', '*.tmp', join('**', 'modules', '*')]
 LIVE_DOCS_WATCH = ['aiohttp_client_cache', 'examples']
-CLEAN_DIRS = ['dist', 'build', join('docs', '_build'), join('docs', 'modules')]
+CLEAN_DIRS = ['dist', 'build', DOCS_DIR / '_build', DOCS_DIR / 'modules']
 
-UNIT_TESTS = join('test', 'unit')
-INTEGRATION_TESTS = join('test', 'integration')
+TEST_DIR = Path('test')
+UNIT_TESTS = TEST_DIR / 'unit'
+INTEGRATION_TESTS = TEST_DIR / 'integration'
 COVERAGE_ARGS = (
     '--cov --cov-report=term --cov-report=html'  # Generate HTML + stdout coverage report
 )
 XDIST_ARGS = '--numprocesses=auto --dist=loadfile'  # Run tests in parallel, grouped by test module
 
 
-@session(python=['3.7', '3.8', '3.9', '3.10'])
+@session(python=['3.7', '3.8', '3.9', '3.10', '3.11'])
 def test(session):
     """Run tests for a specific python version"""
     test_paths = session.posargs or [UNIT_TESTS]
