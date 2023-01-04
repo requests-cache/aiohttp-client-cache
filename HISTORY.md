@@ -1,5 +1,8 @@
 # History
 
+## 0.8.1 (2023-01-04)
+* For SQLite backend, close database connection on `ClientSession` context exit
+
 ## 0.8.0 (2022-12-29)
 * Lazily initialize and reuse SQLite connection objects
 * Fix `AttributeError` when using a response cached with an older version of `attrs`

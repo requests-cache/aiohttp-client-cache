@@ -244,6 +244,8 @@ class CacheBackend:
 
     async def close(self):
         """Close any active connections, if applicable"""
+        await self.responses.close()
+        await self.redirects.close()
 
 
 # TODO: Support yarl.URL like aiohttp does?
@@ -302,6 +304,9 @@ class BaseCache(metaclass=ABCMeta):
     @abstractmethod
     async def clear(self):
         """Delete all items from the cache"""
+
+    async def close(self):
+        """Close any active connections, if applicable"""
 
     @abstractmethod
     async def delete(self, key: str):

@@ -45,9 +45,6 @@ class SQLiteBackend(CacheBackend):
         )
         self.redirects = SQLiteCache(cache_name, 'redirects', use_temp=use_temp, **kwargs)
 
-    async def close(self):
-        await self.responses.close()
-
 
 class SQLiteCache(BaseCache):
     """An async interface for caching objects in a SQLite database.

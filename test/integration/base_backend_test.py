@@ -41,7 +41,6 @@ class BaseBackendTest:
 
         async with CachedSession(cache=cache, **self.init_kwargs, **kwargs) as session:
             yield session
-            await session.cache.close()
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
     @pytest.mark.parametrize('field', ['params', 'data', 'json'])
