@@ -28,11 +28,11 @@ class TestMongoDBCache(BaseStorageTest):
     async def test_values_many(self):
         # If some entries are missing the "data" field for some reason, they
         # should not be returned with the results.
-        cache = await self.init_cache()
-        await cache.collection.insert_many({"data": f'value_{i}'} for i in range(10))
-        await cache.collection.insert_many({"not_data": f'value_{i}'} for i in range(10))
-        actual_results = [v async for v in cache.values()]
-        assert actual_results == [f'value_{i}' for i in range(10)]
+        async with self.init_cache() as cache:
+            await cache.collection.insert_many({"data": f'value_{i}'} for i in range(10))
+            await cache.collection.insert_many({"not_data": f'value_{i}'} for i in range(10))
+            actual_results = [v async for v in cache.values()]
+            assert actual_results == [f'value_{i}' for i in range(10)]
 
 
 class TestMongoDBPickleCache(TestMongoDBCache):
