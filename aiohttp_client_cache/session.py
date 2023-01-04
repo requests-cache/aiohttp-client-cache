@@ -62,6 +62,11 @@ class CacheMixin(MIXIN_BASE):
                 await self.cache.save_response(new_response, actions.key, actions.expires)
             return set_response_defaults(new_response)
 
+    async def close(self):
+        """Close both aiohttp connector and any backend connection(s) on contextmanager exit"""
+        await super().close()
+        await self.cache.close()
+
     @asynccontextmanager
     async def disabled(self):
         """Temporarily disable the cache
