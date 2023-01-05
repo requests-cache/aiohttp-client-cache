@@ -1,6 +1,6 @@
 # History
 
-## 0.8.1 (2023-01-04)
+## 0.8.1 (2023-01-05)
 * For SQLite backend, close database connection on `ClientSession` context exit
 
 ## 0.8.0 (2022-12-29)
