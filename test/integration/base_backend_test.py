@@ -104,7 +104,6 @@ class BaseBackendTest:
 
     async def test_delete_expired_responses(self):
         async with self.init_session(expire_after=1) as session:
-
             # Populate the cache with several responses that should expire immediately
             for response_format in HTTPBIN_FORMATS:
                 await session.get(httpbin(response_format))
@@ -242,7 +241,6 @@ class BaseBackendTest:
             assert await session.cache.responses.size() == 0
 
     async def test_cookies_with_redirect(self):
-
         async with self.init_session(cache_control=True) as session:
             await session.get(httpbin('cookies/set?test_cookie=value'))
             session.cookie_jar.clear()
