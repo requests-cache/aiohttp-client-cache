@@ -1,4 +1,4 @@
-from typing import AsyncIterable
+from typing import Any, AsyncIterable
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -13,7 +13,10 @@ class MongoDBBackend(CacheBackend):
     """
 
     def __init__(
-        self, cache_name: str = 'aiohttp-cache', connection: AsyncIOMotorClient = None, **kwargs
+        self,
+        cache_name: str = 'aiohttp-cache',
+        connection: AsyncIOMotorClient = None,
+        **kwargs: Any
     ):
         """
         Args:
@@ -36,7 +39,11 @@ class MongoDBCache(BaseCache):
     """
 
     def __init__(
-        self, db_name: str, collection_name: str, connection: AsyncIOMotorClient = None, **kwargs
+        self,
+        db_name: str,
+        collection_name: str,
+        connection: AsyncIOMotorClient = None,
+        **kwargs: Any
     ):
         super().__init__(**kwargs)
         connection_kwargs = get_valid_kwargs(AsyncIOMotorClient.__init__, kwargs)
