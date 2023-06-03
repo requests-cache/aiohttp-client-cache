@@ -6,7 +6,7 @@ from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
-from typing import AsyncIterable, AsyncIterator, Optional, Union
+from typing import Any, AsyncIterable, AsyncIterator, Optional, Union
 
 import aiosqlite
 
@@ -37,7 +37,7 @@ class SQLiteBackend(CacheBackend):
         cache_name: str = 'aiohttp-cache',
         use_temp: bool = False,
         fast_save: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = SQLitePickleCache(
@@ -69,7 +69,7 @@ class SQLiteCache(BaseCache):
         table_name: str = 'aiohttp-cache',
         use_temp: bool = False,
         fast_save: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
         self.connection_kwargs = get_valid_kwargs(sqlite_template, kwargs)

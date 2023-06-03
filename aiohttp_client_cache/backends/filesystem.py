@@ -5,7 +5,7 @@ from pathlib import Path
 from pickle import PickleError
 from shutil import rmtree
 from tempfile import gettempdir
-from typing import AsyncIterable, Union
+from typing import Any, AsyncIterable, Union
 
 import aiofiles
 import aiofiles.os
@@ -26,7 +26,7 @@ class FileBackend(CacheBackend):
     """
 
     def __init__(
-        self, cache_name: Union[Path, str] = 'http_cache', use_temp: bool = False, **kwargs
+        self, cache_name: Union[Path, str] = 'http_cache', use_temp: bool = False, **kwargs: Any
     ):
         super().__init__(**kwargs)
         self.responses = FileCache(cache_name, use_temp=use_temp, **kwargs)
@@ -37,7 +37,7 @@ class FileBackend(CacheBackend):
 class FileCache(BaseCache):
     """A dictionary-like interface to files on the local filesystem"""
 
-    def __init__(self, cache_name, use_temp: bool = False, **kwargs):
+    def __init__(self, cache_name, use_temp: bool = False, **kwargs: Any):
         super().__init__(**kwargs)
         self.cache_dir = _get_cache_dir(cache_name, use_temp)
 
@@ -46,7 +46,7 @@ class FileCache(BaseCache):
         """Attempt an I/O operation, and either ignore errors or re-raise them as KeyErrors"""
         try:
             yield
-        except (IOError, OSError, PickleError):
+        except (OSError, PickleError):
             if not ignore_errors:
                 raise
 

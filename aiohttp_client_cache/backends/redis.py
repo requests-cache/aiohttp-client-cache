@@ -1,4 +1,4 @@
-from typing import AsyncIterable, Optional
+from typing import Any, AsyncIterable, Optional
 
 from redis.asyncio import Connection, Redis, from_url
 
@@ -14,7 +14,9 @@ class RedisBackend(CacheBackend):
     (requires `redis-py <https://redis-py.readthedocs.io>`_)
     """
 
-    def __init__(self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs):
+    def __init__(
+        self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs: Any
+    ):
         """
         Args:
             cache_name: Used as a namespace (prefix for hash key)
@@ -49,7 +51,7 @@ class RedisCache(BaseCache):
         collection_name: str,
         address: str = DEFAULT_ADDRESS,
         connection: Optional[Redis] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         # Pop off BaseCache kwargs and use the rest as Redis connection kwargs
         super().__init__(**kwargs)

@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from datetime import datetime
 from logging import getLogger
-from typing import AsyncIterable, Callable, Iterable, Optional, Tuple, Union
+from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Optional, Tuple, Union
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -15,6 +15,11 @@ from aiohttp_client_cache.response import AnyResponse, CachedResponse
 from aiohttp_client_cache.signatures import extend_init_signature
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
+_FilterFn = Union[
+    Callable[[AnyResponse], bool],
+    Callable[[AnyResponse], Awaitable[bool]],
+]
+
 logger = getLogger(__name__)
 
 
@@ -35,13 +40,13 @@ class CacheBackend:
         cache_name: str = 'aiohttp-cache',
         expire_after: ExpirationTime = -1,
         urls_expire_after: Optional[ExpirationPatterns] = None,
-        allowed_codes: tuple = (200,),
-        allowed_methods: tuple = ('GET', 'HEAD'),
+        allowed_codes: Tuple[int, ...] = (200,),
+        allowed_methods: Tuple[str, ...] = ('GET', 'HEAD'),
         include_headers: bool = False,
-        ignored_params: Optional[Iterable] = None,
+        ignored_params: Optional[Iterable[str]] = None,
         cache_control: bool = False,
-        filter_fn: Callable = lambda r: True,
-        **kwargs,
+        filter_fn: _FilterFn = lambda r: True,
+        **kwargs: Any,
     ):
         """
         Args:
@@ -217,7 +222,7 @@ class CacheBackend:
         logger.debug(f'Deleting {len(keys_to_delete)} expired cache entries')
         await self.bulk_delete(keys_to_delete)
 
-    def create_key(self, method: str, url: StrOrURL, **kwargs):
+    def create_key(self, method: str, url: StrOrURL, **kwargs: Any):
         """Create a unique cache key based on request details"""
         return create_key(
             method,
@@ -227,7 +232,7 @@ class CacheBackend:
             **kwargs,
         )
 
-    async def delete_url(self, url: StrOrURL, method: str = 'GET', **kwargs):
+    async def delete_url(self, url: StrOrURL, method: str = 'GET', **kwargs: Any):
         """Delete cached response associated with `url`, along with its history (if applicable)"""
         key = self.create_key(url=url, method=method, **kwargs)
         await self.delete(key)
