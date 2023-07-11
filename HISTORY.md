@@ -1,5 +1,9 @@
 # History
 
+## 0.8.2 (2023-07-TBD)
+* Add some missing type annotations to backend classes
+* Fix passing connection parameters to MongoDB backend
+
 ## 0.8.1 (2023-01-05)
 * For SQLite backend, close database connection on `ClientSession` context exit
 
