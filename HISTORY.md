@@ -1,6 +1,6 @@
 # History
 
-## 0.8.2 (2023-07-TBD)
+## 0.8.2 (2023-07-14)
 * Add some missing type annotations to backend classes
 * Fix passing connection parameters to MongoDB backend
 * Revert closing backend connections on session context exit

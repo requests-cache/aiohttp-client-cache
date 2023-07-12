@@ -21,16 +21,6 @@ client requests, based on [requests-cache](https://github.com/reclosedev/request
 * **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html):
   SQLite, DynamoDB, MongoDB, and Redis.
 
-# Development Status
-**This library is a work in progress!**
-
-Breaking changes should be expected until a `1.0` release, so version pinning is recommended.
-
-My goal for this library is to eventually have a similar (but not identical) feature set as
-`requests-cache`, and also contribute new features from this library back to `requests-cache`.
-If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
-[create an issue](https://github.com/requests-cache/aiohttp-client-cache/issues/new/choose) for it!
-
 # Quickstart
 First, install with pip (python 3.7+ required):
 ```bash
@@ -87,3 +77,7 @@ To learn more, see:
 * [Cache Backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html)
 * [API Reference](https://aiohttp-client-cache.readthedocs.io/en/latest/reference.html)
 * [Examples](https://aiohttp-client-cache.readthedocs.io/en/latest/examples.html)
+
+# Feedback
+If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
+[create an issue](https://github.com/requests-cache/aiohttp-client-cache/issues/new/choose) for it!
