@@ -3,6 +3,7 @@
 ## 0.8.2 (2023-07-TBD)
 * Add some missing type annotations to backend classes
 * Fix passing connection parameters to MongoDB backend
+* Revert closing backend connections on session context exit
 * Fix `CachedResponse.close()` method to match `ClientResponse.close()`
 
 ## 0.8.1 (2023-01-05)

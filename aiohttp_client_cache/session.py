@@ -65,7 +65,6 @@ class CacheMixin(MIXIN_BASE):
     async def close(self):
         """Close both aiohttp connector and any backend connection(s) on contextmanager exit"""
         await super().close()
-        await self.cache.close()
 
     @asynccontextmanager
     async def disabled(self):
