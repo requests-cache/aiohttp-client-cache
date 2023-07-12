@@ -233,7 +233,7 @@ class CachedResponse(HeadersMixin):
     async def __aenter__(self) -> 'CachedResponse':
         return self
 
-    async def close(self):
+    def close(self):
         pass
 
     async def wait_for_close(self):

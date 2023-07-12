@@ -195,7 +195,7 @@ async def test_no_ops(aiohttp_client):
 
     await response.start()
     response.release()
-    await response.close()
+    response.close()
     await response.wait_for_close()
     await response.terminate()
     assert response.connection is None
