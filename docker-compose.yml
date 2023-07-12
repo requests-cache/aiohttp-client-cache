@@ -15,6 +15,9 @@ services:
     ports:
       - 8000:8000
     command: '-jar DynamoDBLocal.jar -inMemory'
+    environment:
+      AWS_ACCESS_KEY_ID: 'placeholder'
+      AWS_SECRET_ACCESS_KEY: 'placeholder'
     working_dir: /home/dynamodblocal
 
   mongo:

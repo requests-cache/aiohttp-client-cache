@@ -1,6 +1,7 @@
 from typing import Any, AsyncIterable
 
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import MongoClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 from aiohttp_client_cache.signatures import extend_init_signature, mongo_template
@@ -46,7 +47,12 @@ class MongoDBCache(BaseCache):
         **kwargs: Any
     ):
         super().__init__(**kwargs)
-        connection_kwargs = get_valid_kwargs(AsyncIOMotorClient.__init__, kwargs)
+
+        # Motor accepts the same arguments as pymongo, plus one additional argument
+        connection_kwargs = get_valid_kwargs(MongoClient.__init__, kwargs)
+        if kwargs.get('io_loop'):
+            connection_kwargs['io_loop'] = kwargs.pop('io_loop')
+
         self.connection = connection or AsyncIOMotorClient(**connection_kwargs)
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]

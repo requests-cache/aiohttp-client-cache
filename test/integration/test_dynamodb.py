@@ -1,31 +1,25 @@
-import asyncio
 from typing import Any, Dict
 
-import aioboto3
 import pytest
 
 from aiohttp_client_cache.backends.dynamodb import DynamoDBBackend, DynamoDbCache
 from test.integration import BaseBackendTest, BaseStorageTest
 
-resource_kwargs = {
-    'region_name': 'region',
-    'aws_access_key_id': 'access_key_id',
-    'aws_secret_access_key': 'secret_access_key',
+AWS_OPTIONS = {
     'endpoint_url': 'http://localhost:8000',
+    'region_name': 'us-east-1',
+    'aws_access_key_id': 'placeholder',
+    'aws_secret_access_key': 'placeholder',
 }
 
 
 def is_dynamodb_running():
     """Test if a DynamoDB service is running locally"""
-
-    async def check_dynamodb():
-        session = aioboto3.Session()
-        async with session.resource('dynamodb', **resource_kwargs) as resource:
-            client = resource.meta.client
-            await client.describe_limits()
+    import boto3
 
     try:
-        asyncio.run(check_dynamodb())
+        client = boto3.client('dynamodb', **AWS_OPTIONS)
+        client.describe_limits()
         return True
     except OSError:
         return False
@@ -46,10 +40,10 @@ class TestDynamoDbCache(BaseStorageTest):
         'create_if_not_exists': True,
         'key_attr_name': 'k',
         'val_attr_name': 'v',
-        **resource_kwargs,
+        **AWS_OPTIONS,
     }
 
 
 class TestDynamoDBBackend(BaseBackendTest):
     backend_class = DynamoDBBackend
-    init_kwargs: Dict[str, Any] = {'create_if_not_exists': True, **resource_kwargs}
+    init_kwargs: Dict[str, Any] = {'create_if_not_exists': True, **AWS_OPTIONS}
