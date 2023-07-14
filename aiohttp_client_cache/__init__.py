@@ -1,4 +1,4 @@
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 # flake8: noqa: F401, F403
 try:
