@@ -44,6 +44,7 @@ class CacheBackend:
         allowed_methods: Tuple[str, ...] = ('GET', 'HEAD'),
         include_headers: bool = False,
         ignored_params: Optional[Iterable[str]] = None,
+        autoclose: bool = False,
         cache_control: bool = False,
         filter_fn: _FilterFn = lambda r: True,
         **kwargs: Any,
@@ -58,6 +59,7 @@ class CacheBackend:
             allowed_methods: Only cache requests with these HTTP methods
             include_headers: Cache requests with different headers separately
             ignored_params: Request parameters to be excluded from the cache key
+            autoclose: Close any active backend connections when the session is closed
             cache_control: Use Cache-Control response headers
             filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
                 returns a boolean indicating whether or not that response should be cached. Will be
@@ -70,6 +72,7 @@ class CacheBackend:
         self.allowed_methods = allowed_methods
         self.cache_control = cache_control
         self.filter_fn = filter_fn
+        self.autoclose = autoclose
         self.disabled = False
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
@@ -251,6 +254,11 @@ class CacheBackend:
         """Close any active connections, if applicable"""
         await self.responses.close()
         await self.redirects.close()
+
+    async def close_if_enabled(self):
+        """Close any active connections, if ``autoclose`` is enabled"""
+        if self.autoclose:
+            await self.close()
 
 
 # TODO: Support yarl.URL like aiohttp does?

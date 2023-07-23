@@ -54,7 +54,9 @@ def extend_init_signature(super_class: Type, *extra_functions: Callable) -> Call
     def wrapper(target_class: Type):
         try:
             # Modify init signature + docstring
-            revision = extend_signature(super_class.__init__, *extra_functions)
+            revision = extend_signature(
+                super_class.__init__, target_class.__init__, *extra_functions
+            )
             target_class.__init__ = revision(target_class.__init__)
             # Include init docs in class docs
             target_class.__doc__ = target_class.__doc__ or ''

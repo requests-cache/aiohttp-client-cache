@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
+from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
-from test.conftest import CACHE_NAME, skip_37
+from test.conftest import CACHE_NAME, httpbin, skip_37
 from test.integration import BaseBackendTest, BaseStorageTest
 
 pytestmark = pytest.mark.asyncio
@@ -145,3 +146,12 @@ class TestSQLitePickleCache(BaseStorageTest):
 class TestSQLiteBackend(BaseBackendTest):
     backend_class = SQLiteBackend
     init_kwargs = {'use_temp': True}
+
+    @skip_37
+    @patch.object(CacheBackend, 'close')
+    async def test_autoclose__default(self, mock_close):
+        """By default, the backend should be closed when the session is closed"""
+
+        async with self.init_session() as session:
+            await session.get(httpbin('get'))
+        mock_close.assert_called_once()

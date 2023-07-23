@@ -26,11 +26,6 @@ class RedisBackend(CacheBackend):
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
         self.redirects = RedisCache(cache_name, 'redirects', address=address, **kwargs)
 
-    async def close(self):
-        """Close any active connections"""
-        await self.responses.close()
-        await self.redirects.close()
-
 
 class RedisCache(BaseCache):
     """An async interface for caching objects in Redis.

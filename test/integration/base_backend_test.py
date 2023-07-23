@@ -4,6 +4,7 @@ import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Type
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -248,6 +249,20 @@ class BaseBackendTest:
 
         cookies = session.cookie_jar.filter_cookies(httpbin())
         assert cookies['test_cookie'].value == 'value'
+
+    @skip_37
+    @patch.object(CacheBackend, 'close')
+    async def test_autoclose(self, mock_close):
+        async with self.init_session(autoclose=True) as session:
+            await session.get(httpbin('get'))
+        mock_close.assert_called_once()
+
+    @skip_37
+    @patch.object(CacheBackend, 'close')
+    async def test_autoclose__disabled(self, mock_close):
+        async with self.init_session(autoclose=False) as session:
+            await session.get(httpbin('get'))
+        mock_close.assert_not_called()
 
     async def test_serializer__pickle(self):
         """Without a secret key, plain pickle should be used"""

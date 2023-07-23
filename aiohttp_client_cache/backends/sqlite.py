@@ -11,12 +11,11 @@ from typing import Any, AsyncIterable, AsyncIterator, Optional, Union
 import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.signatures import extend_init_signature, sqlite_template
+from aiohttp_client_cache.signatures import sqlite_template
 
 bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
 
 
-@extend_init_signature(CacheBackend, sqlite_template)
 class SQLiteBackend(CacheBackend):
     """Async cache backend for `SQLite <https://www.sqlite.org>`_
     (requires `aiosqlite <https://aiosqlite.omnilib.dev>`_)
@@ -37,9 +36,10 @@ class SQLiteBackend(CacheBackend):
         cache_name: str = 'aiohttp-cache',
         use_temp: bool = False,
         fast_save: bool = False,
+        autoclose: bool = True,
         **kwargs: Any,
     ):
-        super().__init__(cache_name=cache_name, **kwargs)
+        super().__init__(cache_name=cache_name, autoclose=autoclose, **kwargs)
         self.responses = SQLitePickleCache(
             cache_name, 'responses', use_temp=use_temp, fast_save=fast_save, **kwargs
         )
