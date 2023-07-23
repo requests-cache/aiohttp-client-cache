@@ -4,13 +4,19 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.signatures import extend_init_signature, mongo_template
 
 
-@extend_init_signature(CacheBackend, mongo_template)
 class MongoDBBackend(CacheBackend):
     """Async cache backend for `MongoDB <https://www.mongodb.com>`_
-    (requires `motor <https://motor.readthedocs.io>`_)
+
+    Notes:
+        * Requires `motor <https://motor.readthedocs.io>`_
+        * Accepts keyword arguments for :py:class:`pymongo.MongoClient`
+
+    Args:
+        cache_name: Database name
+        connection: Optional client object to use instead of creating a new one
+        kwargs: Additional keyword arguments for :py:class:`.CacheBackend` or backend connection
     """
 
     def __init__(
@@ -19,11 +25,6 @@ class MongoDBBackend(CacheBackend):
         connection: AsyncIOMotorClient = None,
         **kwargs: Any
     ):
-        """
-        Args:
-            cache_name: Database name
-            connection: Optional client object to use instead of creating a new one
-        """
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection, **kwargs)
         self.redirects = MongoDBCache(cache_name, 'redirects', self.responses.connection, **kwargs)

@@ -12,7 +12,6 @@ from aiohttp.typedefs import StrOrURL
 from aiohttp_client_cache.cache_control import CacheActions, ExpirationPatterns, ExpirationTime
 from aiohttp_client_cache.cache_keys import create_key
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
-from aiohttp_client_cache.signatures import extend_init_signature
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
 _FilterFn = Union[
@@ -266,6 +265,11 @@ class CacheBackend:
 class BaseCache(metaclass=ABCMeta):
     """A wrapper for lower-level cache storage operations. This is separate from
     :py:class:`.CacheBackend` to allow a single backend to contain multiple cache objects.
+
+    Args:
+        secret_key: Optional secret key used to sign cache items for added security
+        salt: Optional salt used to sign cache items
+        serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
     """
 
     def __init__(
@@ -275,12 +279,6 @@ class BaseCache(metaclass=ABCMeta):
         serializer=None,
         **kwargs,
     ):
-        """
-        Args:
-            secret_key: Optional secret key used to sign cache items for added security
-            salt: Optional salt used to sign cache items
-            serializer: Custom serializer that provides ``loads`` and ``dumps`` methods
-        """
         super().__init__()
         self._serializer = serializer or self._get_serializer(secret_key, salt)
 
@@ -357,9 +355,6 @@ class BaseCache(metaclass=ABCMeta):
             return item
         except KeyError:
             return default
-
-
-CacheBackend = extend_init_signature(BaseCache)(CacheBackend)  # type: ignore
 
 
 class DictCache(BaseCache, UserDict):

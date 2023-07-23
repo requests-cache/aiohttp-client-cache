@@ -4,6 +4,7 @@
 ## 0.8.3 (2023-07-TBD)
 * Add `autoclose` option to `CacheBackend` to close backend connections when the session context exits.
   * Enabled by default for SQLite backend, and disabled by default for other backends.
+* `python-forge` is no longer required and is now an optional dependency
 
 ## 0.8.2 (2023-07-14)
 * Add some missing type annotations to backend classes
