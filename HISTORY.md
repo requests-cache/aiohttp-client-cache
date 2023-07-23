@@ -99,7 +99,7 @@
 * Add support for HTTP timestamps (RFC 5322) in ``expire_after`` parameters
 * Add a `use_temp` option to `SQLiteBackend` to use a tempfile
 * Packaging is now handled with Poetry. For users, installation still works the same. For developers,
-  see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/latest/contributing.html) for details
+  see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/contributing.html) for details
 * Published package on [conda-forge](https://anaconda.org/conda-forge/aiohttp-client-cache)
 
 ## 0.3.0 (2021-04-09)

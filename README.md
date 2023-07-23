@@ -1,7 +1,7 @@
 # aiohttp-client-cache
 
 [![Build status](https://github.com/requests-cache/aiohttp-client-cache/workflows/Build/badge.svg)](https://github.com/requests-cache/aiohttp-client-cache/actions)
-[![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/stable?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/latest/)
+[![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/stable?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/stable/)
 [![Codecov](https://codecov.io/gh/requests-cache/aiohttp-client-cache/branch/main/graph/badge.svg?token=I6PNLYTILM)](https://codecov.io/gh/requests-cache/aiohttp-client-cache)
 [![PyPI](https://img.shields.io/pypi/v/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 [![Conda](https://img.shields.io/conda/vn/conda-forge/aiohttp-client-cache?color=blue)](https://anaconda.org/conda-forge/aiohttp-client-cache)
@@ -12,13 +12,13 @@
 client requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 
 # Features
-* **Ease of use:** Use as a [drop-in replacement](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html)
+* **Ease of use:** Use as a [drop-in replacement](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html)
   for `aiohttp.ClientSession`
 * **Customization:** Works out of the box with little to no config, but with plenty of options
   available for customizing cache
-  [expiration](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html#cache-expiration)
-  and other [behavior](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html#cache-options)
-* **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html):
+  [expiration](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html#cache-expiration)
+  and other [behavior](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html#cache-options)
+* **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html):
   SQLite, DynamoDB, MongoDB, and Redis.
 
 # Quickstart
@@ -28,7 +28,7 @@ pip install aiohttp-client-cache
 ```
 
 ## Basic Usage
-Next, use [aiohttp_client_cache.CachedSession](https://aiohttp-client-cache.readthedocs.io/en/latest/modules/aiohttp_client_cache.session.html#aiohttp_client_cache.session.CachedSession)
+Next, use [aiohttp_client_cache.CachedSession](https://aiohttp-client-cache.readthedocs.io/en/stable/modules/aiohttp_client_cache.session.html#aiohttp_client_cache.session.CachedSession)
 in place of [aiohttp.ClientSession](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession).
 To briefly demonstrate how to use it:
 
@@ -73,10 +73,10 @@ cache = SQLiteBackend(
 
 # More Info
 To learn more, see:
-* [User Guide](https://aiohttp-client-cache.readthedocs.io/en/latest/user_guide.html)
-* [Cache Backends](https://aiohttp-client-cache.readthedocs.io/en/latest/backends.html)
-* [API Reference](https://aiohttp-client-cache.readthedocs.io/en/latest/reference.html)
-* [Examples](https://aiohttp-client-cache.readthedocs.io/en/latest/examples.html)
+* [User Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html)
+* [Cache Backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html)
+* [API Reference](https://aiohttp-client-cache.readthedocs.io/en/stable/reference.html)
+* [Examples](https://aiohttp-client-cache.readthedocs.io/en/stable/examples.html)
 
 # Feedback
 If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
