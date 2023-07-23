@@ -254,7 +254,7 @@ class CacheBackend:
         await self.responses.close()
         await self.redirects.close()
 
-    async def close_if_enabled(self):
+    async def _close_if_enabled(self):
         """Close any active connections, if ``autoclose`` is enabled"""
         if self.autoclose:
             await self.close()
