@@ -16,13 +16,17 @@ from aiohttp_client_cache.backends.sqlite import SQLiteCache
 
 class FileBackend(CacheBackend):
     """Backend that stores cached responses as files on the local filesystem.
-    Response paths will be in the format ``<cache_name>/responses/<cache_key>``.
-    Redirects are stored in a SQLite database, located at ``<cache_name>/redirects.sqlite``.
+
+    Notes:
+        * Requires `aiofiles <https://github.com/Tinche/aiofiles>`_
+        * Response paths will be in the format ``<cache_name>/responses/<cache_key>``.
+        * Redirects are stored in a SQLite database, located at ``<cache_name>/redirects.sqlite``.
 
     Args:
         cache_name: Base directory for cache files
         use_temp: Store cache files in a temp directory (e.g., ``/tmp/http_cache/``).
             Note: if ``cache_name`` is an absolute path, this option will be ignored.
+        kwargs: Additional keyword arguments for :py:class:`.CacheBackend`
     """
 
     def __init__(

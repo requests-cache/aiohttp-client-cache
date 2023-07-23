@@ -6,29 +6,33 @@ from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, AsyncIterable, AsyncIterator, Optional, Union
+from typing import Any, AsyncIterable, AsyncIterator, Optional, Type, Union
 
 import aiosqlite
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.signatures import sqlite_template
 
 bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
 
 
 class SQLiteBackend(CacheBackend):
     """Async cache backend for `SQLite <https://www.sqlite.org>`_
-    (requires `aiosqlite <https://aiosqlite.omnilib.dev>`_)
 
-    The path to the database file will be ``<cache_name>`` (or ``<cache_name>.sqlite`` if no file
-    extension is specified)
+    Notes:
+        * Requires `aiosqlite <https://aiosqlite.omnilib.dev>`_
+        * Accepts keyword arguments for :py:func:`sqlite3.connect` / :py:func:`aiosqlite.connect`
+        * The path to the database file will be ``<cache_name>`` (or ``<cache_name>.sqlite`` if no
+          file extension is specified)
 
     Args:
         cache_name: Database filename
-    use_temp: Store database in a temp directory (e.g., ``/tmp/http_cache.sqlite``).
-        Note: if ``cache_name`` is an absolute path, this option will be ignored.
-    fast_save: Increas cache write performance, but with the possibility of data loss. See
-        `pragma: synchronous <http://www.sqlite.org/pragma.html#pragma_synchronous>`_ for details.
+        use_temp: Store database in a temp directory (e.g., ``/tmp/http_cache.sqlite``).
+            Note: if ``cache_name`` is an absolute path, this option will be ignored.
+        fast_save: Increase cache write performance, but with the possibility of data loss. See
+            `pragma: synchronous <http://www.sqlite.org/pragma.html#pragma_synchronous>`_ for
+            details.
+        autoclose: Close any active backend connections when the session is closed
+        kwargs: Additional keyword arguments for :py:class:`.CacheBackend` or backend connection
     """
 
     def __init__(
@@ -196,6 +200,18 @@ class SQLitePickleCache(SQLiteCache):
 
     async def write(self, key, item):
         await super().write(key, sqlite3.Binary(self.serialize(item)))
+
+
+def sqlite_template(
+    timeout: float = 5.0,
+    detect_types: int = 0,
+    isolation_level: Optional[str] = None,
+    check_same_thread: bool = True,
+    factory: Optional[Type] = None,
+    cached_statements: int = 100,
+    uri: bool = False,
+):
+    """Template function to get an accurate function signature for :py:func:`sqlite3.connect`"""
 
 
 def _get_cache_filename(filename: Union[Path, str], use_temp: bool) -> str:

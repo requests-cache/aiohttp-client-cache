@@ -34,7 +34,6 @@ python          = "^3.7"
 aiohttp         = "^3.8"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
-python-forge    = "^18.6"
 url-normalize   = "^1.4"
 
 # Optional backend dependencies
@@ -50,6 +49,7 @@ furo                        = {optional=true, version=">=2022.1.2", python=">=3.
 linkify-it-py               = {optional=true, version=">=2.0", python=">=3.8"}
 markdown-it-py              = {optional=true, version=">=2.2", python=">=3.8"}
 myst-parser                 = {optional=true, version=">=2.0", python=">=3.8"}
+python-forge                = {optional=true, version="^18.6", python=">=3.8"}
 sphinx                      = {optional=true, version="^6.2", python=">=3.8"}
 sphinx-automodapi           = {optional=true, version=">=0.15", python=">=3.8"}
 sphinx-autodoc-typehints    = {optional=true, version="^1.23", python=">=3.8"}
@@ -106,7 +106,7 @@ source = ['aiohttp_client_cache']
 omit = [
     'aiohttp_client_cache/__init__.py',
     'aiohttp_client_cache/backends/__init__.py',
-    'aiohttp_client_cache/docs/*',
+    'aiohttp_client_cache/signatures.py',
 ]
 
 [tool.coverage.report]

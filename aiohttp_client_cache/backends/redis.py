@@ -1,27 +1,28 @@
 from typing import Any, AsyncIterable, Optional
 
-from redis.asyncio import Connection, Redis, from_url
+from redis.asyncio import Redis, from_url
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.signatures import extend_init_signature, redis_template
 
 DEFAULT_ADDRESS = 'redis://localhost'
 
 
-@extend_init_signature(CacheBackend, redis_template)
 class RedisBackend(CacheBackend):
     """Async cache backend for `Redis <https://redis.io>`_
-    (requires `redis-py <https://redis-py.readthedocs.io>`_)
+
+    Notes:
+        * Requires `redis-py <https://redis-py.readthedocs.io>`_
+        * Accepts keyword arguments for :py:class:`redis.asyncio.client.Redis`
+
+    Args:
+        cache_name: Used as a namespace (prefix for hash key)
+        address: Redis server URI
+        kwargs: Additional keyword arguments for :py:class:`.CacheBackend` or backend connection
     """
 
     def __init__(
         self, cache_name: str = 'aiohttp-cache', address: str = DEFAULT_ADDRESS, **kwargs: Any
     ):
-        """
-        Args:
-            cache_name: Used as a namespace (prefix for hash key)
-            address: Redis server URI
-        """
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = RedisCache(cache_name, 'responses', address=address, **kwargs)
         self.redirects = RedisCache(cache_name, 'redirects', address=address, **kwargs)
@@ -52,7 +53,7 @@ class RedisCache(BaseCache):
         super().__init__(**kwargs)
         self.address = address
         self._connection = connection
-        self.connection_kwargs = get_valid_kwargs(Connection.__init__, kwargs)
+        self.connection_kwargs = get_valid_kwargs(Redis.__init__, kwargs)
         self.hash_key = f'{namespace}:{collection_name}'
 
     async def get_connection(self):

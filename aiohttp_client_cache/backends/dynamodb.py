@@ -7,17 +7,26 @@ from aioboto3.session import Session as AWSSession
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
-from aiohttp_client_cache.signatures import dynamodb_template, extend_init_signature
 
 
-@extend_init_signature(CacheBackend, dynamodb_template)
 class DynamoDBBackend(CacheBackend):
     """Async cache backend for `DynamoDB <https://aws.amazon.com/dynamodb>`_
-    (requires `aioboto3 <https://aioboto3.readthedocs.io>`_)
 
-    See `DynamoDB Service Resource
-    <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
-    for more usage details.
+    Notes:
+        * Requires `aioboto3 <https://aioboto3.readthedocs.io>`_
+        * Accepts keyword arguments for :py:meth:`boto3.session.Session.client`
+        * See `DynamoDB Service Resource
+          <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
+          for more usage details.
+
+    Args:
+        cache_name: Table name to use
+        key_attr_name: The name of the field to use for keys in the DynamoDB document
+        val_attr_name: The name of the field to use for values in the DynamoDB document
+        create_if_not_exists: Whether or not to attempt to create the DynamoDB table
+        context: An existing `ResourceCreatorContext <https://aioboto3.readthedocs.io/en/latest/usage.html>`_
+            to reuse instead of creating a new one
+        kwargs: Additional keyword arguments for :py:class:`.CacheBackend` or backend connection
     """
 
     def __init__(
@@ -29,15 +38,6 @@ class DynamoDBBackend(CacheBackend):
         context: ResourceCreatorContext = None,
         **kwargs: Any,
     ):
-        """
-        Args:
-            cache_name: Table name to use
-            key_attr_name: The name of the field to use for keys in the DynamoDB document
-            val_attr_name: The name of the field to use for values in the DynamoDB document
-            create_if_not_exists: Whether or not to attempt to create the DynamoDB table
-            context: An existing `ResourceCreatorContext <https://aioboto3.readthedocs.io/en/latest/usage.html>`_
-                to reuse instead of creating a new one
-        """
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = DynamoDbCache(
             cache_name,
