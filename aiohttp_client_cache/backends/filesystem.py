@@ -18,7 +18,7 @@ class FileBackend(CacheBackend):
     """Backend that stores cached responses as files on the local filesystem.
 
     Notes:
-        * Requires `aiofiles <https://github.com/Tinche/aiofiles>`_
+        * Requires `aiofiles <https://github.com/Tinche/aiofiles>`_ and `aiosqlite <https://aiosqlite.omnilib.dev>`_.
         * Response paths will be in the format ``<cache_name>/responses/<cache_key>``.
         * Redirects are stored in a SQLite database, located at ``<cache_name>/redirects.sqlite``.
 

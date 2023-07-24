@@ -24,8 +24,14 @@ client requests, based on [requests-cache](https://github.com/reclosedev/request
 # Quickstart
 First, install with pip (python 3.7+ required):
 ```bash
-pip install aiohttp-client-cache
+pip install aiohttp-client-cache[all]
 ```
+
+**Note:**
+Adding `[all]` will install optional dependencies for all supported backends. When adding this
+library to your application, you can include only the dependencies you actually need; see individual
+backend docs and [pyproject.toml](https://github.com/requests-cache/aiohttp-client-cache/blob/main/pyproject.toml)
+for details.
 
 ## Basic Usage
 Next, use [aiohttp_client_cache.CachedSession](https://aiohttp-client-cache.readthedocs.io/en/stable/modules/aiohttp_client_cache.session.html#aiohttp_client_cache.session.CachedSession)
