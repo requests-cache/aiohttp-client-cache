@@ -50,7 +50,7 @@ class MongoDBCache(BaseCache):
         super().__init__(**kwargs)
 
         # Motor accepts the same arguments as pymongo, plus one additional argument
-        connection_kwargs = get_valid_kwargs(MongoClient.__init__, kwargs)
+        connection_kwargs = get_valid_kwargs(MongoClient.__init__, kwargs, accept_varkwargs=False)
         if kwargs.get('io_loop'):
             connection_kwargs['io_loop'] = kwargs.pop('io_loop')
 
