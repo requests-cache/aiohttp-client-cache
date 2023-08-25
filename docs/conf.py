@@ -49,6 +49,7 @@ intersphinx_mapping = {
     'pymongo': ('https://pymongo.readthedocs.io/en/stable/', None),
     'python': ('https://docs.python.org/3', None),
     'redis': ('https://redis-py.readthedocs.io/en/stable/', None),
+    'yarl': ('https://yarl.aio-libs.org/en/latest/', None),
 }
 
 # MyST extensions
