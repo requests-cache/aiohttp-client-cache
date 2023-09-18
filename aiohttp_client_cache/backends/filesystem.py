@@ -26,13 +26,18 @@ class FileBackend(CacheBackend):
         cache_name: Base directory for cache files
         use_temp: Store cache files in a temp directory (e.g., ``/tmp/http_cache/``).
             Note: if ``cache_name`` is an absolute path, this option will be ignored.
+        autoclose: Close any active backend connections when the session is closed
         kwargs: Additional keyword arguments for :py:class:`.CacheBackend`
     """
 
     def __init__(
-        self, cache_name: Union[Path, str] = 'http_cache', use_temp: bool = False, **kwargs: Any
+        self,
+        cache_name: Union[Path, str] = 'http_cache',
+        use_temp: bool = False,
+        autoclose: bool = True,
+        **kwargs: Any
     ):
-        super().__init__(**kwargs)
+        super().__init__(autoclose=autoclose, **kwargs)
         self.responses = FileCache(cache_name, use_temp=use_temp, **kwargs)
         db_path = join(dirname(self.responses.cache_dir), 'redirects.sqlite')
         self.redirects = SQLiteCache(db_path, 'redirects', **kwargs)
