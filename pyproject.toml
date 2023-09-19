@@ -64,9 +64,9 @@ filesystem  = ["aiofiles", "aiosqlite"]
 mongodb     = ["motor"]
 redis       = ["redis"]
 sqlite      = ["aiosqlite"]
-docs        = ["furo", "linkify-it-py", "myst-parser", "sphinx", "sphinx-automodapi",
-               "sphinx-autodoc-typehints", "sphinx-copybutton", "sphinx-inline-tabs",
-               "sphinxcontrib-apidoc"]
+docs        = ["furo", "linkify-it-py", "markdown-it-py", "myst-parser", "python-forge",
+               "sphinx", "sphinx-automodapi","sphinx-autodoc-typehints", "sphinx-copybutton",
+               "sphinx-inline-tabs", "sphinxcontrib-apidoc"]
 
 [tool.poetry.dev-dependencies]
 # For unit + integration tests
