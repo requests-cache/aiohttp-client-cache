@@ -1,10 +1,7 @@
 # Contributors
-Thanks to [Roman Haritonov](https://github.com/reclosedev) and
-[contributors](https://github.com/reclosedev/requests-cache/blob/master/CONTRIBUTORS.md)
-for the original `requests-cache`! `aiohttp-client-cache` reuses some backend code from `requests-cache`, so a copy of its license is included [here](https://github.com/requests-cache/aiohttp-client-cache/blob/main/LICENSE_requests_cache.md).
+Thanks to the following individuals for contributing to `aiohttp-client-cache`:
 
-And thanks to the following individuals for contributing to `aiohttp-client-cache`:
-
+* [Roman Haritonov](https://github.com/reclosedev)
 * [Andrew Kursar](https://github.com/akursar)
 * [Joe Bergeron](https://github.com/Jophish)
 * [Fredrik Bergroth](https://github.com/fbergroth)
@@ -14,4 +11,6 @@ And thanks to the following individuals for contributing to `aiohttp-client-cach
 * [layday](https://github.com/layday)
 * [Damian Fajfer](https://github.com/fajfer)
 * [Ilias Tsatiris](https://github.com/iliastsa)
-* [Project D.D. ](https://github.com/RozeFound)
+* [Project D.D.](https://github.com/RozeFound)
+* [Austin Raney](https://github.com/aaraney)
+* [0hax](https://github.com/0hax)
