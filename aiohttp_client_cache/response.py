@@ -208,7 +208,7 @@ class CachedResponse(HeadersMixin):
 
     async def read(self) -> bytes:
         """Read response payload."""
-        return self._body
+        return await self.content.read()
 
     def reset(self):
         """Reset the stream reader to re-read a streamed response"""

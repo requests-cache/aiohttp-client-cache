@@ -381,10 +381,20 @@ class DictCache(BaseCache, UserDict):
             yield key
 
     async def read(self, key: str) -> Union[CachedResponse, str, None]:
+        """An additional step is needed here for response data. The original response object
+        is still in memory, and hasn't gone through a serialize/deserialize loop. So, the file-like
+        response body has already been read, and needs to be reset.
+        """
         try:
-            return self.data[key]
+            item = self.data[key]
         except KeyError:
             return None
+
+        try:
+            item.reset()
+        except AttributeError:
+            pass
+        return item
 
     async def size(self) -> int:
         return len(self.data)
