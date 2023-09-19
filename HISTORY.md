@@ -1,6 +1,6 @@
 # History
 
-## 0.8.3 (Unreleased)
+## 0.9.0 (2023-09-19)
 * Add compatibility with Sentry python SDK
 * Add `autoclose` option to `CacheBackend` to close backend connections when the session context exits.
   * Enabled by default for SQLite backend, and disabled by default for other backends.
