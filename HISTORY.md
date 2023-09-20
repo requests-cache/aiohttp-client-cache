@@ -1,5 +1,8 @@
 # History
 
+## 0.9.1 (2023-09-20)
+* Remove unintended optional dependencies in both PyPI and conda-forge packages
+
 ## 0.9.0 (2023-09-19)
 * Add compatibility with Sentry python SDK
 * Add `autoclose` option to `CacheBackend` to close backend connections when the session context exits.
@@ -7,13 +10,13 @@
 * `python-forge` is no longer required and is now an optional dependency
 * Fix reading response content multiple times for memory backend
 
-## 0.8.2 (2023-07-14)
+### 0.8.2 (2023-07-14)
 * Add some missing type annotations to backend classes
 * Fix passing connection parameters to MongoDB backend
 * Revert closing backend connections on session context exit
 * Fix `CachedResponse.close()` method to match `ClientResponse.close()`
 
-## 0.8.1 (2023-01-05)
+### 0.8.1 (2023-01-05)
 * For SQLite backend, close database connection on `ClientSession` context exit
 
 ## 0.8.0 (2022-12-29)
@@ -22,13 +25,13 @@
 * Fix concurrent usage of `SQLiteCache.bulk_commit()`
 * Add `fast_save` option for `SQLiteCache` (`PRAGMA` setting to improve write performance, with some tradeoffs)
 
-## 0.7.3 (2022-07-31)
+### 0.7.3 (2022-07-31)
 * Remove upper version constraint for `attrs` dependency
 
-## 0.7.2 (2022-07-13)
+### 0.7.2 (2022-07-13)
 * Fix `TypeError` bug when using `expire_after` param with `CachedSession._request()`
 
-## 0.7.1 (2022-06-22)
+### 0.7.1 (2022-06-22)
 * Fix possible deadlock with `SQLiteCache.init_db()` and `clear()`
 
 ## 0.7.0 (2022-05-21)
