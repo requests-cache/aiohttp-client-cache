@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterable, Dict
+from typing import Any, AsyncIterable, Dict, Optional
 
 import aioboto3
 from aioboto3.session import ResourceCreatorContext
@@ -35,7 +35,7 @@ class DynamoDBBackend(CacheBackend):
         key_attr_name: str = 'k',
         val_attr_name: str = 'v',
         create_if_not_exists: bool = False,
-        context: ResourceCreatorContext = None,
+        context: Optional[ResourceCreatorContext] = None,
         **kwargs: Any,
     ):
         super().__init__(cache_name=cache_name, **kwargs)
