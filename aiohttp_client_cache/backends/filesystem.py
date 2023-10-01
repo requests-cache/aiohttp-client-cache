@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from os import listdir, makedirs
-from os.path import abspath, dirname, expanduser, isabs, isfile, join
+from os.path import abspath, expanduser, isabs, isfile, join
 from pathlib import Path
 from pickle import PickleError
 from shutil import rmtree
@@ -39,7 +39,7 @@ class FileBackend(CacheBackend):
     ):
         super().__init__(autoclose=autoclose, **kwargs)
         self.responses = FileCache(cache_name, use_temp=use_temp, **kwargs)
-        db_path = join(dirname(self.responses.cache_dir), 'redirects.sqlite')
+        db_path = join(self.responses.cache_dir, 'redirects.sqlite')
         self.redirects = SQLiteCache(db_path, 'redirects', **kwargs)
 
 
@@ -94,7 +94,7 @@ class FileCache(BaseCache):
             yield filename
 
     async def size(self) -> int:
-        return len(listdir(self.cache_dir))
+        return len(list(filter(lambda fn: not fn.endswith(".sqlite"), listdir(self.cache_dir))))
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
         async for key in self.keys():
