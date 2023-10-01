@@ -4,7 +4,7 @@ import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Type
-from unittest.mock import patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
@@ -81,13 +81,22 @@ class BaseBackendTest:
 
     @skip_37
     async def test_gather(self):
+        # limit the maximum number of concurrent reads to 100 to avoid
+        # problems with too many open files when using a FileBackend
+        sem = asyncio.Semaphore(100)
+
         urls = [httpbin(f'get?page={i}') for i in range(1000)]
+
+        async def get_url(mysession, url):
+            async with sem:
+                return await mysession.get(url)
+
         async with self.init_session() as session:
-            tasks = [asyncio.create_task(session.get(url)) for url in urls]
+            tasks = [asyncio.create_task(get_url(session, url)) for url in urls]
             responses = await asyncio.gather(*tasks)
             assert all([r.from_cache is False for r in responses])
 
-            tasks = [asyncio.create_task(session.get(url)) for url in urls]
+            tasks = [asyncio.create_task(get_url(session, url)) for url in urls]
             responses = await asyncio.gather(*tasks)
             assert all([r.from_cache is True for r in responses])
 
@@ -251,18 +260,23 @@ class BaseBackendTest:
         assert cookies['test_cookie'].value == 'value'
 
     @skip_37
-    @patch.object(CacheBackend, 'close')
-    async def test_autoclose(self, mock_close):
+    async def test_autoclose(self):
         async with self.init_session(autoclose=True) as session:
+            mock_close = MagicMock(wraps=session.cache.close)
+            session.cache.close = mock_close
             await session.get(httpbin('get'))
         mock_close.assert_called_once()
 
     @skip_37
-    @patch.object(CacheBackend, 'close')
-    async def test_autoclose__disabled(self, mock_close):
+    async def test_autoclose__disabled(self):
         async with self.init_session(autoclose=False) as session:
+            mock_close = MagicMock(wraps=session.cache.close)
+            session.cache.close = mock_close
             await session.get(httpbin('get'))
         mock_close.assert_not_called()
+        # explicitly call close after the test has completed
+        # to properly shutdown the cache backend
+        await session.cache.close()
 
     async def test_serializer__pickle(self):
         """Without a secret key, plain pickle should be used"""
