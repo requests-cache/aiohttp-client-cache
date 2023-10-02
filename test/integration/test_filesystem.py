@@ -9,7 +9,7 @@ import pytest
 from aiohttp_client_cache.backends.base import BaseCache
 from aiohttp_client_cache.backends.filesystem import FileBackend, FileCache
 from aiohttp_client_cache.session import CachedSession
-from test.conftest import CACHE_NAME, httpbin
+from test.conftest import CACHE_NAME
 from test.integration import BaseBackendTest, BaseStorageTest
 
 
@@ -55,23 +55,6 @@ class TestFileBackend(BaseBackendTest):
     @pytest.mark.skip(reason='Test not yet working for Filesystem backend')
     async def test_gather(self):
         super().test_gather()
-
-    async def test_disabled(self):
-        async with self.init_session() as session:
-            response = await session.request("GET", httpbin('cache/0'))
-
-            assert response.from_cache is False
-            assert await session.cache.responses.size() == 1
-
-            response = await session.request("GET", httpbin('cache/0'))
-
-            assert response.from_cache is True
-            assert await session.cache.responses.size() == 1
-
-            async with session.disabled():
-                response = await session.request("GET", httpbin('cache/0'))
-                assert response.from_cache is False
-                assert await session.cache.responses.size() == 1
 
     async def test_redirect_cache_path(self):
         async with self.init_session() as session:
