@@ -127,6 +127,7 @@ class CacheBackend:
             session_expire_after=self.expire_after,
             urls_expire_after=self.urls_expire_after,
             cache_control=self.cache_control,
+            cache_disabled=self.disabled,
             **kwargs,
         )
 

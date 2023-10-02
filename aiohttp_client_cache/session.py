@@ -55,7 +55,10 @@ class CacheMixin(MIXIN_BASE):
             return response
         # If the response was missing or expired, send and cache a new request
         else:
-            logger.debug(f'Cached response not found; making request to {str_or_url}')
+            if actions.skip_read:
+                logger.debug(f'Reading from cache was skipped; making request to {str_or_url}')
+            else:
+                logger.debug(f'Cached response not found; making request to {str_or_url}')
             new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
             actions.update_from_response(new_response)
             if await self.cache.is_cacheable(new_response, actions):
