@@ -283,3 +283,28 @@ class BaseBackendTest:
             session.cache.responses._serializer.secret_keys = ['a different key']
             with pytest.raises(BadSignature):
                 await session.cache.responses.read('key')
+
+    async def test_disabled(self):
+        """With a disabled CachedSession, responses should not come from the cache
+        and the cache should not be modified
+        """
+        async with self.init_session() as session:
+            # first request shall populate the cache
+            response = await session.request("GET", httpbin('cache/0'))
+
+            assert response.from_cache is False
+            assert await session.cache.responses.size() == 1
+
+            # second request shall come from the cache
+            response = await session.request("GET", httpbin('cache/0'))
+
+            assert response.from_cache is True
+            assert await session.cache.responses.size() == 1
+
+            # now disable the cache, the response should not come from the cache
+            # but the cache should be unmodified afterward.
+            async with session.disabled():
+                response = await session.request("GET", httpbin('cache/0'))
+
+                assert response.from_cache is False
+                assert await session.cache.responses.size() == 1

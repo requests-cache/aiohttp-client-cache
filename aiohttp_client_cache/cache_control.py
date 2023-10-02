@@ -58,15 +58,19 @@ class CacheActions:
         cls,
         key: str,
         cache_control: bool = False,
+        cache_disabled: bool = False,
         headers: Optional[Mapping] = None,
         **kwargs,
     ):
         """Initialize from request info and CacheBackend settings"""
-        headers = headers or {}
-        if cache_control and has_cache_headers(headers):
-            return cls.from_headers(key, headers)
+        if cache_disabled:
+            return cls(key=key, skip_read=True, skip_write=True, revalidate=True)
         else:
-            return cls.from_settings(key, cache_control=cache_control, **kwargs)
+            headers = headers or {}
+            if cache_control and has_cache_headers(headers):
+                return cls.from_headers(key, headers)
+            else:
+                return cls.from_settings(key, cache_control=cache_control, **kwargs)
 
     @classmethod
     def from_headers(cls, key: str, headers: Mapping):
