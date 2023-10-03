@@ -108,6 +108,7 @@ class CacheBackend:
         method: str,
         url: StrOrURL,
         expire_after: ExpirationTime = None,
+        refresh: bool = False,
         **kwargs,
     ) -> Tuple[Optional[CachedResponse], CacheActions]:
         """Fetch a cached response based on request info
@@ -124,6 +125,7 @@ class CacheBackend:
             key,
             url=url,
             request_expire_after=expire_after,
+            refresh=refresh,
             session_expire_after=self.expire_after,
             urls_expire_after=self.urls_expire_after,
             cache_control=self.cache_control,

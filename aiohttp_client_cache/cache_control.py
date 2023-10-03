@@ -59,18 +59,22 @@ class CacheActions:
         key: str,
         cache_control: bool = False,
         cache_disabled: bool = False,
+        refresh: bool = False,
+        force_refresh: bool = False,
         headers: Optional[Mapping] = None,
         **kwargs,
     ):
         """Initialize from request info and CacheBackend settings"""
         if cache_disabled:
-            return cls(key=key, skip_read=True, skip_write=True, revalidate=True)
+            return cls(key=key, skip_read=True, skip_write=True)
         else:
             headers = headers or {}
             if cache_control and has_cache_headers(headers):
                 return cls.from_headers(key, headers)
             else:
-                return cls.from_settings(key, cache_control=cache_control, **kwargs)
+                return cls.from_settings(
+                    key, cache_control=cache_control, refresh=refresh, **kwargs
+                )
 
     @classmethod
     def from_headers(cls, key: str, headers: Mapping):
@@ -92,6 +96,8 @@ class CacheActions:
         key: str,
         url: StrOrURL,
         cache_control: bool = False,
+        refresh: bool = False,
+        force_refresh: bool = False,
         request_expire_after: ExpirationTime = None,
         session_expire_after: ExpirationTime = None,
         urls_expire_after: Optional[ExpirationPatterns] = None,
@@ -112,7 +118,7 @@ class CacheActions:
             expire_after=expire_after,
             skip_read=do_not_cache,
             skip_write=do_not_cache,
-            revalidate=do_not_cache,
+            revalidate=refresh and not do_not_cache,
         )
 
     @property
