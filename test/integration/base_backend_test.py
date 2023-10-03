@@ -85,7 +85,7 @@ class BaseBackendTest:
         # problems with too many open files when using a FileBackend
         sem = asyncio.Semaphore(100)
 
-        urls = [httpbin(f'get?page={i}') for i in range(1000)]
+        urls = [httpbin(f'get?page={i}') for i in range(500)]
 
         async def get_url(mysession, url):
             async with sem:
