@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from os import listdir, makedirs
+from os import makedirs
 from os.path import abspath, expanduser, isabs, isfile, join
 from pathlib import Path
 from pickle import PickleError
@@ -94,11 +94,16 @@ class FileCache(BaseCache):
                 await f.write(self.serialize(value) or b'')
 
     async def keys(self) -> AsyncIterable[str]:
-        for filename in listdir(self.cache_dir):
+        for filename in await self._cache_entries():
             yield filename
 
     async def size(self) -> int:
-        return len(list(filter(lambda fn: not fn.endswith(".sqlite"), listdir(self.cache_dir))))
+        return len(await self._cache_entries())
+
+    async def _cache_entries(self) -> list[str]:
+        return list(
+            filter(lambda fn: not fn.endswith(".sqlite"), await aiofiles.os.listdir(self.cache_dir))
+        )
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
         async for key in self.keys():
