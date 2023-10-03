@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
+from async_timeout import timeout
 from itsdangerous.exc import BadSignature
 from itsdangerous.serializer import Serializer
 
@@ -108,13 +109,15 @@ class BaseBackendTest:
         """Test that the cache backend can be safely used without the CachedSession contextmanager.
         An "unclosed ClientSession" warning is expected here, however.
         """
-        session = await self._init_session()
-        await session.get(httpbin('get'))
-        del session
+        # Timeout to avoid hanging if the test fails
+        async with timeout(5.0):
+            session = await self._init_session()
+            await session.get(httpbin('get'))
+            del session
 
-        session = await self._init_session(clear=False)
-        r = await session.get(httpbin('get'))
-        assert r.from_cache is True
+            session = await self._init_session(clear=False)
+            r = await session.get(httpbin('get'))
+            assert r.from_cache is True
 
     async def test_request__expire_after(self):
         async with self.init_session() as session:
