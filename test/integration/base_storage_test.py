@@ -83,8 +83,8 @@ class BaseStorageTest:
             for k, v in test_data.items():
                 await cache.write(k, v)
 
-        assert sorted([k async for k in cache.keys()]) == sorted(test_data.keys())
-        assert sorted([v async for v in cache.values()]) == sorted(test_data.values())
+            assert sorted([k async for k in cache.keys()]) == sorted(test_data.keys())
+            assert sorted([v async for v in cache.values()]) == sorted(test_data.values())
 
     async def test_size(self):
         async with self.init_cache() as cache:
@@ -92,7 +92,7 @@ class BaseStorageTest:
             for k, v in self.test_data.items():
                 await cache.write(k, v)
 
-        assert await cache.size() == len(self.test_data)
+            assert await cache.size() == len(self.test_data)
 
     async def test_clear(self):
         async with self.init_cache() as cache:
