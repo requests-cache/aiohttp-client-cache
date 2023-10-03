@@ -5,7 +5,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
 from aiohttp import ClientSession
-from aiohttp.typedefs import LooseHeaders, StrOrURL
+from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
 from aiohttp_client_cache.cache_control import ExpirationTime
@@ -42,7 +42,6 @@ class CacheMixin(MIXIN_BASE):
         self,
         method: str,
         str_or_url: StrOrURL,
-        headers: Optional[LooseHeaders] = None,
         expire_after: ExpirationTime = None,
         refresh: bool = False,
         **kwargs,
@@ -50,12 +49,13 @@ class CacheMixin(MIXIN_BASE):
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         # Attempt to fetch cached response
         response, actions = await self.cache.request(
-            method, str_or_url, expire_after=expire_after, **kwargs
+            method, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
         )
 
         if actions.revalidate and response:
             # if the url is present in the cache, try to refresh it from the server
-            refresh_headers = {k: v for k, v in headers.items()} if headers is not None else {}
+            headers = kwargs["headers"] if "headers" in kwargs else {}
+            refresh_headers = {k: v for k, v in headers.items()}
 
             if "ETag" in response.headers:
                 refresh_headers["If-None-Match"] = response.headers["ETag"]
@@ -94,7 +94,7 @@ class CacheMixin(MIXIN_BASE):
                 logger.debug(f'Reading from cache was skipped; making request to {str_or_url}')
             else:
                 logger.debug(f'Cached response not found; making request to {str_or_url}')
-            new_response = await super()._request(method, str_or_url, headers=headers, **kwargs)  # type: ignore
+            new_response = await super()._request(method, str_or_url, **kwargs)  # type: ignore
             actions.update_from_response(new_response)
             if await self.cache.is_cacheable(new_response, actions):
                 await self.cache.save_response(new_response, actions.key, actions.expires)

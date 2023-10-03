@@ -60,7 +60,6 @@ class CacheActions:
         cache_control: bool = False,
         cache_disabled: bool = False,
         refresh: bool = False,
-        force_refresh: bool = False,
         headers: Optional[Mapping] = None,
         **kwargs,
     ):
@@ -87,7 +86,7 @@ class CacheActions:
             expire_after=directives.get('max-age'),
             skip_read=do_not_cache or 'no-store' in directives or 'no-cache' in directives,
             skip_write=do_not_cache or 'no-store' in directives,
-            revalidate=do_not_cache,
+            revalidate=False,
         )
 
     @classmethod
@@ -97,7 +96,6 @@ class CacheActions:
         url: StrOrURL,
         cache_control: bool = False,
         refresh: bool = False,
-        force_refresh: bool = False,
         request_expire_after: ExpirationTime = None,
         session_expire_after: ExpirationTime = None,
         urls_expire_after: Optional[ExpirationPatterns] = None,
