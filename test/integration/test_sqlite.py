@@ -1,11 +1,10 @@
 import asyncio
 import os
 from tempfile import gettempdir
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
 from test.conftest import CACHE_NAME, httpbin, skip_37
 from test.integration import BaseBackendTest, BaseStorageTest
@@ -139,6 +138,7 @@ class TestSQLiteCache(BaseStorageTest):
 
 
 class TestSQLitePickleCache(BaseStorageTest):
+    init_kwargs = {'use_temp': True}
     picklable = True
     storage_class = SQLitePickleCache
 
@@ -148,10 +148,12 @@ class TestSQLiteBackend(BaseBackendTest):
     init_kwargs = {'use_temp': True}
 
     @skip_37
-    @patch.object(CacheBackend, 'close')
-    async def test_autoclose__default(self, mock_close):
+    async def test_autoclose__default(self):
         """By default, the backend should be closed when the session is closed"""
 
         async with self.init_session() as session:
+            mock_close = MagicMock(wraps=session.cache.close)
+            session.cache.close = mock_close
+
             await session.get(httpbin('get'))
         mock_close.assert_called_once()

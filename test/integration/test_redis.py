@@ -36,7 +36,3 @@ class TestRedisCache(BaseStorageTest):
 
 class TestRedisBackend(BaseBackendTest):
     backend_class = RedisBackend
-
-    @pytest.mark.skip(reason='Test not yet working for Redis backend')
-    async def test_gather(self):
-        super().test_gather()
