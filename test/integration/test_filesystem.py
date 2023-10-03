@@ -4,8 +4,6 @@ from shutil import rmtree
 from tempfile import gettempdir
 from typing import AsyncIterator
 
-import pytest
-
 from aiohttp_client_cache.backends.base import BaseCache
 from aiohttp_client_cache.backends.filesystem import FileBackend, FileCache
 from aiohttp_client_cache.session import CachedSession
@@ -51,10 +49,6 @@ class TestFileCache(BaseStorageTest):
 class TestFileBackend(BaseBackendTest):
     backend_class = FileBackend
     init_kwargs = {'use_temp': True}
-
-    @pytest.mark.skip(reason='Test not yet working for Filesystem backend')
-    async def test_gather(self):
-        super().test_gather()
 
     async def test_redirect_cache_path(self):
         async with self.init_session() as session:
