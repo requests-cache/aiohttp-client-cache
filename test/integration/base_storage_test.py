@@ -30,10 +30,11 @@ class BaseStorageTest:
 
     async def test_write_read(self):
         async with self.init_cache() as cache:
-            # Test write() and contains()
+            # Test write(), contains(), and size()
             for k, v in self.test_data.items():
                 await cache.write(k, v)
                 assert await cache.contains(k) is True
+            assert await cache.size() == len(self.test_data)
 
             # Test read()
             for k, v in self.test_data.items():
@@ -72,15 +73,18 @@ class BaseStorageTest:
             await cache.bulk_delete(self.test_data.keys())
 
     async def test_keys_values(self):
+        test_data = {f'key_{i}': f'value_{i}' for i in range(20)}
+
+        # test keys() and values()
         async with self.init_cache() as cache:
             assert [k async for k in cache.keys()] == []
             assert [v async for v in cache.values()] == []
 
-            for k, v in self.test_data.items():
+            for k, v in test_data.items():
                 await cache.write(k, v)
 
-            assert {k async for k in cache.keys()} == set(self.test_data.keys())
-            assert {v async for v in cache.values()} == set(self.test_data.values())
+        assert sorted([k async for k in cache.keys()]) == sorted(test_data.keys())
+        assert sorted([v async for v in cache.values()]) == sorted(test_data.values())
 
     async def test_size(self):
         async with self.init_cache() as cache:

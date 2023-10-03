@@ -94,11 +94,11 @@ class FileCache(BaseCache):
                 await f.write(self.serialize(value) or b'')
 
     async def keys(self) -> AsyncIterable[str]:
-        for filename in listdir(self.cache_dir):
+        for filename in filter(lambda fn: not fn.endswith(".sqlite"), listdir(self.cache_dir)):
             yield filename
 
     async def size(self) -> int:
-        return len(list(filter(lambda fn: not fn.endswith(".sqlite"), listdir(self.cache_dir))))
+        return len([k async for k in self.keys()])
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
         async for key in self.keys():
