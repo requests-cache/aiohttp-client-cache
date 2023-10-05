@@ -194,6 +194,25 @@ def has_cache_headers(headers: Mapping) -> bool:
     return any([d in cache_control for d in CACHE_DIRECTIVES] + [bool(headers.get('Expires'))])
 
 
+def get_refresh_headers(
+    request_headers: Optional[Mapping], cached_headers: Mapping
+) -> tuple[bool, Mapping]:
+    """Returns headers containing directives for conditional requests if the cached headers support it.**"""
+    headers = request_headers if request_headers is not None else {}
+    refresh_headers = {k: v for k, v in headers.items()}
+    conditional_request_supported = False
+
+    if "ETag" in cached_headers:
+        refresh_headers["If-None-Match"] = cached_headers["ETag"]
+        conditional_request_supported = True
+
+    if "Last-Modified" in cached_headers:
+        refresh_headers["If-Modified-Since"] = cached_headers["Last-Modified"]
+        conditional_request_supported = True
+
+    return conditional_request_supported, refresh_headers
+
+
 def parse_http_date(value: str) -> Optional[datetime]:
     """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
     try:

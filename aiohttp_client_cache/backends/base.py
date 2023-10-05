@@ -118,6 +118,8 @@ class CacheBackend:
             url: Request URL
             expire_after: Expiration time to set only for this request; overrides
                 ``CachedSession.expire_after``, and accepts all the same values.
+            refresh: Revalidate with the server before using a cached response, and refresh if needed
+                (e.g., a "soft refresh", like F5 in a browser)
             kwargs: All other request arguments
         """
         key = self.create_key(method, url, **kwargs)

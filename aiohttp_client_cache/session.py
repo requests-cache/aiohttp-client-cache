@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
-from aiohttp_client_cache.cache_control import ExpirationTime
+from aiohttp_client_cache.cache_control import ExpirationTime, get_refresh_headers
 from aiohttp_client_cache.response import AnyResponse, set_response_defaults
 from aiohttp_client_cache.signatures import extend_signature
 
@@ -53,34 +53,37 @@ class CacheMixin(MIXIN_BASE):
         )
 
         if actions.revalidate and response:
-            # if the url is present in the cache, try to refresh it from the server
-            headers = kwargs["headers"] if "headers" in kwargs else {}
-            refresh_headers = {k: v for k, v in headers.items()}
-
-            if "ETag" in response.headers:
-                refresh_headers["If-None-Match"] = response.headers["ETag"]
-
-            if "Last-Modified" in response.headers:
-                refresh_headers["If-Modified-Since"] = response.headers["Last-Modified"]
-
-            logger.debug(f'Refreshing cached response; making request to {str_or_url}')
-            refreshed_response = await super()._request(
-                method, str_or_url, headers=refresh_headers, **kwargs
+            # if the response is present in the cache, try to refresh it from the server
+            conditional_request_supported, refresh_headers = get_refresh_headers(
+                kwargs.get("headers", None), response.headers
             )
 
-            if refreshed_response.status == 304:
-                logger.debug('Cached response not modified')
-                pass
-            else:
-                actions.update_from_response(refreshed_response)
-                if await self.cache.is_cacheable(refreshed_response, actions):
-                    logger.debug('Cached response refreshed; updating cache')
-                    await self.cache.save_response(refreshed_response, actions.key, actions.expires)
-                else:
-                    logger.debug('Cached response refreshed; deleting from cache')
-                    await self.cache.delete(actions.key)
+            if conditional_request_supported:
+                logger.debug(f'Refreshing cached response; making request to {str_or_url}')
+                refreshed_response = await super()._request(
+                    method, str_or_url, headers=refresh_headers, **kwargs
+                )
 
-                return refreshed_response
+                if refreshed_response.status == 304:
+                    logger.debug('Cached response not modified; returning cached response')
+                    pass
+                else:
+                    actions.update_from_response(refreshed_response)
+                    if await self.cache.is_cacheable(refreshed_response, actions):
+                        logger.debug('Cached response refreshed; updating cache')
+                        await self.cache.save_response(
+                            refreshed_response, actions.key, actions.expires
+                        )
+                    else:
+                        logger.debug('Cached response refreshed; deleting from cache')
+                        await self.cache.delete(actions.key)
+
+                    return refreshed_response
+            else:
+                logger.debug(
+                    'Conditional requests not supported, no ETag or Last-Modified headers present; '
+                    'returning cached response'
+                )
 
         # Restore any cached cookies to the session
         if response:
