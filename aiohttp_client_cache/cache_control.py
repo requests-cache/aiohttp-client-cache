@@ -1,4 +1,6 @@
 """Utilities for determining cache expiration and other cache actions"""
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
