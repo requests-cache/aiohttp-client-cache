@@ -232,7 +232,7 @@ class CachedResponse(HeadersMixin):
 
     async def __aenter__(self) -> 'CachedResponse':
         return self
-    
+
     @property
     def closed(self) -> bool:
         return True
