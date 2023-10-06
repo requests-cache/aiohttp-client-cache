@@ -1,7 +1,7 @@
 # aiohttp-client-cache
 
-[![Build status](https://github.com/requests-cache/aiohttp-client-cache/workflows/Build/badge.svg)](https://github.com/requests-cache/aiohttp-client-cache/actions)
-[![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/stable?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/stable/)
+[![Build status](https://github.com/requests-cache/aiohttp-client-cache/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/requests-cache/aiohttp-client-cache/actions)
+[![Documentation Status](https://img.shields.io/readthedocs/aiohttp-client-cache/latest?label=docs)](https://aiohttp-client-cache.readthedocs.io/en/stable/)
 [![Codecov](https://codecov.io/gh/requests-cache/aiohttp-client-cache/branch/main/graph/badge.svg?token=I6PNLYTILM)](https://codecov.io/gh/requests-cache/aiohttp-client-cache)
 [![PyPI](https://img.shields.io/pypi/v/aiohttp-client-cache?color=blue)](https://pypi.org/project/aiohttp-client-cache)
 [![Conda](https://img.shields.io/conda/vn/conda-forge/aiohttp-client-cache?color=blue)](https://anaconda.org/conda-forge/aiohttp-client-cache)
