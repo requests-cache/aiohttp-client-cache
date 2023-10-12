@@ -1,5 +1,11 @@
 # History
 
+## 0.10.0 (Unreleased)
+* Add `CachedResponse.closed` attribute for compatibility with `aiohttp.ClientResponse`
+* Close `aiosqlite` thread if it's still running when session object is deleted
+* Move redirects cache for `FileBackend` into same directory as cached response files
+* Fix issue in which `CachedSession.disabled()` prevents only cache read but not write
+
 ## 0.9.1 (2023-09-20)
 * Remove unintended optional dependencies in both PyPI and conda-forge packages
 
