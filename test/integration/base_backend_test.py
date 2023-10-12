@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
+from async_timeout import timeout
 from itsdangerous.exc import BadSignature
 from itsdangerous.serializer import Serializer
 
@@ -35,13 +36,17 @@ class BaseBackendTest:
 
     @asynccontextmanager
     async def init_session(self, clear=True, **kwargs) -> AsyncIterator[CachedSession]:
+        session = await self._init_session(clear=clear, **kwargs)
+        async with session:
+            yield session
+
+    async def _init_session(self, clear=True, **kwargs) -> CachedSession:
         kwargs.setdefault('allowed_methods', ALL_METHODS)
         cache = self.backend_class(CACHE_NAME, **self.init_kwargs, **kwargs)
         if clear:
             await cache.clear()
 
-        async with CachedSession(cache=cache, **self.init_kwargs, **kwargs) as session:
-            yield session
+        return CachedSession(cache=cache, **self.init_kwargs, **kwargs)
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
     @pytest.mark.parametrize('field', ['params', 'data', 'json'])
@@ -99,6 +104,20 @@ class BaseBackendTest:
             tasks = [asyncio.create_task(get_url(session, url)) for url in urls]
             responses = await asyncio.gather(*tasks)
             assert all([r.from_cache is True for r in responses])
+
+    async def test_without_contextmanager(self):
+        """Test that the cache backend can be safely used without the CachedSession contextmanager.
+        An "unclosed ClientSession" warning is expected here, however.
+        """
+        # Timeout to avoid hanging if the test fails
+        async with timeout(5.0):
+            session = await self._init_session()
+            await session.get(httpbin('get'))
+            del session
+
+            session = await self._init_session(clear=False)
+            r = await session.get(httpbin('get'))
+            assert r.from_cache is True
 
     async def test_request__expire_after(self):
         async with self.init_session() as session:

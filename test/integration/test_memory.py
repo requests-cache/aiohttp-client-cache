@@ -23,6 +23,14 @@ class TestMemoryBackend(BaseBackendTest):
             content_2 = await cached_response_2.read()
             assert content_1 == content_2 == original_content
 
+    async def test_without_contextmanager(self):
+        """Test that the cache backend can be safely used without the CachedSession contextmanager.
+        An "unclosed ClientSession" warning is expected here, however.
+        """
+        session = await self._init_session()
+        await session.get(httpbin('get'))
+        del session
+
     # Serialization tests don't apply to in-memory cache
     async def test_serializer__pickle(self):
         pass

@@ -103,6 +103,20 @@ class SQLiteCache(BaseCache):
         )
         return self._connection
 
+    def __del__(self):
+        """If the aiosqlite connection is still open when this object is deleted, force its thread
+        to close by emptying its internal queue and setting its ``_running`` flag to ``False``.
+        This is basically a last resort to avoid hanging the application if this backend is used
+        without the CachedSession contextmanager.
+
+        Note: Since this uses internal attributes, it has the potential to break in future versions
+        of aiosqlite.
+        """
+        if self._connection is not None:
+            self._connection._tx.queue.clear()
+            self._connection._running = False
+            self._connection = None
+
     @asynccontextmanager
     async def bulk_commit(self):
         """Contextmanager to more efficiently write a large number of records at once
