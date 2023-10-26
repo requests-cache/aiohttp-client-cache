@@ -4,7 +4,7 @@ import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Type
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
@@ -23,6 +23,7 @@ from test.conftest import (
     httpbin,
     skip_37,
 )
+from test.unit.test_base_backend import skip_py37
 
 pytestmark = pytest.mark.asyncio
 
@@ -323,6 +324,7 @@ class BaseBackendTest:
                 assert response.from_cache is False
                 assert await session.cache.responses.size() == 1
 
+    @skip_py37
     async def test_conditional_requests(self):
         """Test that conditional requests using refresh=True work.
         The `/cache` endpoint returns proper ETag header and responds to a request
@@ -332,6 +334,8 @@ class BaseBackendTest:
         async with self.init_session() as session:
             # mock the _refresh_cached_response method to verify
             # that a conditional request is being made
+            from unittest.mock import AsyncMock
+
             mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
             session._refresh_cached_response = mock_refresh
 
