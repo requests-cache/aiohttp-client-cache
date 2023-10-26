@@ -2,7 +2,7 @@
 import warnings
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
@@ -90,7 +90,7 @@ class CacheMixin(MIXIN_BASE):
         cached_response: CachedResponse,
         actions: CacheActions,
         **kwargs,
-    ) -> tuple[bool, AnyResponse]:
+    ) -> Tuple[bool, AnyResponse]:
         """Checks if the cached response is still valid using conditional requests if supported"""
 
         # check whether we can do a conditional request,
