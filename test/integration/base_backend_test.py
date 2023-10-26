@@ -322,3 +322,16 @@ class BaseBackendTest:
 
                 assert response.from_cache is False
                 assert await session.cache.responses.size() == 1
+
+    async def test_conditional_requests(self):
+        """Test that conditional requests using refresh=True work.
+        The `/cache` endpoint returns proper ETag header and responds to a request
+        with an If-None-Match header with a 304 response.
+        """
+
+        async with self.init_session() as session:
+            # TODO: how do I check that the refresh request really have been made?
+            response = await session.get(httpbin('cache'))
+            assert response.from_cache is False
+            response = await session.get(httpbin('cache'), refresh=True)
+            assert response.from_cache is True
