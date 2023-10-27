@@ -1,8 +1,9 @@
+from os import urandom
 from typing import Any, Dict
 
 import pytest
 
-from aiohttp_client_cache.backends.dynamodb import DynamoDBBackend, DynamoDbCache
+from aiohttp_client_cache.backends.dynamodb import MAX_ITEM_SIZE, DynamoDBBackend, DynamoDbCache
 from test.integration import BaseBackendTest, BaseStorageTest
 
 AWS_OPTIONS = {
@@ -42,6 +43,13 @@ class TestDynamoDbCache(BaseStorageTest):
         'val_attr_name': 'v',
         **AWS_OPTIONS,
     }
+
+    async def test_write_oversized_item(self):
+        """If an item exceeds DynamoDB's max item size, expect it to not be written to the cache"""
+        data = urandom(MAX_ITEM_SIZE + 1)
+        async with self.init_cache() as cache:
+            cache.write('key', data)
+            assert await cache.contains('key') is False
 
 
 class TestDynamoDBBackend(BaseBackendTest):

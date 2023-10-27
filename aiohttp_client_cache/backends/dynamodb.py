@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from logging import getLogger
 from typing import Any, AsyncIterable, Dict, Optional
 
 import aioboto3
@@ -7,6 +8,9 @@ from aioboto3.session import Session as AWSSession
 from botocore.exceptions import ClientError
 
 from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
+
+logger = getLogger(__name__)
+MAX_ITEM_SIZE = 400000  # 400KB
 
 
 class DynamoDBBackend(CacheBackend):
@@ -18,6 +22,8 @@ class DynamoDBBackend(CacheBackend):
         * See `DynamoDB Service Resource
           <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#service-resource>`_
           for more usage details.
+        * DynamoDB has a maximum item size of 400KB. If an item exceeds this size, it will not be
+          written to the cache.
 
     Args:
         cache_name: Table name to use
@@ -158,9 +164,16 @@ class DynamoDbCache(BaseCache):
         return None
 
     async def write(self, key: str, item: ResponseOrKey) -> None:
+        item = self.serialize(item)
+        if len(item or b'') > MAX_ITEM_SIZE:
+            logger.warning(
+                f'Item size exceeds maximum for DynamoDB ({MAX_ITEM_SIZE}); skipping write'
+            )
+            return
+
         table = await self.get_table()
         doc = self._doc(key)
-        doc[self.val_attr_name] = self.serialize(item)
+        doc[self.val_attr_name] = item
         await table.put_item(Item=doc)
 
     async def clear(self) -> None:
