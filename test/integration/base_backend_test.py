@@ -22,6 +22,7 @@ from test.conftest import (
     assert_delta_approx_equal,
     from_cache,
     httpbin,
+    httpbin_custom,
     skip_37,
 )
 
@@ -363,6 +364,32 @@ class BaseBackendTest:
 
             response = await session.get(httpbin('cache'), refresh=True)
             assert response.from_cache is True
+            mock_refresh.assert_awaited_once()
+
+    @skip_37
+    async def test_conditional_request_changed(self):
+        """Test that conditional requests using refresh=True work.
+        The `/cache/<value>` endpoint will return a different ETag ever <value> s.
+        """
+
+        async with self.init_session() as session:
+            # mock the _refresh_cached_response method to verify
+            # that a conditional request is being made
+            from unittest.mock import AsyncMock
+
+            mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
+            session._refresh_cached_response = mock_refresh
+
+            response = await session.get(httpbin_custom('cache/1'))
+            assert response.from_cache is False
+            mock_refresh.assert_not_awaited()
+
+            await asyncio.sleep(2)
+            # after 2s the ETag should have been expired and the server should respond
+            # with a 200 response rather than a 304.
+
+            response = await session.get(httpbin_custom('cache/1'), refresh=True)
+            assert response.from_cache is False
             mock_refresh.assert_awaited_once()
 
     @skip_37

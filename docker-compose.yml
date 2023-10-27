@@ -8,6 +8,14 @@ services:
     ports:
       - '80:80'
 
+  httpbin-custom:
+    container_name: httpbin-custom
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '81:81'
+
   dynamodb:
     image: amazon/dynamodb-local
     hostname: dynamodb-local
