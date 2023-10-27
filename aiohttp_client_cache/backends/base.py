@@ -108,6 +108,7 @@ class CacheBackend:
         method: str,
         url: StrOrURL,
         expire_after: ExpirationTime = None,
+        refresh: bool = False,
         **kwargs,
     ) -> Tuple[Optional[CachedResponse], CacheActions]:
         """Fetch a cached response based on request info
@@ -117,6 +118,8 @@ class CacheBackend:
             url: Request URL
             expire_after: Expiration time to set only for this request; overrides
                 ``CachedSession.expire_after``, and accepts all the same values.
+            refresh: Revalidate with the server before using a cached response, and refresh if needed
+                (e.g., a "soft refresh", like F5 in a browser)
             kwargs: All other request arguments
         """
         key = self.create_key(method, url, **kwargs)
@@ -124,6 +127,7 @@ class CacheBackend:
             key,
             url=url,
             request_expire_after=expire_after,
+            refresh=refresh,
             session_expire_after=self.expire_after,
             urls_expire_after=self.urls_expire_after,
             cache_control=self.cache_control,
