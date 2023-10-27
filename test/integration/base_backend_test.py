@@ -341,3 +341,51 @@ class BaseBackendTest:
 
                 assert response.from_cache is False
                 assert await session.cache.responses.size() == 1
+
+    @skip_37
+    async def test_conditional_request(self):
+        """Test that conditional requests using refresh=True work.
+        The `/cache` endpoint returns proper ETag header and responds to a request
+        with an If-None-Match header with a 304 response.
+        """
+
+        async with self.init_session() as session:
+            # mock the _refresh_cached_response method to verify
+            # that a conditional request is being made
+            from unittest.mock import AsyncMock
+
+            mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
+            session._refresh_cached_response = mock_refresh
+
+            response = await session.get(httpbin('cache'))
+            assert response.from_cache is False
+            mock_refresh.assert_not_awaited()
+
+            response = await session.get(httpbin('cache'), refresh=True)
+            assert response.from_cache is True
+            mock_refresh.assert_awaited_once()
+
+    @skip_37
+    async def test_no_support_for_conditional_request(self):
+        """Test that conditional requests using refresh=True work even when the
+        cached response / server does not support conditional requests. In this case
+        the cached response shall be returned as if no refresh=True option would
+        have been passed in.
+        The `/cache/<int>` endpoint returns no ETag header and just returns a normal 200 response.
+        """
+
+        async with self.init_session() as session:
+            # mock the _refresh_cached_response method to verify
+            # that a conditional request is being made
+            from unittest.mock import AsyncMock
+
+            mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
+            session._refresh_cached_response = mock_refresh
+
+            response = await session.get(httpbin('cache/10'))
+            assert response.from_cache is False
+            mock_refresh.assert_not_awaited()
+
+            response = await session.get(httpbin('cache/10'), refresh=True)
+            assert response.from_cache is True
+            mock_refresh.assert_awaited_once()

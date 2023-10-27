@@ -1,4 +1,6 @@
 """Utilities for determining cache expiration and other cache actions"""
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
@@ -59,18 +61,21 @@ class CacheActions:
         key: str,
         cache_control: bool = False,
         cache_disabled: bool = False,
+        refresh: bool = False,
         headers: Optional[Mapping] = None,
         **kwargs,
     ):
         """Initialize from request info and CacheBackend settings"""
         if cache_disabled:
-            return cls(key=key, skip_read=True, skip_write=True, revalidate=True)
+            return cls(key=key, skip_read=True, skip_write=True)
         else:
             headers = headers or {}
             if cache_control and has_cache_headers(headers):
                 return cls.from_headers(key, headers)
             else:
-                return cls.from_settings(key, cache_control=cache_control, **kwargs)
+                return cls.from_settings(
+                    key, cache_control=cache_control, refresh=refresh, **kwargs
+                )
 
     @classmethod
     def from_headers(cls, key: str, headers: Mapping):
@@ -83,7 +88,7 @@ class CacheActions:
             expire_after=directives.get('max-age'),
             skip_read=do_not_cache or 'no-store' in directives or 'no-cache' in directives,
             skip_write=do_not_cache or 'no-store' in directives,
-            revalidate=do_not_cache,
+            revalidate=False,
         )
 
     @classmethod
@@ -92,6 +97,7 @@ class CacheActions:
         key: str,
         url: StrOrURL,
         cache_control: bool = False,
+        refresh: bool = False,
         request_expire_after: ExpirationTime = None,
         session_expire_after: ExpirationTime = None,
         urls_expire_after: Optional[ExpirationPatterns] = None,
@@ -112,7 +118,7 @@ class CacheActions:
             expire_after=expire_after,
             skip_read=do_not_cache,
             skip_write=do_not_cache,
-            revalidate=do_not_cache,
+            revalidate=refresh and not do_not_cache,
         )
 
     @property
@@ -188,6 +194,25 @@ def has_cache_headers(headers: Mapping) -> bool:
     ci_headers = CIMultiDict(headers)
     cache_control = ','.join(ci_headers.getall('Cache-Control', []))
     return any([d in cache_control for d in CACHE_DIRECTIVES] + [bool(headers.get('Expires'))])
+
+
+def get_refresh_headers(
+    request_headers: Optional[Mapping], cached_headers: Mapping
+) -> tuple[bool, Mapping]:
+    """Returns headers containing directives for conditional requests if the cached headers support it.**"""
+    headers = request_headers if request_headers is not None else {}
+    refresh_headers = {k: v for k, v in headers.items()}
+    conditional_request_supported = False
+
+    if "ETag" in cached_headers:
+        refresh_headers["If-None-Match"] = cached_headers["ETag"]
+        conditional_request_supported = True
+
+    if "Last-Modified" in cached_headers:
+        refresh_headers["If-Modified-Since"] = cached_headers["Last-Modified"]
+        conditional_request_supported = True
+
+    return conditional_request_supported, refresh_headers
 
 
 def parse_http_date(value: str) -> Optional[datetime]:
