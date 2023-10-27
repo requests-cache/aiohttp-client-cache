@@ -44,6 +44,9 @@ jobs:
           redis-version: '6'
       - uses: rrainn/dynamodb-action@v3.0.0
 
+      # Start httpbin-custom
+      - uses: ./.github/actions/httpbin-custom
+
       # Cache packages per python version, and reuse until lockfile changes
       - name: Cache python packages
         id: cache

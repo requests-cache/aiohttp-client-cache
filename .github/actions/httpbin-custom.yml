@@ -1,0 +1,4 @@
+name: 'custom httpbin-like test server'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
