@@ -20,4 +20,4 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH ./test
 
-ENTRYPOINT ["poetry", "run", "gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
+ENTRYPOINT [".venv/bin/gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
