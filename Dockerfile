@@ -12,12 +12,11 @@ COPY pyproject.toml poetry.lock gunicorn-cfg.py ./
 
 RUN pip install "poetry==$POETRY_VERSION"
 
-RUN poetry config virtualenvs.in-project true && \
-    poetry install --only=test-server --no-root
+RUN poetry install --only=test-server --no-root
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH ./test
 
-ENTRYPOINT [".venv/bin/gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
+ENTRYPOINT ["poetry" "run" "gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
