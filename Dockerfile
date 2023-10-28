@@ -17,6 +17,6 @@ RUN poetry install --only=test-server --no-root
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH ./test
+ENV PYTHONPATH="$PYTHONPATH:/app/test"
 
 ENTRYPOINT ["poetry", "run", "gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
