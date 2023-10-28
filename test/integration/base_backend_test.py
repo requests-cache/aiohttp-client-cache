@@ -360,10 +360,13 @@ class BaseBackendTest:
 
             response = await session.get(httpbin('cache'))
             assert response.from_cache is False
+            etag = response.headers["Etag"]
+            assert etag is not None
             mock_refresh.assert_not_awaited()
 
             response = await session.get(httpbin('cache'), refresh=True)
             assert response.from_cache is True
+            assert etag == response.headers["Etag"]
             mock_refresh.assert_awaited_once()
 
     @skip_37
@@ -382,6 +385,8 @@ class BaseBackendTest:
 
             response = await session.get(httpbin_custom('cache/1'))
             assert response.from_cache is False
+            etag = response.headers["Etag"]
+            assert etag is not None
             mock_refresh.assert_not_awaited()
 
             await asyncio.sleep(2)
@@ -390,6 +395,7 @@ class BaseBackendTest:
 
             response = await session.get(httpbin_custom('cache/1'), refresh=True)
             assert response.from_cache is False
+            assert etag != response.headers["Etag"]
             mock_refresh.assert_awaited_once()
 
     @skip_37
@@ -411,8 +417,10 @@ class BaseBackendTest:
 
             response = await session.get(httpbin('cache/10'))
             assert response.from_cache is False
+            assert response.headers.get("Etag") is None
             mock_refresh.assert_not_awaited()
 
             response = await session.get(httpbin('cache/10'), refresh=True)
             assert response.from_cache is True
+            assert response.headers.get("Etag") is None
             mock_refresh.assert_awaited_once()
