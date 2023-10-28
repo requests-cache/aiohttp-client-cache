@@ -54,6 +54,12 @@ def httpbin(path: str = ''):
     return base_url + path
 
 
+def httpbin_custom(path: str = ''):
+    """Get the url for a local httpbin_custom instance"""
+    base_url = 'http://localhost:8181/'
+    return base_url + path
+
+
 @pytest.fixture(scope='function')
 async def tempfile_session():
     """:py:func:`.get_tempfile_session` as a pytest fixture"""

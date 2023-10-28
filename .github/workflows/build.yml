@@ -55,6 +55,11 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: poetry install -v -E all
 
+      - name: Run custom test server
+        run: |
+          source $VENV
+          cd test && gunicorn -D -c ../gunicorn-cfg.py server:app
+
       # Run tests with coverage report
       - name: Run tests
         run: |
