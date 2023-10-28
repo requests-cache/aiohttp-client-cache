@@ -13,8 +13,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - '81:81'
 
   dynamodb:
     image: amazon/dynamodb-local
