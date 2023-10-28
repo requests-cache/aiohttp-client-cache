@@ -8,15 +8,16 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     POETRY_VERSION=1.4.0
 
 COPY test ./test
-COPY pyproject.toml poetry.lock gunicorn-cfg.py ./
+COPY pyproject.toml poetry.lock gunicorn-cfg.py docker-entrypoint.sh ./
 
 RUN pip install "poetry==$POETRY_VERSION"
 
-RUN poetry install --only=test-server --no-root
+RUN python -m venv /venv
+RUN poetry export --only=test-server -f requirements.txt | /venv/bin/pip install -r /dev/stdin
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH="$PYTHONPATH:/app/test"
 
-ENTRYPOINT ["poetry", "run", "gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
+CMD ["./docker-entrypoint.sh"]
