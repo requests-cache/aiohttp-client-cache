@@ -96,14 +96,13 @@ class CacheMixin(MIXIN_BASE):
         # check whether we can do a conditional request,
         # i.e. if the necessary headers are present (ETag, Last-Modified)
         conditional_request_supported, refresh_headers = get_refresh_headers(
-            kwargs.get("headers", None), cached_response.headers
+            kwargs.get('headers'), cached_response.headers
         )
 
         if conditional_request_supported:
             logger.debug(f'Refreshing cached response; making request to {str_or_url}')
-            refreshed_response = await super()._request(
-                method, str_or_url, headers=refresh_headers, **kwargs
-            )
+            kwargs['headers'] = refresh_headers
+            refreshed_response = await super()._request(method, str_or_url, **kwargs)
 
             if refreshed_response.status == 304:
                 logger.debug('Cached response not modified; returning cached response')
