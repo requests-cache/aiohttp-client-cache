@@ -13,7 +13,7 @@ def is_db_running():
     async def get_db_info():
         client = await from_url(DEFAULT_ADDRESS)
         await client.info()
-        await client.close()
+        await client.aclose()
 
     try:
         asyncio.run(get_db_info())

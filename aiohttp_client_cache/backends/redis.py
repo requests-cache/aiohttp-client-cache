@@ -64,7 +64,7 @@ class RedisCache(BaseCache):
 
     async def close(self):
         if self._connection:
-            await self._connection.close()
+            await self._connection.aclose()
             self._connection = None
 
     async def clear(self):
