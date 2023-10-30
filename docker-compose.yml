@@ -12,7 +12,7 @@ services:
     container_name: httpbin-custom
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: test/server/Dockerfile
     ports:
       - '8181:8181'
 

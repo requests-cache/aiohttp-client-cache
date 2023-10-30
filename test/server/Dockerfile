@@ -8,7 +8,7 @@ ENV PIP_DEFAULT_TIMEOUT=100 \
     POETRY_VERSION=1.4.0
 
 COPY test ./test
-COPY pyproject.toml poetry.lock gunicorn-cfg.py ./
+COPY pyproject.toml poetry.lock ./
 
 RUN pip install "poetry==$POETRY_VERSION"
 
@@ -20,4 +20,4 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONPATH="$PYTHONPATH:/app/test"
 
-ENTRYPOINT ["poetry", "run", "gunicorn", "server:app", "-c", "gunicorn-cfg.py"]
+ENTRYPOINT ["poetry", "run", "gunicorn", "server:app", "-c", "test/server/gunicorn-cfg.py"]

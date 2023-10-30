@@ -58,7 +58,7 @@ jobs:
       - name: Run custom test server
         run: |
           source $VENV
-          cd test && gunicorn -D -c ../gunicorn-cfg.py server:app
+          cd test && gunicorn -D -c server/gunicorn-cfg.py server:app
 
       # Run tests with coverage report
       - name: Run tests
