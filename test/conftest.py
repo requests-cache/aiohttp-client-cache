@@ -1,5 +1,3 @@
-import asyncio
-import gc
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -82,15 +80,3 @@ def assert_delta_approx_equal(dt1: datetime, dt2: datetime, target_delta, thresh
     """Assert that the given datetimes are approximately ``target_delta`` seconds apart"""
     diff_in_seconds = (dt2 - dt1).total_seconds()
     assert abs(diff_in_seconds - target_delta) <= threshold_seconds
-
-
-# workaround for a regression in python 3.11:
-# https://github.com/python/cpython/issues/109538
-@pytest.fixture
-def event_loop():
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    loop.set_debug(True)
-    yield loop
-    gc.collect()
-    loop.close()
