@@ -1,6 +1,6 @@
 # History
 
-## 0.10.0 (2023-10-07)
+## 0.10.0 (2023-10-30)
 * Add support for conditional requests with `ETag` and `Last-Modified`
 * If a DynamoDB item exceeds the max size (400KB), skip writing to the cache and log a warning instead of raising an error
 * Add `CachedResponse.closed` attribute for compatibility with `aiohttp.ClientResponse`
