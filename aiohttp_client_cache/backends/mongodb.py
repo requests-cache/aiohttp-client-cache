@@ -70,10 +70,7 @@ class MongoDBCache(BaseCache):
 
     async def delete(self, key: str):
         spec = {'_id': key}
-        if hasattr(self.collection, "find_one_and_delete"):
-            await self.collection.delete_one(spec)
-        else:
-            await self.collection.find_and_modify(spec, remove=True, fields={'_id': True})
+        await self.collection.delete_one(spec)
 
     async def keys(self) -> AsyncIterable[str]:
         async for doc in self.collection.find({}, {'_id': True}):
