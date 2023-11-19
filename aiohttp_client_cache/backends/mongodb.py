@@ -62,7 +62,7 @@ class MongoDBCache(BaseCache):
         await self.collection.drop()
 
     async def contains(self, key: str) -> bool:
-        return bool(await self.collection.find_one({'_id': key}))
+        return bool(await self.collection.find_one({'_id': key}, projection={'_id': True}))
 
     async def bulk_delete(self, keys: set):
         spec = {'_id': {'$in': list(keys)}}
