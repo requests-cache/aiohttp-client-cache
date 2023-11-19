@@ -83,7 +83,7 @@ class MongoDBCache(BaseCache):
         doc = await self.collection.find_one({'_id': key}, projection={'data': True})
         try:
             return doc['data']
-        except KeyError:
+        except TypeError:
             return None
 
     async def size(self) -> int:
@@ -96,7 +96,7 @@ class MongoDBCache(BaseCache):
             yield doc['data']
 
     async def write(self, key: str, item: ResponseOrKey):
-        update = {'data': item}
+        update = {'$set': {'data': item}}
         await self.collection.update_one({'_id': key}, update, upsert=True)
 
 
