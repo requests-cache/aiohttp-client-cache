@@ -6,7 +6,9 @@ services:
     image: kennethreitz/httpbin
     container_name: httpbin
     ports:
-      - '80:80'
+      # Use an unprivileged port to support running the Docker daemon as a non-root user (Rootless mode).
+      # See https://docs.docker.com/engine/security/rootless/#networking-errors
+      - ${HTTPBIN_CUSTOM_PORT:-8080}:80
 
   httpbin-custom:
     container_name: httpbin-custom
