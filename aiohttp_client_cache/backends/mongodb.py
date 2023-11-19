@@ -90,7 +90,9 @@ class MongoDBCache(BaseCache):
         return await self.collection.count_documents({})
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
-        async for doc in self.collection.find({'data': {'$exists': True}}):
+        async for doc in self.collection.find(
+            {'data': {'$exists': True}}, projection={'data': True}
+        ):
             yield doc['data']
 
     async def write(self, key: str, item: ResponseOrKey):
