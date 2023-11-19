@@ -96,8 +96,8 @@ class MongoDBCache(BaseCache):
             yield doc['data']
 
     async def write(self, key: str, item: ResponseOrKey):
-        doc = {'_id': key, 'data': item}
-        await self.collection.replace_one({'_id': key}, doc, upsert=True)
+        update = {'data': item}
+        await self.collection.update_one({'_id': key}, update, upsert=True)
 
 
 class MongoDBPickleCache(MongoDBCache):
