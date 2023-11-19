@@ -50,7 +50,7 @@ def from_cache(*responses) -> bool:
 
 def httpbin(path: str = ''):
     """Get the url for either a local or remote httpbin instance"""
-    base_url = getenv('HTTPBIN_URL', 'http://localhost:80/')
+    base_url = getenv('HTTPBIN_URL', 'http://localhost:8080/')
     return base_url + path
 
 
