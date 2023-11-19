@@ -77,7 +77,7 @@ class MongoDBCache(BaseCache):
             yield doc['_id']
 
     async def read(self, key: str) -> ResponseOrKey:
-        doc = await self.collection.find_one({'_id': key}, projection={'data': True})
+        doc = await self.collection.find_one({'_id': key}, projection={'_id': False, 'data': True})
         try:
             return doc['data']
         except TypeError:
@@ -88,7 +88,7 @@ class MongoDBCache(BaseCache):
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
         async for doc in self.collection.find(
-            {'data': {'$exists': True}}, projection={'data': True}
+            {'data': {'$exists': True}}, projection={'_id': False, 'data': True}
         ):
             yield doc['data']
 
