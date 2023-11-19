@@ -62,7 +62,7 @@ class MongoDBCache(BaseCache):
         await self.collection.drop()
 
     async def contains(self, key: str) -> bool:
-        return bool(await self.collection.find_one({'_id': key}))
+        return bool(await self.collection.find_one({'_id': key}, projection={'_id': True}))
 
     async def bulk_delete(self, keys: set):
         spec = {'_id': {'$in': list(keys)}}
@@ -70,29 +70,31 @@ class MongoDBCache(BaseCache):
 
     async def delete(self, key: str):
         spec = {'_id': key}
-        if hasattr(self.collection, "find_one_and_delete"):
-            await self.collection.find_one_and_delete(spec, {'_id': True})
-        else:
-            await self.collection.find_and_modify(spec, remove=True, fields={'_id': True})
+        await self.collection.delete_one(spec)
 
     async def keys(self) -> AsyncIterable[str]:
         async for doc in self.collection.find({}, {'_id': True}):
             yield doc['_id']
 
     async def read(self, key: str) -> ResponseOrKey:
-        result = await self.collection.find_one({'_id': key})
-        return result['data'] if result else None
+        doc = await self.collection.find_one({'_id': key}, projection={'_id': False, 'data': True})
+        try:
+            return doc['data']
+        except TypeError:
+            return None
 
     async def size(self) -> int:
         return await self.collection.count_documents({})
 
     async def values(self) -> AsyncIterable[ResponseOrKey]:
-        async for doc in self.collection.find({'data': {'$exists': True}}):
+        async for doc in self.collection.find(
+            {'data': {'$exists': True}}, projection={'_id': False, 'data': True}
+        ):
             yield doc['data']
 
     async def write(self, key: str, item: ResponseOrKey):
-        doc = {'_id': key, 'data': item}
-        await self.collection.replace_one({'_id': key}, doc, upsert=True)
+        update = {'$set': {'data': item}}
+        await self.collection.update_one({'_id': key}, update, upsert=True)
 
 
 class MongoDBPickleCache(MongoDBCache):
