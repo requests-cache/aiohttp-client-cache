@@ -133,7 +133,7 @@ class CachedResponse(HeadersMixin):
         return True
 
     @property
-    def _headers(self) -> CIMultiDictProxy[str]:
+    def _headers(self) -> CIMultiDictProxy[str]:  # type: ignore[override]
         return self.headers
 
     @property
