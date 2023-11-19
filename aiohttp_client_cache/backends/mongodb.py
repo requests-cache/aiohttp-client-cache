@@ -80,8 +80,8 @@ class MongoDBCache(BaseCache):
             yield doc['_id']
 
     async def read(self, key: str) -> ResponseOrKey:
-        result = await self.collection.find_one({'_id': key})
-        return result['data'] if result else None
+        doc = await self.collection.find_one({'_id': key}, projection={'data': True})
+        return doc['data'] if doc else None
 
     async def size(self) -> int:
         return await self.collection.count_documents({})
