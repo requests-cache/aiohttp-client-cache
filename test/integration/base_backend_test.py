@@ -23,7 +23,6 @@ from test.conftest import (
     from_cache,
     httpbin,
     httpbin_custom,
-    skip_37,
 )
 
 pytestmark = pytest.mark.asyncio
@@ -85,7 +84,6 @@ class BaseBackendTest:
         assert not from_cache(response_1) and from_cache(response_2)
         assert from_cache(response_3) and not from_cache(response_4)
 
-    @skip_37
     async def test_gather(self):
         # limit the maximum number of concurrent reads to 100 to avoid
         # problems with too many open files when using a FileBackend
@@ -279,7 +277,6 @@ class BaseBackendTest:
         cookies = session.cookie_jar.filter_cookies(httpbin())
         assert cookies['test_cookie'].value == 'value'
 
-    @skip_37
     async def test_autoclose(self):
         async with self.init_session(autoclose=True) as session:
             mock_close = MagicMock(wraps=session.cache.close)
@@ -287,7 +284,6 @@ class BaseBackendTest:
             await session.get(httpbin('get'))
         mock_close.assert_called_once()
 
-    @skip_37
     async def test_autoclose__disabled(self):
         async with self.init_session(autoclose=False) as session:
             mock_close = MagicMock(wraps=session.cache.close)
@@ -343,7 +339,6 @@ class BaseBackendTest:
                 assert response.from_cache is False
                 assert await session.cache.responses.size() == 1
 
-    @skip_37
     async def test_conditional_request(self):
         """Test that conditional requests using refresh=True work.
         The `/cache` endpoint returns proper ETag header and responds to a request
@@ -369,7 +364,6 @@ class BaseBackendTest:
             assert etag == response.headers["Etag"]
             mock_refresh.assert_awaited_once()
 
-    @skip_37
     async def test_conditional_request_changed(self):
         """Test that conditional requests using refresh=True work.
         The `/cache/<value>` endpoint will return a different ETag ever <value> s.
@@ -398,7 +392,6 @@ class BaseBackendTest:
             assert etag != response.headers["Etag"]
             mock_refresh.assert_awaited_once()
 
-    @skip_37
     async def test_no_support_for_conditional_request(self):
         """Test that conditional requests using refresh=True work even when the
         cached response / server does not support conditional requests. In this case

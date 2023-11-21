@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohttp-client-cache"
-version="0.10.0"
+version="0.11.0"
 description = "Persistent cache for aiohttp requests"
 authors = ["Jordan Cook"]
 license = "MIT License"
@@ -30,7 +30,7 @@ classifiers = [
 "Documentation" = "https://aiohttp-client-cache.readthedocs.io"
 
 [tool.poetry.dependencies]
-python          = "^3.7"
+python          = "^3.8"
 aiohttp         = "^3.8"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
@@ -45,17 +45,17 @@ motor           = {optional=true, version=">=3.1"}
 redis           = {optional=true, version=">=4.2"}
 
 # Documentation dependencies needed for Readthedocs builds
-furo                        = {optional=true, version="^2023.8", python=">=3.8"}
-linkify-it-py               = {optional=true, version=">=2.0", python=">=3.8"}
-markdown-it-py              = {optional=true, version=">=2.2", python=">=3.8"}
-myst-parser                 = {optional=true, version=">=2.0", python=">=3.8"}
-python-forge                = {optional=true, version="^18.6", python=">=3.8"}
-sphinx                      = {optional=true, version="7.1.2", python=">=3.8"}
-sphinx-automodapi           = {optional=true, version=">=0.15", python=">=3.8"}
-sphinx-autodoc-typehints    = {optional=true, version="^1.23", python=">=3.8"}
-sphinx-copybutton           = {optional=true, version="^0.3", python=">=3.8"}
-sphinx-inline-tabs          = {optional=true, version=">=2023.4", python=">=3.8"}
-sphinxcontrib-apidoc        = {optional=true, version=">=0.3", python=">=3.8"}
+furo                        = {optional=true, version="^2023.8"}
+linkify-it-py               = {optional=true, version=">=2.0"}
+markdown-it-py              = {optional=true, version=">=2.2"}
+myst-parser                 = {optional=true, version=">=2.0"}
+python-forge                = {optional=true, version="^18.6"}
+sphinx                      = {optional=true, version="7.1.2"}
+sphinx-automodapi           = {optional=true, version=">=0.15"}
+sphinx-autodoc-typehints    = {optional=true, version="^1.23"}
+sphinx-copybutton           = {optional=true, version="^0.3"}
+sphinx-inline-tabs          = {optional=true, version=">=2023.4"}
+sphinxcontrib-apidoc        = {optional=true, version=">=0.3"}
 
 [tool.poetry.extras]
 all         = ["aioboto3", "aiobotocore", "aiofiles", "aiosqlite", "motor", "redis"]
@@ -75,7 +75,7 @@ brotli          = ">=1.0"
 pytest          = ">=6.2"
 pytest-aiohttp  = "^0.3"
 pytest-asyncio  = "^0.14"
-pytest-clarity  = {version=">=1.0", python=">=3.8"}
+pytest-clarity  = ">=1.0"
 pytest-cov      = "^2.11"
 pytest-xdist    = "^2.3"
 
@@ -83,12 +83,8 @@ pytest-xdist    = "^2.3"
 nox             = ">=2022.11"
 nox-poetry      = "^0.8.6"
 pre-commit      = ">=2.12"
-sphinx-autobuild= {version=">=2021.3", python=">=3.8"}
+sphinx-autobuild= ">=2021.3"
 types-aiofiles  = ">=0.1.7"
-
-# Workarounds for possible dependency issues with importlib-metadata (3.7 only)
-typing-extensions = {version="^4.0", python="3.7"}
-zipp              = {version="^3.7", python="3.7"}
 
 [tool.poetry.group.test-server.dependencies]
 flask = ">=2.0"

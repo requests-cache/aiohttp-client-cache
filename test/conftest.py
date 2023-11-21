@@ -2,7 +2,6 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
 from os import getenv
-from sys import version_info
 from tempfile import NamedTemporaryFile
 from typing import AsyncIterator
 
@@ -36,11 +35,6 @@ HTTPDATE_DATETIME = datetime(2021, 4, 16, 21, 13)
 # Configure logging for pytest session
 logging.basicConfig(level='INFO')
 # logging.getLogger('aiohttp_client_cache').setLevel('DEBUG')
-
-
-skip_37 = pytest.mark.skipif(
-    version_info < (3, 8), reason='Test requires AsyncMock from python 3.8+'
-)
 
 
 def from_cache(*responses) -> bool:

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
-from test.conftest import CACHE_NAME, httpbin, skip_37
+from test.conftest import CACHE_NAME, httpbin
 from test.integration import BaseBackendTest, BaseStorageTest
 
 pytestmark = pytest.mark.asyncio
@@ -45,7 +45,6 @@ class TestSQLiteCache(BaseStorageTest):
             assert keys == {f'key_{i}' for i in range(n_items)}
             assert values == {f'value_{i}' for i in range(n_items)}
 
-    @skip_37
     @patch('aiohttp_client_cache.backends.sqlite.aiosqlite')
     async def test_concurrent_bulk_commit(self, mock_sqlite):
         """Multiple concurrent bulk commits should not interfere with each other"""
@@ -86,7 +85,6 @@ class TestSQLiteCache(BaseStorageTest):
             assert keys_1 == keys_2 == set(range(1000))
             assert values_1 == values_2 == set(range(1000))
 
-    @skip_37
     @patch('aiohttp_client_cache.backends.sqlite.aiosqlite')
     async def test_connection_kwargs(self, mock_sqlite):
         """A spot check to make sure optional connection kwargs gets passed to connection"""
@@ -153,7 +151,6 @@ class TestSQLiteBackend(BaseBackendTest):
     backend_class = SQLiteBackend
     init_kwargs = {'use_temp': True}
 
-    @skip_37
     async def test_autoclose__default(self):
         """By default, the backend should be closed when the session is closed"""
 
