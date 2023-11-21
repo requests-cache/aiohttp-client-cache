@@ -2,6 +2,7 @@
 
 ## (Unreleased)
 * Added minor performance improvements for MongoDB backend. (!203)
+* Drop support for Python 3.7
 
 ## 0.10.0 (2023-10-30)
 * Add support for conditional requests with `ETag` and `Last-Modified`

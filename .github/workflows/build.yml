@@ -20,7 +20,7 @@ jobs:
       matrix:
         # Fix the 3.11 version due to this regression introduced in 3.11.5:
         #   https://github.com/python/cpython/issues/109538
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.4']
+        python-version: ['3.8', '3.9', '3.10', '3.11.4']
     services:
       nginx:
         image: kennethreitz/httpbin

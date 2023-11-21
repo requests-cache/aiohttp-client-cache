@@ -5,7 +5,6 @@ import pytest
 
 from aiohttp_client_cache import CachedResponse
 from aiohttp_client_cache.backends import CacheBackend, DictCache, get_placeholder_backend
-from test.conftest import skip_37
 
 TEST_URL = 'https://test.com'
 
@@ -66,7 +65,6 @@ async def test_get_response__cache_miss(mock_delete):
     mock_delete.assert_not_called()
 
 
-@skip_37
 @patch.object(CacheBackend, 'delete')
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
@@ -79,7 +77,6 @@ async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
     mock_delete.assert_called_with('request-key')
 
 
-@skip_37
 @pytest.mark.parametrize('error_type', [AttributeError, KeyError, TypeError, pickle.PickleError])
 @patch.object(CacheBackend, 'delete')
 @patch.object(DictCache, 'read')
@@ -94,7 +91,6 @@ async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
     mock_delete.assert_not_called()
 
 
-@skip_37
 @patch.object(DictCache, 'read', return_value=object())
 async def test_get_response__quiet_serde_error(mock_read):
     """Test for a quiet deserialization error in which no errors are raised but attributes are
@@ -108,7 +104,6 @@ async def test_get_response__quiet_serde_error(mock_read):
     assert response is None
 
 
-@skip_37
 async def test_save_response():
     cache = CacheBackend()
     mock_response = get_mock_response()
@@ -121,7 +116,6 @@ async def test_save_response():
     assert await cache.redirects.read(redirect_key) == 'key'
 
 
-@skip_37
 async def test_save_response__manual_save():
     """Manually save a response with no cache key provided"""
     cache = CacheBackend()
@@ -188,7 +182,6 @@ async def test_has_url():
     assert not await cache.has_url('https://test.com/some_other_path')
 
 
-@skip_37
 @patch('aiohttp_client_cache.backends.base.create_key')
 async def test_create_key(mock_create_key):
     """Actual logic is in cache_keys module; just test to make sure it gets called correctly"""
@@ -239,7 +232,6 @@ async def test_is_cacheable(method, status, disabled, expired, filter_return, ex
     assert await cache.is_cacheable(mock_response) is expected_result
 
 
-@skip_37
 @pytest.mark.parametrize(
     'method, status, disabled, expired, body, expected_result',
     [

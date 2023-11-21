@@ -13,7 +13,7 @@ conda install -c conda-forge aiohttp-client-cache
 ```
 
 ### Requirements
-- Requires python 3.7+.
+- Requires python 3.8+.
 - You may need additional dependencies depending on which backend you want to use. To install with
   extra dependencies for all supported {ref}`backends`:
   ```bash
