@@ -34,8 +34,3 @@ repos:
     hooks:
       - id: xenon
         args: [--max-average=A, --max-modules=B, --max-absolute=C]
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
-    hooks:
-      - id: pyupgrade
-        args: [--py38-plus]
