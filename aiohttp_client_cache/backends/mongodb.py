@@ -23,7 +23,7 @@ class MongoDBBackend(CacheBackend):
         self,
         cache_name: str = 'aiohttp-cache',
         connection: AsyncIOMotorClient = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(cache_name=cache_name, **kwargs)
         self.responses = MongoDBPickleCache(cache_name, 'responses', connection, **kwargs)
@@ -45,7 +45,7 @@ class MongoDBCache(BaseCache):
         db_name: str,
         collection_name: str,
         connection: AsyncIOMotorClient = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
 

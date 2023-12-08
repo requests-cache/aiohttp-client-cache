@@ -111,7 +111,7 @@ async def test_session__default_attrs(mock_request):
 
 
 @pytest.mark.parametrize(
-    "params",
+    'params',
     [
         {'param': 'value'},  # Dict of strings
         {'param': 4.2},  # Dict of floats

@@ -35,7 +35,7 @@ class FileBackend(CacheBackend):
         cache_name: Union[Path, str] = 'http_cache',
         use_temp: bool = False,
         autoclose: bool = True,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(autoclose=autoclose, **kwargs)
         self.responses = FileCache(cache_name, use_temp=use_temp, **kwargs)
@@ -94,7 +94,7 @@ class FileCache(BaseCache):
                 await f.write(self.serialize(value) or b'')
 
     async def keys(self) -> AsyncIterable[str]:
-        for filename in filter(lambda fn: not fn.endswith(".sqlite"), listdir(self.cache_dir)):
+        for filename in filter(lambda fn: not fn.endswith('.sqlite'), listdir(self.cache_dir)):
             yield filename
 
     async def size(self) -> int:

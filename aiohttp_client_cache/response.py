@@ -214,7 +214,7 @@ class CachedResponse(HeadersMixin):
         """Reset the stream reader to re-read a streamed response"""
         self._content = None
 
-    async def text(self, encoding: Optional[str] = None, errors: str = "strict") -> str:
+    async def text(self, encoding: Optional[str] = None, errors: str = 'strict') -> str:
         """Read response payload and decode"""
         return self._body.decode(encoding or self.encoding, errors=errors)
 

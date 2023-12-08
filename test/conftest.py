@@ -39,7 +39,7 @@ logging.basicConfig(level='INFO')
 
 def from_cache(*responses) -> bool:
     """Indicate whether one or more responses came from the cache"""
-    return all([isinstance(response, CachedResponse) for response in responses])
+    return all(isinstance(response, CachedResponse) for response in responses)
 
 
 def httpbin(path: str = ''):
