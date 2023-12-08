@@ -6,7 +6,7 @@ from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
 from itertools import chain
 from logging import getLogger
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Tuple, Union
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -62,7 +62,7 @@ class CacheActions:
         cache_control: bool = False,
         cache_disabled: bool = False,
         refresh: bool = False,
-        headers: Optional[Mapping] = None,
+        headers: Mapping | None = None,
         **kwargs,
     ):
         """Initialize from request info and CacheBackend settings"""
@@ -100,7 +100,7 @@ class CacheActions:
         refresh: bool = False,
         request_expire_after: ExpirationTime = None,
         session_expire_after: ExpirationTime = None,
-        urls_expire_after: Optional[ExpirationPatterns] = None,
+        urls_expire_after: ExpirationPatterns | None = None,
         **kwargs,
     ):
         """Initialize from CacheBackend settings"""
@@ -122,7 +122,7 @@ class CacheActions:
         )
 
     @property
-    def expires(self) -> Optional[datetime]:
+    def expires(self) -> datetime | None:
         """Convert the user/header-provided expiration value to a datetime"""
         return get_expiration_datetime(self.expire_after)
 
@@ -145,7 +145,7 @@ def coalesce(*values: Any, default=None) -> Any:
     return next((v for v in values if v is not None), default)
 
 
-def get_expiration_datetime(expire_after: ExpirationTime) -> Optional[datetime]:
+def get_expiration_datetime(expire_after: ExpirationTime) -> datetime | None:
     """Convert an expiration value in any supported format to an absolute datetime"""
     logger.debug(f'Determining expiration time based on: {expire_after}')
     if isinstance(expire_after, str):
@@ -179,7 +179,7 @@ def get_cache_directives(headers: Mapping) -> Dict:
 
 
 def get_url_expiration(
-    url: StrOrURL, urls_expire_after: Optional[ExpirationPatterns] = None
+    url: StrOrURL, urls_expire_after: ExpirationPatterns | None = None
 ) -> ExpirationTime:
     """Check for a matching per-URL expiration, if any"""
     for pattern, expire_after in (urls_expire_after or {}).items():
@@ -197,7 +197,7 @@ def has_cache_headers(headers: Mapping) -> bool:
 
 
 def get_refresh_headers(
-    request_headers: Optional[Mapping], cached_headers: Mapping
+    request_headers: Mapping | None, cached_headers: Mapping
 ) -> tuple[bool, Mapping]:
     """Returns headers containing directives for conditional requests if the cached headers support it.**"""
     headers = request_headers if request_headers is not None else {}
@@ -215,7 +215,7 @@ def get_refresh_headers(
     return conditional_request_supported, refresh_headers
 
 
-def parse_http_date(value: str) -> Optional[datetime]:
+def parse_http_date(value: str) -> datetime | None:
     """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
     try:
         return parsedate_to_datetime(value)
@@ -246,7 +246,7 @@ def to_utc(dt: datetime):
     return dt
 
 
-def try_int(value: Optional[str]) -> Optional[int]:
+def try_int(value: str | None) -> int | None:
     """Convert a string value to an int, if possible, otherwise ``None``"""
     return int(str(value)) if str(value).isnumeric() else None
 
