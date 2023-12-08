@@ -161,7 +161,7 @@ def get_expiration_datetime(expire_after: ExpirationTime) -> datetime | None:
     return datetime.utcnow() + expire_after
 
 
-def get_cache_directives(headers: Mapping) -> dict:
+def get_cache_directives(headers: Mapping) -> Dict:
     """Get all Cache-Control directives, and handle multiple headers and comma-separated lists"""
     if not headers:
         return {}
