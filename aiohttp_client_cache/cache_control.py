@@ -161,7 +161,7 @@ def get_expiration_datetime(expire_after: ExpirationTime) -> datetime | None:
     return datetime.utcnow() + expire_after
 
 
-def get_cache_directives(headers: Mapping) -> Dict:
+def get_cache_directives(headers: Mapping) -> dict:
     """Get all Cache-Control directives, and handle multiple headers and comma-separated lists"""
     if not headers:
         return {}
@@ -199,17 +199,17 @@ def has_cache_headers(headers: Mapping) -> bool:
 def get_refresh_headers(
     request_headers: Mapping | None, cached_headers: Mapping
 ) -> tuple[bool, Mapping]:
-    """Returns headers containing directives for conditional requests if the cached headers support it.**"""
+    """Returns headers containing directives for conditional requests if the cached headers support it"""
     headers = request_headers if request_headers is not None else {}
-    refresh_headers = {k: v for k, v in headers.items()}
+    refresh_headers = dict(headers)
     conditional_request_supported = False
 
-    if "ETag" in cached_headers:
-        refresh_headers["If-None-Match"] = cached_headers["ETag"]
+    if 'ETag' in cached_headers:
+        refresh_headers['If-None-Match'] = cached_headers['ETag']
         conditional_request_supported = True
 
-    if "Last-Modified" in cached_headers:
-        refresh_headers["If-Modified-Since"] = cached_headers["Last-Modified"]
+    if 'Last-Modified' in cached_headers:
+        refresh_headers['If-Modified-Since'] = cached_headers['Last-Modified']
         conditional_request_supported = True
 
     return conditional_request_supported, refresh_headers

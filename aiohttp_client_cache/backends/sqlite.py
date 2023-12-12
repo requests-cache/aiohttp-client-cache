@@ -159,7 +159,7 @@ class SQLiteCache(BaseCache):
 
     async def bulk_delete(self, keys: set):
         async with self.get_connection(commit=True) as db:
-            placeholders = ", ".join("?" for _ in keys)
+            placeholders = ', '.join('?' for _ in keys)
             await db.execute(
                 f'DELETE FROM `{self.table_name}` WHERE key IN ({placeholders})', tuple(keys)
             )

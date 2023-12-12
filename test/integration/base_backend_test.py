@@ -98,11 +98,11 @@ class BaseBackendTest:
         async with self.init_session() as session:
             tasks = [asyncio.create_task(get_url(session, url)) for url in urls]
             responses = await asyncio.gather(*tasks)
-            assert all([r.from_cache is False for r in responses])
+            assert all(r.from_cache is False for r in responses)
 
             tasks = [asyncio.create_task(get_url(session, url)) for url in urls]
             responses = await asyncio.gather(*tasks)
-            assert all([r.from_cache is True for r in responses])
+            assert all(r.from_cache is True for r in responses)
 
     async def test_without_contextmanager(self):
         """Test that the cache backend can be safely used without the CachedSession contextmanager.
@@ -320,13 +320,13 @@ class BaseBackendTest:
         """
         async with self.init_session() as session:
             # first request shall populate the cache
-            response = await session.request("GET", httpbin('cache/0'))
+            response = await session.request('GET', httpbin('cache/0'))
 
             assert response.from_cache is False
             assert await session.cache.responses.size() == 1
 
             # second request shall come from the cache
-            response = await session.request("GET", httpbin('cache/0'))
+            response = await session.request('GET', httpbin('cache/0'))
 
             assert response.from_cache is True
             assert await session.cache.responses.size() == 1
@@ -334,7 +334,7 @@ class BaseBackendTest:
             # now disable the cache, the response should not come from the cache
             # but the cache should be unmodified afterward.
             async with session.disabled():
-                response = await session.request("GET", httpbin('cache/0'))
+                response = await session.request('GET', httpbin('cache/0'))
 
                 assert response.from_cache is False
                 assert await session.cache.responses.size() == 1
@@ -355,13 +355,13 @@ class BaseBackendTest:
 
             response = await session.get(httpbin('cache'))
             assert response.from_cache is False
-            etag = response.headers["Etag"]
+            etag = response.headers['Etag']
             assert etag is not None
             mock_refresh.assert_not_awaited()
 
             response = await session.get(httpbin('cache'), refresh=True)
             assert response.from_cache is True
-            assert etag == response.headers["Etag"]
+            assert etag == response.headers['Etag']
             mock_refresh.assert_awaited_once()
 
     async def test_conditional_request_changed(self):
@@ -379,7 +379,7 @@ class BaseBackendTest:
 
             response = await session.get(httpbin_custom('cache/1'))
             assert response.from_cache is False
-            etag = response.headers["Etag"]
+            etag = response.headers['Etag']
             assert etag is not None
             mock_refresh.assert_not_awaited()
 
@@ -389,7 +389,7 @@ class BaseBackendTest:
 
             response = await session.get(httpbin_custom('cache/1'), refresh=True)
             assert response.from_cache is False
-            assert etag != response.headers["Etag"]
+            assert etag != response.headers['Etag']
             mock_refresh.assert_awaited_once()
 
     async def test_no_support_for_conditional_request(self):
@@ -410,10 +410,10 @@ class BaseBackendTest:
 
             response = await session.get(httpbin('cache/10'))
             assert response.from_cache is False
-            assert response.headers.get("Etag") is None
+            assert response.headers.get('Etag') is None
             mock_refresh.assert_not_awaited()
 
             response = await session.get(httpbin('cache/10'), refresh=True)
             assert response.from_cache is True
-            assert response.headers.get("Etag") is None
+            assert response.headers.get('Etag') is None
             mock_refresh.assert_awaited_once()

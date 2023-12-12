@@ -118,11 +118,11 @@ class DynamoDbCache(BaseCache):
                 AttributeDefinitions=[{'AttributeName': self.key_attr_name, 'AttributeType': 'S'}],
                 TableName=self.table_name,
                 KeySchema=[{'AttributeName': self.key_attr_name, 'KeyType': 'HASH'}],
-                BillingMode="PAY_PER_REQUEST",
+                BillingMode='PAY_PER_REQUEST',
             )
             await table.wait_until_exists()
         except ClientError as e:
-            if e.response["Error"]["Code"] != "ResourceInUseException":
+            if e.response['Error']['Code'] != 'ResourceInUseException':
                 raise
 
         return table
@@ -158,7 +158,7 @@ class DynamoDbCache(BaseCache):
     async def read(self, key: str) -> ResponseOrKey:
         table = await self.get_table()
         response = await table.get_item(Key=self._doc(key), ProjectionExpression=self.val_attr_name)
-        item = response.get("Item")
+        item = response.get('Item')
         if item:
             return self.deserialize(item[self.val_attr_name].value)
         return None

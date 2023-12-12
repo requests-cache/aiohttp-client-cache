@@ -153,7 +153,7 @@ class CacheMixin(MIXIN_BASE):
 # Ignore aiohttp warning: "Inheritance from ClientSession is discouraged"
 # Since only _request() is overridden, there is minimal chance of breakage, but still possible
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
 
     class CachedSession(CacheMixin, ClientSession):
         """A drop-in replacement for :py:class:`aiohttp.ClientSession` that adds caching support

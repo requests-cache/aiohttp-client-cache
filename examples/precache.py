@@ -88,7 +88,7 @@ def measure_cache():
     print(f'Completed run in {elapsed_time:0.3f} seconds and cached {cached_bytes:0.3f} MB')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parent_url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_URL
     with measure_cache():
         asyncio.run(precache_page_links(parent_url))

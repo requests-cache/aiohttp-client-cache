@@ -56,7 +56,7 @@ async def test_basic_attrs(aiohttp_client):
     assert response.encoding == 'utf-8'
     assert response.headers['Content-Type'] == 'text/plain; charset=utf-8'
     assert await response.text() == '404: Not Found'
-    assert response.history == tuple()
+    assert response.history == ()
     assert response._released is True
 
 
