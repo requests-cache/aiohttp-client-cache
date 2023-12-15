@@ -2,6 +2,7 @@ version: '3.8'
 services:
   dragonfly:
     image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    # NOTE: Disabled because this will not work with a rootless Docker.
     #ulimits:
     #  memlock: -1
     ports:
