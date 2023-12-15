@@ -1,6 +1,7 @@
 # History
 
 ## (Unreleased)
+* Added a Docker Compose file with [DragonflyDB](https://www.dragonflydb.io/) service that can be used as a Redis drop-in replacement.
 * Added minor performance improvements for MongoDB backend. (!203)
 * Drop support for Python 3.7
 

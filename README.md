@@ -19,7 +19,7 @@ client requests, based on [requests-cache](https://github.com/reclosedev/request
   [expiration](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html#cache-expiration)
   and other [behavior](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html#cache-options)
 * **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html):
-  SQLite, DynamoDB, MongoDB, and Redis.
+  SQLite, DynamoDB, MongoDB, DragonflyDB and Redis.
 
 # Quickstart
 First, install with pip (python 3.8+ required):
