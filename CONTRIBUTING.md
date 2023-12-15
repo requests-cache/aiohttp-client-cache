@@ -72,6 +72,9 @@ docker-compose up -d
 pytest test/integration
 ```
 
+To test DragonflyDB you need to stop a Redis container (if running) and run `docker compose -f dragonflydb.yaml up`.
+No other changes are required, you can run related tests with e.g. `pytest test -k redis`.
+
 ## Documentation
 [Sphinx](http://www.sphinx-doc.org/en/master/) is used to generate documentation.
 
