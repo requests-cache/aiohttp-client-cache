@@ -15,3 +15,4 @@ Thanks to the following individuals for contributing to `aiohttp-client-cache`:
 * [Austin Raney](https://github.com/aaraney)
 * [0hax](https://github.com/0hax)
 * [Thomas Neidhart](https://github.com/netomi)
+* [https://github.com/Jamim](https://github.com/Jamim)
