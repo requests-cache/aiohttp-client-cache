@@ -8,7 +8,7 @@ on:
     branches: [main]
   workflow_dispatch:
 env:
-  LATEST_PY_VERSION: '3.11'
+  LATEST_PY_VERSION: '3.12'
   COVERAGE_ARGS: '--cov --cov-report=term --cov-report=xml'
   XDIST_ARGS: '--numprocesses=auto --dist=loadfile'
 
@@ -18,7 +18,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version:
+          - '3.12'
+          - '3.11'
+          - '3.10'
+          - '3.9'
+          - '3.8'
     services:
       nginx:
         image: kennethreitz/httpbin
@@ -26,8 +31,8 @@ jobs:
           - 8080:80
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - uses: snok/install-poetry@v1.3
@@ -70,15 +75,15 @@ jobs:
       # Latest python version: send coverage report to codecov
       - name: "Upload coverage report to Codecov"
         if: ${{ matrix.python-version == env.LATEST_PY_VERSION }}
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 
 
   # Run code analysis checks
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.LATEST_PY_VERSION }}
       - name: Run style checks and linting via pre-commit hooks
