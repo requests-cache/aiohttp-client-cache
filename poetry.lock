@@ -2513,4 +2513,4 @@ sqlite = ["aiosqlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "21a9031c5e8fdb28f81ea90d7776174a8bd3e72b4c4326cbd3ab0296f037e0dc"
+content-hash = "325156cf77b2e892ba8507583e3fc84b1a41d07d44a533223296b3ab51adf9df"
