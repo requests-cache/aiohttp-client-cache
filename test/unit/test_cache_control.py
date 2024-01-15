@@ -20,6 +20,9 @@ from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 
 fake = Faker()
 
+# A hack to support pytest-xdist.
+Faker.seed(42)  # Use any value, but it must be the same within a pytest-xdist session.
+
 IGNORED_DIRECTIVES = [
     'must-revalidate',
     'no-transform',
