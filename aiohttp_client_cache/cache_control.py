@@ -253,18 +253,29 @@ def try_int(value):
 
 
 @try_int.register
-def _(value: None | int) -> None | int:
+def _(value: None) -> None:
     return value
 
 
 @try_int.register
-def _(value: float | bool) -> NoReturn:
+def _(value: int) -> int:
+    return value
+
+
+@try_int.register
+def _(value: float) -> NoReturn:
     # Make sure that we do not inadvertently process a supertype of `int`.
     raise TypeError
 
 
 @try_int.register
-def _(value: str) -> int | None:
+def _(value: bool) -> NoReturn:
+    # Make sure that we do not inadvertently process a supertype of `int`.
+    raise TypeError
+
+
+@try_int.register
+def _(value: str):
     try:
         return int(value)
     except ValueError:
