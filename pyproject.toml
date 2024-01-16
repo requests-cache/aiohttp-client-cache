@@ -114,6 +114,8 @@ exclude_lines = [
 
 [tool.mypy]
 ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 exclude = "dist|build"
 
 [tool.ruff]
