@@ -720,6 +720,21 @@ files = [
 testing = ["hatch", "pre-commit", "pytest", "tox"]
 
 [[package]]
+name = "faker"
+version = "22.2.0"
+description = "Faker is a Python package that generates fake data for you."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "Faker-22.2.0-py3-none-any.whl", hash = "sha256:2c2b7a8e55368defd718226bd5b48ef31b2d082c2900ccb4200987e433be500e"},
+    {file = "Faker-22.2.0.tar.gz", hash = "sha256:fab78f435d27fa7bd109b095eea3504477e4149051c903fd63f11ce252e3d9b7"},
+]
+
+[package.dependencies]
+python-dateutil = ">=2.4"
+typing-extensions = {version = ">=3.10.0.1", markers = "python_version <= \"3.8\""}
+
+[[package]]
 name = "filelock"
 version = "3.13.1"
 description = "A platform independent file lock."
@@ -1665,7 +1680,7 @@ testing = ["filelock"]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
-optional = true
+optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
@@ -2513,4 +2528,4 @@ sqlite = ["aiosqlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "325156cf77b2e892ba8507583e3fc84b1a41d07d44a533223296b3ab51adf9df"
+content-hash = "8ef8c0c9d56ed1f3f5ff83b3eaac80c59e3b9c43be51cc7725f977a71425bbca"

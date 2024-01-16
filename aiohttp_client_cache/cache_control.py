@@ -4,9 +4,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
+from functools import singledispatch
 from itertools import chain
 from logging import getLogger
-from typing import Any, Dict, Mapping, Tuple, Union
+from typing import Any, Dict, Mapping, NoReturn, Tuple, Union
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -246,9 +247,39 @@ def to_utc(dt: datetime):
     return dt
 
 
-def try_int(value: str | None) -> int | None:
-    """Convert a string value to an int, if possible, otherwise ``None``"""
-    return int(str(value)) if str(value).isnumeric() else None
+@singledispatch
+def try_int(value):
+    raise NotImplementedError
+
+
+@try_int.register
+def _(value: None) -> None:
+    return value
+
+
+@try_int.register
+def _(value: int) -> int:
+    return value
+
+
+@try_int.register
+def _(value: float) -> NoReturn:
+    # Make sure that we do not inadvertently process a supertype of `int`.
+    raise TypeError
+
+
+@try_int.register
+def _(value: bool) -> NoReturn:
+    # Make sure that we do not inadvertently process a supertype of `int`.
+    raise TypeError
+
+
+@try_int.register
+def _(value: str):
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def url_match(url: StrOrURL, pattern: str) -> bool:

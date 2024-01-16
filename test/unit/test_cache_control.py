@@ -1,12 +1,27 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
+from typing import Any
 from unittest.mock import MagicMock, patch
+from contextlib import nullcontext
 
 import pytest
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
+from faker import Faker
 
-from aiohttp_client_cache.cache_control import DO_NOT_CACHE, CacheActions, get_expiration_datetime
+from aiohttp_client_cache.cache_control import (
+    DO_NOT_CACHE,
+    CacheActions,
+    get_expiration_datetime,
+    try_int,
+)
 from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
+
+fake = Faker()
+
+# A hack to support pytest-xdist.
+Faker.seed(42)  # Use any value, but it must be the same within a pytest-xdist session.
 
 IGNORED_DIRECTIVES = [
     'must-revalidate',
@@ -198,3 +213,22 @@ def test_get_expiration_datetime__relative(expire_after, expected_expiration_del
 def test_get_expiration_datetime__httpdate():
     assert get_expiration_datetime(HTTPDATE_STR) == HTTPDATE_DATETIME
     assert get_expiration_datetime('P12Y34M56DT78H90M12.345S') is None
+
+
+@pytest.mark.parametrize(
+    'value, expected_output, error',
+    [
+        (str(random_int := fake.pyint()), random_int, None),  # `str` (numeric) to `int`.
+        ('0', 0, None),  # `str` (numeric) to `int`.
+        (None, None, None),  # `None` to `None`.
+        (random_int, random_int, None),  # `int` to `int`.
+        (fake.pystr(), None, None),  # `str` (non-numeric) to `None`.
+        (fake.pybool(), ..., TypeError),  # Unsupported type.
+        (fake.pyfloat(), ..., TypeError),  # Unsupported type.
+        (fake.pyiterable(), ..., NotImplementedError),  # Unsupported type.
+    ],
+)
+def test_try_int(value: Any, expected_output: str | None, error: type[Exception] | None) -> None:
+    ctx = pytest.raises(error) if error else nullcontext()
+    with ctx:
+        assert try_int(value) == expected_output

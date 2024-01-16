@@ -78,6 +78,7 @@ pytest-asyncio  = "^0.14"
 pytest-clarity  = ">=1.0"
 pytest-cov      = "^2.11"
 pytest-xdist    = "^2.3"
+Faker           = "^22.2.0"
 
 # For convenience in local development; additional tools are managed by pre-commit
 nox             = ">=2022.11"
@@ -113,6 +114,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
+python_version = 3.8
 ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unused_ignores = true
