@@ -68,7 +68,7 @@ docs        = ["furo", "linkify-it-py", "markdown-it-py", "myst-parser", "python
                "sphinx", "sphinx-automodapi","sphinx-autodoc-typehints", "sphinx-copybutton",
                "sphinx-inline-tabs", "sphinxcontrib-apidoc"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # For unit + integration tests
 async-timeout   = ">=4.0"
 brotli          = ">=1.0"
@@ -116,6 +116,8 @@ exclude_lines = [
 [tool.mypy]
 python_version = 3.8
 ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 exclude = "dist|build"
 
 [tool.ruff]
