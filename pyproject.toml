@@ -68,7 +68,7 @@ docs        = ["furo", "linkify-it-py", "markdown-it-py", "myst-parser", "python
                "sphinx", "sphinx-automodapi","sphinx-autodoc-typehints", "sphinx-copybutton",
                "sphinx-inline-tabs", "sphinxcontrib-apidoc"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # For unit + integration tests
 async-timeout   = ">=4.0"
 brotli          = ">=1.0"
