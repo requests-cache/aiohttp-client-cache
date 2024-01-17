@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import Any
+from datetime import datetime, timedelta, timezone
+from email.utils import format_datetime
+import os
+from typing import Any, Mapping
 from unittest.mock import MagicMock, patch
 from contextlib import nullcontext
 
@@ -13,15 +15,23 @@ from faker import Faker
 from aiohttp_client_cache.cache_control import (
     DO_NOT_CACHE,
     CacheActions,
+    convert_to_utc_naive,
     get_expiration_datetime,
+    compose_refresh_headers,
+    parse_http_date,
+    split_kv_directive,
     try_int,
+    url_match,
 )
 from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 
-fake = Faker()
+# Any random value, but to support `pytest-xdist` the value must be static during a Pytest session.
+DEFAULT_FAKER_SEED = os.getenv('CUSTOM_FAKER_SEED') or 42
 
-# A hack to support pytest-xdist.
-Faker.seed(42)  # Use any value, but it must be the same within a pytest-xdist session.
+Faker.seed(os.getenv('GITHUB_JOB') or DEFAULT_FAKER_SEED)
+fake = Faker()
+# Make sure "pytest-xdist" collects the same datetime object.
+RANDOM_DATETIME_NOW_UTC = fake.date_time(tzinfo=timezone.utc).replace(second=0)
 
 IGNORED_DIRECTIVES = [
     'must-revalidate',
@@ -213,6 +223,120 @@ def test_get_expiration_datetime__relative(expire_after, expected_expiration_del
 def test_get_expiration_datetime__httpdate():
     assert get_expiration_datetime(HTTPDATE_STR) == HTTPDATE_DATETIME
     assert get_expiration_datetime('P12Y34M56DT78H90M12.345S') is None
+
+
+@pytest.mark.parametrize(
+    'request_headers, cached_headers, conditional_request_supported, expected_refresh_headers',
+    [
+        (
+            None,
+            {
+                'Last-Modified': 'Tue, 16 Jan 2024 13:05:41 GMT',
+                'ETag': 'ecf4cd5e9ff144a589d45ca6b2f623f4',
+            },
+            True,
+            {
+                'If-Modified-Since': 'Tue, 16 Jan 2024 13:05:41 GMT',
+                'If-None-Match': 'ecf4cd5e9ff144a589d45ca6b2f623f4',
+            },
+        ),
+        (
+            None,
+            {'Last-Modified': 'Tue, 16 Jan 2024 13:05:41 GMT'},
+            True,
+            {
+                'If-Modified-Since': 'Tue, 16 Jan 2024 13:05:41 GMT',
+            },
+        ),
+        (
+            None,
+            {'ETag': 'ecf4cd5e9ff144a589d45ca6b2f623f4'},
+            True,
+            {
+                'If-None-Match': 'ecf4cd5e9ff144a589d45ca6b2f623f4',
+            },
+        ),
+        (None, {'foo': 'bar'}, False, {}),
+        ({'foo': 'bar'}, {'ETag': 123}, True, {'foo': 'bar', 'If-None-Match': 123}),
+        ({'foo': 'bar'}, {}, False, {'foo': 'bar'}),
+    ],
+)
+def test_compose_refresh_headers(
+    request_headers: Mapping | None,
+    cached_headers: Mapping,
+    conditional_request_supported: bool,
+    expected_refresh_headers: Mapping,
+) -> None:
+    refresh_headers = compose_refresh_headers(request_headers, cached_headers)
+    assert refresh_headers[0] == conditional_request_supported
+    assert refresh_headers[1] == expected_refresh_headers
+
+
+@pytest.mark.parametrize(
+    'value, expected_output',
+    [
+        (
+            format_datetime(RANDOM_DATETIME_NOW_UTC, usegmt=False),
+            RANDOM_DATETIME_NOW_UTC.replace(microsecond=0),
+        ),
+        (
+            format_datetime(RANDOM_DATETIME_NOW_UTC, usegmt=True),
+            RANDOM_DATETIME_NOW_UTC.replace(microsecond=0),
+        ),
+        (fake.pystr(), None),
+    ],
+)
+def test_parse_http_date(value: Any, expected_output: datetime | None) -> None:
+    assert parse_http_date(value) == expected_output
+
+
+@pytest.mark.parametrize(
+    'value, expected_output',
+    [
+        ('public', ('public', True)),
+        (' max-age=60', ('max-age', 60)),
+        ('foo=bar', ('foo', None)),
+        ('no-store', ('no-store', True)),
+        ('=', ('', None)),
+        ('', ('', True)),
+    ],
+)
+def test_split_kv_directive(value, expected_output) -> None:
+    assert split_kv_directive(value) == expected_output
+
+
+@pytest.mark.parametrize(
+    'dt, dt_utc',
+    [
+        (RANDOM_DATETIME_NOW_UTC, RANDOM_DATETIME_NOW_UTC.replace(tzinfo=None)),
+        (
+            RANDOM_DATETIME_NOW_UTC.replace(tzinfo=None),
+            RANDOM_DATETIME_NOW_UTC.replace(tzinfo=None),
+        ),
+    ],
+)
+def test_convert_to_utc_naive(dt: datetime, dt_utc: datetime) -> None:
+    assert convert_to_utc_naive(dt) == pytest.approx(dt_utc)
+
+
+@pytest.mark.parametrize(
+    'url, pattern, expected_output',
+    [
+        ('', ..., False),
+        ('https://httpbin.org/delay/1', 'httpbin.org/delay', True),
+        ('https://httpbin.org/delay/1', 'httpbin.org/delay', True),
+        ('https://httpbin.org/stream/1', 'httpbin.org/*/1', True),
+        ('httpbin.org/stream/1', 'httpbin.org/*/1', True),
+        ('https://httpbin.org/stream/1', '*', True),
+        ('https://httpbin.org/stream/1', '', True),
+        (fake.pystr(), '*', True),
+        (URL('https://httpbin.org/stream/2'), 'httpbin.org/*/1', False),
+        (URL('https://httpbin.org/stream/1'), 'httpbin.org/*/1', True),
+        (URL('https://httpbin.org/stream/2'), 'httpbin.org/*/1', False),
+    ],
+)
+def test_url_match(url: Any, pattern: str, expected_output: bool) -> None:
+    assert url_match(url, pattern) == expected_output
 
 
 @pytest.mark.parametrize(

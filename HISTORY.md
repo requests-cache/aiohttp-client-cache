@@ -1,10 +1,24 @@
 # History
 
 ## (Unreleased)
+
+Features
+--------
+
+* Added support for Python 3.12.
+
+Misc
+----
+
+* (Internal/maintance) Renamed or slightly refactored some internal functions (that are not a part of the library public nterface).
+* Added more tests.
 * Added a Docker Compose file with [DragonflyDB](https://www.dragonflydb.io/) service that can be used as a Redis drop-in replacement.
 * Added minor performance improvements for MongoDB backend. (!203)
-* Add support for python 3.12
-* Drop support for python 3.7
+
+Deprecations and Removals
+-------------------------
+
+* Dropped support for Python 3.7.
 
 ## 0.10.0 (2023-10-30)
 * Add support for conditional requests with `ETag` and `Last-Modified`
