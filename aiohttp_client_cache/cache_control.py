@@ -1,6 +1,7 @@
 """Utilities for determining cache expiration and other cache actions"""
 from __future__ import annotations
 
+import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
@@ -154,7 +155,7 @@ def get_expiration_datetime(expire_after: ExpirationTime) -> datetime | None:
     if expire_after is None or expire_after == -1:
         return None
     if isinstance(expire_after, datetime):
-        return to_utc(expire_after)
+        return convert_to_utc_naive(expire_after)
 
     if not isinstance(expire_after, timedelta):
         assert isinstance(expire_after, (int, float))
@@ -197,12 +198,11 @@ def has_cache_headers(headers: Mapping) -> bool:
     return any([d in cache_control for d in CACHE_DIRECTIVES] + [bool(headers.get('Expires'))])
 
 
-def get_refresh_headers(
+def compose_refresh_headers(
     request_headers: Mapping | None, cached_headers: Mapping
 ) -> tuple[bool, Mapping]:
     """Returns headers containing directives for conditional requests if the cached headers support it"""
-    headers = request_headers if request_headers is not None else {}
-    refresh_headers = dict(headers)
+    refresh_headers = dict(request_headers) if request_headers is not None else {}
     conditional_request_supported = False
 
     if 'ETag' in cached_headers:
@@ -216,13 +216,24 @@ def get_refresh_headers(
     return conditional_request_supported, refresh_headers
 
 
-def parse_http_date(value: str) -> datetime | None:
-    """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
-    try:
-        return parsedate_to_datetime(value)
-    except (TypeError, ValueError):
-        logger.debug(f'Failed to parse timestamp: {value}')
-        return None
+if sys.version_info >= (3, 10):
+
+    def parse_http_date(value: str) -> datetime | None:
+        """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
+        try:
+            return parsedate_to_datetime(value)
+        except ValueError:
+            logger.debug(f'Failed to parse timestamp: {value}')
+            return None
+else:  # pragma: no cover
+
+    def parse_http_date(value: str) -> datetime | None:
+        """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
+        try:
+            return parsedate_to_datetime(value)
+        except (ValueError, TypeError):
+            logger.debug(f'Failed to parse timestamp: {value}')
+            return None
 
 
 def split_kv_directive(header_value: str) -> CacheDirective:
@@ -237,8 +248,8 @@ def split_kv_directive(header_value: str) -> CacheDirective:
         return header_value, True
 
 
-def to_utc(dt: datetime):
-    """ "All internal datetimes are UTC and timezone-naive. Convert any user/header-provided
+def convert_to_utc_naive(dt: datetime):
+    """All internal datetimes are UTC and timezone-naive. Convert any user/header-provided
     datetimes to the same format.
     """
     if dt.tzinfo:

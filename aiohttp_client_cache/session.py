@@ -8,7 +8,7 @@ from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
-from aiohttp_client_cache.cache_control import CacheActions, ExpirationTime, get_refresh_headers
+from aiohttp_client_cache.cache_control import CacheActions, ExpirationTime, compose_refresh_headers
 from aiohttp_client_cache.response import AnyResponse, CachedResponse, set_response_defaults
 from aiohttp_client_cache.signatures import extend_signature
 
@@ -95,7 +95,7 @@ class CacheMixin(MIXIN_BASE):
 
         # check whether we can do a conditional request,
         # i.e. if the necessary headers are present (ETag, Last-Modified)
-        conditional_request_supported, refresh_headers = get_refresh_headers(
+        conditional_request_supported, refresh_headers = compose_refresh_headers(
             kwargs.get('headers'), cached_response.headers
         )
 
