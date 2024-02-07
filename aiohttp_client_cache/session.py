@@ -162,3 +162,6 @@ with warnings.catch_warnings():
             cache: A cache backend object. See :py:mod:`aiohttp_client_cache.backends` for
                 options. If not provided, an in-memory cache will be used.
         """
+
+        async def __aenter__(self) -> 'CachedSession':
+            return self
