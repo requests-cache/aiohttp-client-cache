@@ -1,5 +1,6 @@
 # TODO: CachedResponse may be better as a non-slotted subclass of ClientResponse.
 #     Will look into this when working on issue #67.
+from __future__ import annotations
 import asyncio
 import json
 from datetime import datetime
@@ -60,12 +61,12 @@ class CachedResponse(HeadersMixin):
     url: URL = attr.ib(converter=URL)
     version: str = attr.ib()
     _body: Any = attr.ib(default=b'')
-    _content: StreamReader = attr.ib(default=None)
+    _content: StreamReader | None = attr.ib(default=None)
     _links: LinkItems = attr.ib(factory=list)
     cookies: SimpleCookie = attr.ib(factory=SimpleCookie)
     created_at: datetime = attr.ib(factory=datetime.utcnow)
     encoding: str = attr.ib(default='utf-8')
-    expires: Optional[datetime] = attr.ib(default=None)
+    expires: datetime | None = attr.ib(default=None)
     raw_headers: RawHeaders = attr.ib(factory=tuple)
     real_url: StrOrURL = attr.ib(default=None)
     history: Iterable = attr.ib(factory=tuple)
@@ -73,12 +74,9 @@ class CachedResponse(HeadersMixin):
 
     @classmethod
     async def from_client_response(
-        cls, client_response: ClientResponse, expires: Optional[datetime] = None
+        cls, client_response: ClientResponse, expires: datetime | None = None
     ):
         """Convert a ClientResponse into a CachedReponse"""
-        if isinstance(client_response, cls):
-            return client_response
-
         # Copy most attributes over as is
         copy_attrs = set(attr.fields_dict(cls).keys()) - EXCLUDE_ATTRS
         response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
@@ -118,7 +116,7 @@ class CachedResponse(HeadersMixin):
         self._content = value
 
     @property
-    def content_disposition(self) -> Optional[ContentDisposition]:
+    def content_disposition(self) -> ContentDisposition | None:
         """Get Content-Disposition headers, if any"""
         raw = self.headers.get(hdrs.CONTENT_DISPOSITION)
         if raw is None:
@@ -189,7 +187,7 @@ class CachedResponse(HeadersMixin):
     def get_encoding(self):
         return self.encoding
 
-    async def json(self, encoding: Optional[str] = None, **kwargs) -> Optional[Dict[str, Any]]:
+    async def json(self, encoding: str | None = None, **kwargs) -> dict[str, Any] | None:
         """Read and decode JSON response"""
         stripped = self._body.strip()
         if not stripped:
@@ -214,7 +212,7 @@ class CachedResponse(HeadersMixin):
         """Reset the stream reader to re-read a streamed response"""
         self._content = None
 
-    async def text(self, encoding: Optional[str] = None, errors: str = 'strict') -> str:
+    async def text(self, encoding: str | None = None, errors: str = 'strict') -> str:
         """Read response payload and decode"""
         return self._body.decode(encoding or self.encoding, errors=errors)
 
@@ -230,7 +228,7 @@ class CachedResponse(HeadersMixin):
     def connection(self):
         return None
 
-    async def __aenter__(self) -> 'CachedResponse':
+    async def __aenter__(self) -> CachedResponse:
         return self
 
     @property
@@ -259,7 +257,7 @@ class CachedStreamReader(StreamReader):
     chunked reads, etc.
     """
 
-    def __init__(self, body: Optional[bytes] = None):
+    def __init__(self, body: bytes | None = None):
         body = body or b''
         protocol = Mock(_reading_paused=False)
         super().__init__(protocol, limit=len(body), loop=asyncio.get_event_loop())
