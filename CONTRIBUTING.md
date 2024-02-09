@@ -88,7 +88,7 @@ To preview:
 # MacOS:
 $ open docs/_build/index.html
 # Linux:
-$ xdg-open docs/_build/index.html
+$ xdg-open docs/_build/html/index.html
 ```
 
 ### Readthedocs
