@@ -102,7 +102,7 @@ the docs. A configured build container is included in `docker-compose.yml` to si
 
 Run with:
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 docker exec readthedocs make all
 ```
 
