@@ -88,7 +88,7 @@ To preview:
 # MacOS:
 $ open docs/_build/index.html
 # Linux:
-$ xdg-open docs/_build/index.html
+$ xdg-open docs/_build/html/index.html
 ```
 
 ### Readthedocs
@@ -102,7 +102,7 @@ the docs. A configured build container is included in `docker-compose.yml` to si
 
 Run with:
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 docker exec readthedocs make all
 ```
 
@@ -127,7 +127,7 @@ on the `main` branch.
 Release steps:
 * Update the version in both `pyproject.toml` and `aiohttp_client_cache/__init__.py`
 * Make sure the release notes in `HISTORY.md` are up to date
-* Push a new tag, e.g.: `git tag v0.1 && git push origin --tags`
+* Push a new tag, e.g.: `git tag v0.1.0 && git push origin v0.1.0`
 * This will trigger a deployment. Verify that this completes successfully and that the new version can be installed from pypi with `pip install`
 * A [readthedocs build](https://readthedocs.org/projects/aiohttp-client-cache/builds/) will be triggered by the new tag. Verify that this completes successfully.
 
