@@ -12,17 +12,20 @@
 client requests, based on [requests-cache](https://github.com/reclosedev/requests-cache).
 
 # Features
-* **Ease of use:** Use as a [drop-in replacement](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html)
+
+- **Ease of use:** Use as a [drop-in replacement](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html)
   for `aiohttp.ClientSession`
-* **Customization:** Works out of the box with little to no config, but with plenty of options
+- **Customization:** Works out of the box with little to no config, but with plenty of options
   available for customizing cache
   [expiration](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html#cache-expiration)
   and other [behavior](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html#cache-options)
-* **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html):
+- **Persistence:** Includes several [storage backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html):
   SQLite, DynamoDB, MongoDB, DragonflyDB and Redis.
 
 # Quickstart
+
 First, install with pip (python 3.8+ required):
+
 ```bash
 pip install aiohttp-client-cache[all]
 ```
@@ -34,11 +37,13 @@ backend docs and [pyproject.toml](https://github.com/requests-cache/aiohttp-clie
 for details.
 
 ## Basic Usage
+
 Next, use [aiohttp_client_cache.CachedSession](https://aiohttp-client-cache.readthedocs.io/en/stable/modules/aiohttp_client_cache.session.html#aiohttp_client_cache.session.CachedSession)
 in place of [aiohttp.ClientSession](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession).
 To briefly demonstrate how to use it:
 
 **Replace this:**
+
 ```python
 from aiohttp import ClientSession
 
@@ -47,6 +52,7 @@ async with ClientSession() as session:
 ```
 
 **With this:**
+
 ```python
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 
@@ -59,6 +65,7 @@ With caching, the response will be fetched once, saved to `demo_cache.sqlite`, a
 requests will return the cached response near-instantly.
 
 ## Configuration
+
 Several options are available to customize caching behavior. This example demonstrates a few of them:
 
 ```python
@@ -78,12 +85,15 @@ cache = SQLiteBackend(
 ```
 
 # More Info
+
 To learn more, see:
-* [User Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html)
-* [Cache Backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html)
-* [API Reference](https://aiohttp-client-cache.readthedocs.io/en/stable/reference.html)
-* [Examples](https://aiohttp-client-cache.readthedocs.io/en/stable/examples.html)
+
+- [User Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/user_guide.html)
+- [Cache Backends](https://aiohttp-client-cache.readthedocs.io/en/stable/backends.html)
+- [API Reference](https://aiohttp-client-cache.readthedocs.io/en/stable/reference.html)
+- [Examples](https://aiohttp-client-cache.readthedocs.io/en/stable/examples.html)
 
 # Feedback
+
 If there is a feature you want, if you've discovered a bug, or if you have other general feedback, please
 [create an issue](https://github.com/requests-cache/aiohttp-client-cache/issues/new/choose) for it!

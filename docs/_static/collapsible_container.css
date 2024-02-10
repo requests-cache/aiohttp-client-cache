@@ -1,19 +1,19 @@
 /* Adapted from: https://github.com/plone/training/blob/master/_static/custom.css */
 
 .toggle .admonition-title {
-    display: block;
-    clear: both;
-    cursor: pointer;
+  display: block;
+  clear: both;
+  cursor: pointer;
 }
 
 .toggle .admonition-title:after {
-    content: " ▶";
+  content: ' ▶';
 }
 
 .toggle .admonition-title.open:after {
-    content: " ▼";
+  content: ' ▼';
 }
 
 .toggle p:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
