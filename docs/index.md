@@ -1,8 +1,11 @@
 (index-page)=
+
 ```{include} ../README.md
+
 ```
 
 # Contents
+
 ```{toctree}
 :maxdepth: 2
 
@@ -14,6 +17,7 @@ reference
 ```
 
 # Project Info
+
 ```{toctree}
 :maxdepth: 2
 
