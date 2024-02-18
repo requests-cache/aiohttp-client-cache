@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Mapping
-from typing import Any, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Iterable, Sequence, Union
 
 from aiohttp.typedefs import StrOrURL
 from multidict import MultiDict
@@ -16,12 +16,12 @@ RequestParams = Union[Mapping, Sequence, str]
 def create_key(
     method: str,
     url: StrOrURL,
-    params: Optional[RequestParams] = None,
-    data: Optional[Dict] = None,
-    json: Optional[Dict] = None,
-    headers: Optional[Dict] = None,
+    params: RequestParams | None = None,
+    data: dict | None = None,
+    json: dict | None = None,
+    headers: dict | None = None,
     include_headers: bool = False,
-    ignored_params: Optional[Iterable[str]] = None,
+    ignored_params: Iterable[str] | None = None,
     **kwargs,
 ) -> str:
     """Create a unique cache key based on request details"""
@@ -52,7 +52,7 @@ def filter_ignored_params(data, ignored_params: Iterable[str]):
     return MultiDict(((k, v) for k, v in data.items() if k not in ignored_params))
 
 
-def normalize_url_params(url: StrOrURL, params: Optional[RequestParams] = None) -> URL:
+def normalize_url_params(url: StrOrURL, params: RequestParams | None = None) -> URL:
     """Normalize any combination of request parameter formats that aiohttp accepts"""
     if isinstance(url, str):
         url = URL(url)

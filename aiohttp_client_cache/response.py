@@ -70,7 +70,7 @@ class CachedResponse(HeadersMixin):
     expires: datetime | None = attr.ib(default=None)
     raw_headers: RawHeaders = attr.ib(factory=tuple)
     real_url: StrOrURL = attr.ib(default=None)
-    history: Tuple = attr.ib(factory=tuple)
+    history: tuple = attr.ib(factory=tuple)
     last_used: datetime = attr.ib(factory=datetime.utcnow)
 
     @classmethod

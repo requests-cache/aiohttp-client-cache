@@ -1,6 +1,6 @@
 from __future__ import annotations
 from os import urandom
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -55,4 +55,4 @@ class TestDynamoDbCache(BaseStorageTest):
 
 class TestDynamoDBBackend(BaseBackendTest):
     backend_class = DynamoDBBackend
-    init_kwargs: Dict[str, Any] = {'create_if_not_exists': True, **AWS_OPTIONS}
+    init_kwargs: dict[str, Any] = {'create_if_not_exists': True, **AWS_OPTIONS}

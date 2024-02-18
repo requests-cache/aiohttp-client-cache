@@ -8,7 +8,7 @@ from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, AsyncIterable, AsyncIterator, Optional, Type, Union
+from typing import Any, AsyncIterable, AsyncIterator
 
 import aiosqlite
 
@@ -194,7 +194,7 @@ class SQLiteCache(BaseCache):
                 async for row in cursor:
                     yield row[0]
 
-    async def write(self, key: str, item: Union[ResponseOrKey, sqlite3.Binary]):
+    async def write(self, key: str, item: ResponseOrKey | sqlite3.Binary):
         async with self.get_connection(commit=True) as db:
             await db.execute(
                 f'INSERT OR REPLACE INTO `{self.table_name}` (key,value) VALUES (?,?)',
@@ -221,16 +221,16 @@ class SQLitePickleCache(SQLiteCache):
 def sqlite_template(
     timeout: float = 5.0,
     detect_types: int = 0,
-    isolation_level: Optional[str] = None,
+    isolation_level: str | None = None,
     check_same_thread: bool = True,
-    factory: Optional[Type] = None,
+    factory: type | None = None,
     cached_statements: int = 100,
     uri: bool = False,
 ):
     """Template function to get an accurate function signature for :py:func:`sqlite3.connect`"""
 
 
-def _get_cache_filename(filename: Union[Path, str], use_temp: bool) -> str:
+def _get_cache_filename(filename: Path | str, use_temp: bool) -> str:
     """Get resolved path for database file"""
     # Save to a temp directory, if specified
     if use_temp and not isabs(filename):

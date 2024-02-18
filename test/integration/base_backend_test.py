@@ -4,7 +4,7 @@ import asyncio
 import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, AsyncIterator, Dict, Type, cast
+from typing import Any, AsyncIterator, cast
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -33,8 +33,8 @@ pytestmark = pytest.mark.asyncio
 class BaseBackendTest:
     """Base class for testing cache backend classes"""
 
-    backend_class: Type[CacheBackend] = None  # type: ignore
-    init_kwargs: Dict[str, Any] = {}
+    backend_class: type[CacheBackend] = None  # type: ignore
+    init_kwargs: dict[str, Any] = {}
 
     @asynccontextmanager
     async def init_session(self, clear=True, **kwargs) -> AsyncIterator[CachedSession]:

@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 from collections import UserDict
 from datetime import datetime
 from logging import getLogger
-from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Optional, Tuple, Union
+from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Union
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -40,11 +40,11 @@ class CacheBackend:
         self,
         cache_name: str = 'aiohttp-cache',
         expire_after: ExpirationTime = -1,
-        urls_expire_after: Optional[ExpirationPatterns] = None,
-        allowed_codes: Tuple[int, ...] = (200,),
-        allowed_methods: Tuple[str, ...] = ('GET', 'HEAD'),
+        urls_expire_after: ExpirationPatterns | None = None,
+        allowed_codes: tuple[int, ...] = (200,),
+        allowed_methods: tuple[str, ...] = ('GET', 'HEAD'),
         include_headers: bool = False,
-        ignored_params: Optional[Iterable[str]] = None,
+        ignored_params: Iterable[str] | None = None,
         autoclose: bool = False,
         cache_control: bool = False,
         filter_fn: _FilterFn = lambda r: True,
@@ -84,7 +84,7 @@ class CacheBackend:
         self.ignored_params = set(ignored_params or [])
 
     async def is_cacheable(
-        self, response: Optional[AnyResponse], actions: Optional[CacheActions] = None
+        self, response: AnyResponse | None, actions: CacheActions | None = None
     ) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
@@ -112,7 +112,7 @@ class CacheBackend:
         expire_after: ExpirationTime = None,
         refresh: bool = False,
         **kwargs,
-    ) -> Tuple[Optional[CachedResponse], CacheActions]:
+    ) -> tuple[CachedResponse | None, CacheActions]:
         """Fetch a cached response based on request info
 
         Args:
@@ -141,7 +141,7 @@ class CacheBackend:
         response = None if actions.skip_read else await self.get_response(actions.key)
         return response, actions
 
-    async def get_response(self, key: str) -> Optional[CachedResponse]:
+    async def get_response(self, key: str) -> CachedResponse | None:
         """Fetch a cached response based on a cache key"""
         # Attempt to fetch the cached response
         logger.debug(f'Attempting to get cached response for key: {key}')
@@ -166,7 +166,7 @@ class CacheBackend:
         # Response will be a CachedResponse or None by this point
         return response  # type: ignore
 
-    async def _get_redirect_response(self, key: str) -> Optional[CachedResponse]:
+    async def _get_redirect_response(self, key: str) -> CachedResponse | None:
         """Get the response referenced by a redirect key, if available"""
         redirect_key = await self.redirects.read(key)
         return await self.responses.read(redirect_key) if redirect_key else None  # type: ignore
@@ -174,8 +174,8 @@ class CacheBackend:
     async def save_response(
         self,
         response: ClientResponse,
-        cache_key: Optional[str] = None,
-        expires: Optional[datetime] = None,
+        cache_key: str | None = None,
+        expires: datetime | None = None,
     ):
         """Save a response to the cache
 
@@ -281,21 +281,21 @@ class BaseCache(metaclass=ABCMeta):
 
     def __init__(
         self,
-        secret_key: Union[Iterable, str, bytes, None] = None,
-        salt: Union[str, bytes] = b'aiohttp-client-cache',
+        secret_key: Iterable | str | bytes | None = None,
+        salt: str | bytes = b'aiohttp-client-cache',
         serializer=None,
         **kwargs,
     ):
         super().__init__()
         self._serializer = serializer or self._get_serializer(secret_key, salt)
 
-    def serialize(self, item: ResponseOrKey = None) -> Optional[bytes]:
+    def serialize(self, item: ResponseOrKey = None) -> bytes | None:
         """Serialize a URL or response into bytes"""
         if isinstance(item, bytes):
             return item
         return self._serializer.dumps(item) if item else None
 
-    def deserialize(self, item: ResponseOrKey) -> Union[CachedResponse, str, None]:
+    def deserialize(self, item: ResponseOrKey) -> CachedResponse | str | None:
         """Deserialize a cached URL or response"""
         if isinstance(item, (CachedResponse, str)):
             return item
@@ -387,7 +387,7 @@ class DictCache(BaseCache, UserDict):
         for key in self.data.keys():
             yield key
 
-    async def read(self, key: str) -> Union[CachedResponse, str, None]:
+    async def read(self, key: str) -> CachedResponse | str | None:
         """An additional step is needed here for response data. The original response object
         is still in memory, and hasn't gone through a serialize/deserialize loop. So, the file-like
         response body has already been read, and needs to be reset.
