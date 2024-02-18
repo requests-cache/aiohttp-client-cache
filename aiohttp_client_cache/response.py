@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from http.cookies import SimpleCookie
 from logging import getLogger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 from unittest.mock import Mock
 from functools import singledispatch
 
@@ -280,16 +280,13 @@ def _(response: CachedResponse) -> CachedResponse:
 
 
 @set_response_defaults.register
-def _(response: ClientResponse) -> CachedResponse:
+def _(response: ClientResponse) -> ClientResponse:
     """Set some default CachedResponse values on a ClientResponse object, so they can be
     expected to always be present
     """
-    # NOTE: We could create a `CachedResponse` instance from a
-    # `ClientResponse` instance, but perhaps it is a little faster
-    # to set a few attributes.
     for k, v in CACHED_RESPONSE_DEFAULTS.items():
         setattr(response, k, v)
-    return cast(CachedResponse, response)
+    return response
 
 
 def _to_str_tuples(data: Mapping) -> DictItems:
