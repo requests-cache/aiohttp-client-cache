@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from os import listdir, makedirs
 from os.path import abspath, expanduser, isabs, isfile, join

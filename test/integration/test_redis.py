@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 
 import pytest
@@ -13,7 +14,7 @@ def is_db_running():
     async def get_db_info():
         client = await from_url(DEFAULT_ADDRESS)
         await client.info()
-        await client.aclose()
+        await client.aclose()  # type: ignore[attr-defined]
 
     try:
         asyncio.run(get_db_info())

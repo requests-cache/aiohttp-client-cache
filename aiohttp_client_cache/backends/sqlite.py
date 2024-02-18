@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
@@ -81,7 +83,7 @@ class SQLiteCache(BaseCache):
         self.filename = _get_cache_filename(filename, use_temp)
         self.table_name = table_name
 
-        self._connection: Optional[aiosqlite.Connection] = None
+        self._connection: aiosqlite.Connection | None = None
         self._lock = asyncio.Lock()
 
     @asynccontextmanager
@@ -97,8 +99,8 @@ class SQLiteCache(BaseCache):
     async def _init_db(self):
         """Initialize the database, if it hasn't already been"""
         if self.fast_save:
-            await self._connection.execute('PRAGMA synchronous = 0;')
-        await self._connection.execute(
+            await self._connection.execute('PRAGMA synchronous = 0;')  # type: ignore[union-attr]
+        await self._connection.execute(  # type: ignore[union-attr]
             f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
         )
         return self._connection
@@ -132,7 +134,7 @@ class SQLiteCache(BaseCache):
         bulk_commit_var.set(True)
         try:
             yield
-            await self._connection.commit()
+            await self._connection.commit()  # type: ignore[union-attr]
         finally:
             bulk_commit_var.set(False)
 
@@ -213,7 +215,7 @@ class SQLitePickleCache(SQLiteCache):
                     yield self.deserialize(row[0])
 
     async def write(self, key, item):
-        await super().write(key, sqlite3.Binary(self.serialize(item)))
+        await super().write(key, sqlite3.Binary(self.serialize(item)))  # type: ignore[arg-type]
 
 
 def sqlite_template(

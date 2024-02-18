@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import pickle
 from abc import ABCMeta, abstractmethod
@@ -223,7 +225,7 @@ class CacheBackend:
 
         async for key in self.responses.keys():
             response = await self.responses.read(key)
-            if response and response.is_expired or not self.filter_fn(response):
+            if response and response.is_expired or not self.filter_fn(response):  # type: ignore[union-attr,arg-type]
                 keys_to_delete.add(key)
 
         logger.debug(f'Deleting {len(keys_to_delete)} expired cache entries')

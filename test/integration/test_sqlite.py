@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 import os
 from contextlib import asynccontextmanager
@@ -31,7 +32,7 @@ class TestSQLiteCache(BaseStorageTest):
         assert temp_path.startswith(gettempdir())
 
     async def test_bulk_commit(self):
-        async with self.init_cache() as cache:
+        async with self.init_cache(self.storage_class) as cache:
             async with cache.bulk_commit():
                 pass
 
@@ -55,7 +56,7 @@ class TestSQLiteCache(BaseStorageTest):
 
         @asynccontextmanager
         async def bulk_commit_ctx():
-            async with self.init_cache() as cache:
+            async with self.init_cache(self.storage_class) as cache:
 
                 async def bulk_commit_items(n_items):
                     async with cache.bulk_commit():
@@ -71,12 +72,12 @@ class TestSQLiteCache(BaseStorageTest):
             assert mock_connection.commit.call_count == 5
 
     async def test_fast_save(self):
-        async with self.init_cache(index=1, fast_save=True) as cache_1, self.init_cache(
-            index=2, fast_save=True
-        ) as cache_2:
+        async with self.init_cache(
+            self.storage_class, index=1, fast_save=True
+        ) as cache_1, self.init_cache(self.storage_class, index=2, fast_save=True) as cache_2:
             for i in range(1000):
-                await cache_1.write(i, i)
-                await cache_2.write(i, i)
+                await cache_1.write(str(i), str(i))
+                await cache_2.write(str(i), str(i))
 
             keys_1 = {k async for k in cache_1.keys()}
             keys_2 = {k async for k in cache_2.keys()}
@@ -91,11 +92,11 @@ class TestSQLiteCache(BaseStorageTest):
         from unittest.mock import AsyncMock
 
         mock_sqlite.connect = AsyncMock()
-        async with self.init_cache(timeout=0.5, invalid_kwarg='???') as cache:
+        async with self.init_cache(self.storage_class, timeout=0.5, invalid_kwarg='???') as cache:
             mock_sqlite.connect.assert_called_with(cache.filename, timeout=0.5)
 
     async def test_close(self):
-        async with self.init_cache() as cache:
+        async with self.init_cache(self.storage_class) as cache:
             async with cache.get_connection():
                 pass
             await cache.close()
@@ -156,7 +157,7 @@ class TestSQLiteBackend(BaseBackendTest):
 
         async with self.init_session() as session:
             mock_close = MagicMock(wraps=session.cache.close)
-            session.cache.close = mock_close
+            session.cache.close = mock_close  # type: ignore[method-assign]
 
             await session.get(httpbin('get'))
         mock_close.assert_called_once()

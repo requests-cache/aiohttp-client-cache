@@ -113,7 +113,7 @@ def test_init_from_settings(url, request_expire_after, expected_expiration):
         url=URL(url),
         request_expire_after=request_expire_after,
         session_expire_after=1,
-        urls_expire_after=urls_expire_after,
+        urls_expire_after=urls_expire_after,  # type: ignore[arg-type]
     )
     assert actions.expire_after == expected_expiration
 

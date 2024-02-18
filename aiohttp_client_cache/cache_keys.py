@@ -1,4 +1,6 @@
 """Functions for creating keys used for cache requests"""
+from __future__ import annotations
+
 import hashlib
 from collections.abc import Mapping
 from typing import Any, Dict, Iterable, Optional, Sequence, Union

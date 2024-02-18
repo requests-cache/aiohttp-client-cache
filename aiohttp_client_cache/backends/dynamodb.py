@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
 from logging import getLogger
 from typing import Any, AsyncIterable, Dict, Optional

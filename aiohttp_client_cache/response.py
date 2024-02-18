@@ -6,8 +6,9 @@ import json
 from datetime import datetime
 from http.cookies import SimpleCookie
 from logging import getLogger
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
 from unittest.mock import Mock
+from functools import singledispatch
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
@@ -33,7 +34,7 @@ EXCLUDE_ATTRS = {
 }
 
 # Default attriutes to add to ClientResponse objects
-RESPONSE_DEFAULTS = {
+CACHED_RESPONSE_DEFAULTS = {
     'created_at': None,
     'expires': None,
     'from_cache': False,
@@ -69,7 +70,7 @@ class CachedResponse(HeadersMixin):
     expires: datetime | None = attr.ib(default=None)
     raw_headers: RawHeaders = attr.ib(factory=tuple)
     real_url: StrOrURL = attr.ib(default=None)
-    history: Iterable = attr.ib(factory=tuple)
+    history: Tuple = attr.ib(factory=tuple)
     last_used: datetime = attr.ib(factory=datetime.utcnow)
 
     @classmethod
@@ -268,14 +269,27 @@ class CachedStreamReader(StreamReader):
 AnyResponse = Union[ClientResponse, CachedResponse]
 
 
-def set_response_defaults(response: AnyResponse) -> AnyResponse:
+@singledispatch
+def set_response_defaults(response):
+    raise NotImplementedError
+
+
+@set_response_defaults.register
+def _(response: CachedResponse) -> CachedResponse:
+    return response
+
+
+@set_response_defaults.register
+def _(response: ClientResponse) -> CachedResponse:
     """Set some default CachedResponse values on a ClientResponse object, so they can be
     expected to always be present
     """
-    if not isinstance(response, CachedResponse):
-        for k, v in RESPONSE_DEFAULTS.items():
-            setattr(response, k, v)
-    return response
+    # NOTE: We could create a `CachedResponse` instance from a
+    # `ClientResponse` instance, but perhaps it is a little faster
+    # to set a few attributes.
+    for k, v in CACHED_RESPONSE_DEFAULTS.items():
+        setattr(response, k, v)
+    return cast(CachedResponse, response)
 
 
 def _to_str_tuples(data: Mapping) -> DictItems:

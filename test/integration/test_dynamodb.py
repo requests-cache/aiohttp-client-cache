@@ -1,3 +1,4 @@
+from __future__ import annotations
 from os import urandom
 from typing import Any, Dict
 
@@ -47,8 +48,8 @@ class TestDynamoDbCache(BaseStorageTest):
     async def test_write_oversized_item(self):
         """If an item exceeds DynamoDB's max item size, expect it to not be written to the cache"""
         data = urandom(MAX_ITEM_SIZE + 1)
-        async with self.init_cache() as cache:
-            cache.write('key', data)
+        async with self.init_cache(self.storage_class) as cache:
+            await cache.write('key', data)
             assert await cache.contains('key') is False
 
 

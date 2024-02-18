@@ -1,10 +1,10 @@
+from __future__ import annotations
 from contextlib import asynccontextmanager
 from os.path import isfile
 from shutil import rmtree
 from tempfile import gettempdir
 from typing import AsyncIterator
 
-from aiohttp_client_cache.backends.base import BaseCache
 from aiohttp_client_cache.backends.filesystem import FileBackend, FileCache
 from aiohttp_client_cache.session import CachedSession
 from test.conftest import CACHE_NAME
@@ -16,7 +16,7 @@ class TestFileCache(BaseStorageTest):
     picklable = True
 
     @asynccontextmanager
-    async def init_cache(self, index=0, **kwargs) -> AsyncIterator[BaseCache]:
+    async def init_cache(self, index=0, **kwargs) -> AsyncIterator[FileCache]:  # type: ignore[override]
         cache = self.storage_class(f'{CACHE_NAME}_{index}', use_temp=True, **kwargs)
         await cache.clear()
         yield cache
@@ -57,7 +57,7 @@ class TestFileBackend(BaseBackendTest):
             cache = session.cache
             assert isinstance(cache, FileBackend)
 
-            cache_dir = cache.responses.cache_dir
-            redirects_file = cache.redirects.filename
+            cache_dir = cache.responses.cache_dir  # type: ignore[attr-defined]
+            redirects_file = cache.redirects.filename  # type: ignore[attr-defined]
 
             assert redirects_file.startswith(cache_dir)

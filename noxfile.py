@@ -43,7 +43,7 @@ def clean(session):
     """Clean up temporary build + documentation files"""
     for dir in CLEAN_DIRS:
         print(f'Removing {dir}')
-        rmtree(dir, ignore_errors=True)
+        rmtree(dir, ignore_errors=True)  # type: ignore[arg-type]
 
 
 @session(python=False, name='cov')
