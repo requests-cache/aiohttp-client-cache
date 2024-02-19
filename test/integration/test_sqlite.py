@@ -76,8 +76,8 @@ class TestSQLiteCache(BaseStorageTest):
             self.storage_class, index=1, fast_save=True
         ) as cache_1, self.init_cache(self.storage_class, index=2, fast_save=True) as cache_2:
             for i in range(1000):
-                await cache_1.write(str(i), str(i))
-                await cache_2.write(str(i), str(i))
+                await cache_1.write(i, i)  # type: ignore[arg-type]
+                await cache_2.write(i, i)  # type: ignore[arg-type]
 
             keys_1 = {k async for k in cache_1.keys()}
             keys_2 = {k async for k in cache_2.keys()}
