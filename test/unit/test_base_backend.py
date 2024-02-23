@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pickle
 from unittest.mock import MagicMock, patch
 

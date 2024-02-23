@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from os import listdir, makedirs
 from os.path import abspath, expanduser, isabs, isfile, join
@@ -5,7 +7,7 @@ from pathlib import Path
 from pickle import PickleError
 from shutil import rmtree
 from tempfile import gettempdir
-from typing import Any, AsyncIterable, Union
+from typing import Any, AsyncIterable
 
 import aiofiles
 import aiofiles.os
@@ -32,7 +34,7 @@ class FileBackend(CacheBackend):
 
     def __init__(
         self,
-        cache_name: Union[Path, str] = 'http_cache',
+        cache_name: Path | str = 'http_cache',
         use_temp: bool = False,
         autoclose: bool = True,
         **kwargs: Any,
@@ -110,7 +112,7 @@ class FileCache(BaseCache):
             yield self._join(key)
 
 
-def _get_cache_dir(cache_dir: Union[Path, str], use_temp: bool) -> str:
+def _get_cache_dir(cache_dir: Path | str, use_temp: bool) -> str:
     # Save to a temp directory, if specified
     if use_temp and not isabs(cache_dir):
         cache_dir = join(gettempdir(), cache_dir, 'responses')

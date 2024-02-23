@@ -10,10 +10,12 @@ Currently this is used to add the following backend-specific connection details:
 * Type annotations
 * Argument docs
 """
+from __future__ import annotations
+
 import inspect
 import re
 from logging import getLogger
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable
 
 AUTOMETHOD_INIT = '.. automethod:: __init__'
 logger = getLogger(__name__)
@@ -54,7 +56,7 @@ def get_combined_revision(*functions: Callable):
     return forge.sign(*params.values())
 
 
-def deduplicate_kwargs(params: Dict) -> Dict:
+def deduplicate_kwargs(params: dict) -> dict:
     """If a list of params contains one or more variadic keyword args (e.g., ``**kwargs``),
     ensure there are no duplicates and move it to the end.
     """
@@ -100,7 +102,7 @@ def copy_docstrings(target_function: Callable, *template_functions: Callable) ->
     return target_function
 
 
-def _split_docstring(docstring: Optional[str] = None) -> Tuple[str, str, str]:
+def _split_docstring(docstring: str | None = None) -> tuple[str, str, str]:
     """Split a docstring into the following sections, if present:
 
     * Function summary
@@ -127,7 +129,7 @@ def _combine_args_sections(*args_sections: str) -> str:
     args_section = re.sub('\n\\s+', ' ', args_section)
 
     # Split into key-value pairs to remove any duplicates; if so, keep the first one
-    args: Dict[str, str] = {}
+    args: dict[str, str] = {}
     for line in args_section.splitlines():
         k, v = line.split(':', 1)
         args.setdefault(k.strip(), v.strip())

@@ -1,6 +1,8 @@
 """The cache_keys module is mostly covered indirectly via other tests.
 This just contains tests for some extra edge cases not covered elsewhere.
 """
+from __future__ import annotations
+
 from copy import copy
 
 import pytest

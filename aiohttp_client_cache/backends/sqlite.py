@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
@@ -6,7 +8,7 @@ from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, AsyncIterable, AsyncIterator, Optional, Type, Union
+from typing import Any, AsyncIterable, AsyncIterator
 
 import aiosqlite
 
@@ -81,7 +83,7 @@ class SQLiteCache(BaseCache):
         self.filename = _get_cache_filename(filename, use_temp)
         self.table_name = table_name
 
-        self._connection: Optional[aiosqlite.Connection] = None
+        self._connection: aiosqlite.Connection | None = None
         self._lock = asyncio.Lock()
 
     @asynccontextmanager
@@ -97,8 +99,8 @@ class SQLiteCache(BaseCache):
     async def _init_db(self):
         """Initialize the database, if it hasn't already been"""
         if self.fast_save:
-            await self._connection.execute('PRAGMA synchronous = 0;')
-        await self._connection.execute(
+            await self._connection.execute('PRAGMA synchronous = 0;')  # type: ignore[union-attr]
+        await self._connection.execute(  # type: ignore[union-attr]
             f'CREATE TABLE IF NOT EXISTS `{self.table_name}` (key PRIMARY KEY, value)'
         )
         return self._connection
@@ -132,7 +134,7 @@ class SQLiteCache(BaseCache):
         bulk_commit_var.set(True)
         try:
             yield
-            await self._connection.commit()
+            await self._connection.commit()  # type: ignore[union-attr]
         finally:
             bulk_commit_var.set(False)
 
@@ -192,7 +194,7 @@ class SQLiteCache(BaseCache):
                 async for row in cursor:
                     yield row[0]
 
-    async def write(self, key: str, item: Union[ResponseOrKey, sqlite3.Binary]):
+    async def write(self, key: str, item: ResponseOrKey | sqlite3.Binary):
         async with self.get_connection(commit=True) as db:
             await db.execute(
                 f'INSERT OR REPLACE INTO `{self.table_name}` (key,value) VALUES (?,?)',
@@ -213,22 +215,22 @@ class SQLitePickleCache(SQLiteCache):
                     yield self.deserialize(row[0])
 
     async def write(self, key, item):
-        await super().write(key, sqlite3.Binary(self.serialize(item)))
+        await super().write(key, sqlite3.Binary(self.serialize(item)))  # type: ignore[arg-type]
 
 
 def sqlite_template(
     timeout: float = 5.0,
     detect_types: int = 0,
-    isolation_level: Optional[str] = None,
+    isolation_level: str | None = None,
     check_same_thread: bool = True,
-    factory: Optional[Type] = None,
+    factory: type | None = None,
     cached_statements: int = 100,
     uri: bool = False,
 ):
     """Template function to get an accurate function signature for :py:func:`sqlite3.connect`"""
 
 
-def _get_cache_filename(filename: Union[Path, str], use_temp: bool) -> str:
+def _get_cache_filename(filename: Path | str, use_temp: bool) -> str:
     """Get resolved path for database file"""
     # Save to a temp directory, if specified
     if use_temp and not isabs(filename):

@@ -1,8 +1,10 @@
 """Core functions for cache configuration"""
+from __future__ import annotations
+
 import warnings
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, cast
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
@@ -26,9 +28,9 @@ class CacheMixin(MIXIN_BASE):
     @extend_signature(ClientSession.__init__)
     def __init__(
         self,
-        base_url: Optional[StrOrURL] = None,
+        base_url: StrOrURL | None = None,
         *,
-        cache: Optional[CacheBackend] = None,
+        cache: CacheBackend | None = None,
         **kwargs,
     ):
         self.cache = cache or CacheBackend()
@@ -45,7 +47,7 @@ class CacheMixin(MIXIN_BASE):
         expire_after: ExpirationTime = None,
         refresh: bool = False,
         **kwargs,
-    ) -> AnyResponse:
+    ) -> CachedResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         # Attempt to fetch cached response
         response, actions = await self.cache.request(
@@ -65,7 +67,7 @@ class CacheMixin(MIXIN_BASE):
                 return set_response_defaults(new_response)
             else:
                 restore_cookies(new_response)
-                return new_response
+                return cast(CachedResponse, new_response)
 
         # Restore any cached cookies to the session
         if response:
@@ -90,7 +92,7 @@ class CacheMixin(MIXIN_BASE):
         cached_response: CachedResponse,
         actions: CacheActions,
         **kwargs,
-    ) -> Tuple[bool, AnyResponse]:
+    ) -> tuple[bool, AnyResponse]:
         """Checks if the cached response is still valid using conditional requests if supported"""
 
         # check whether we can do a conditional request,
@@ -163,5 +165,5 @@ with warnings.catch_warnings():
                 options. If not provided, an in-memory cache will be used.
         """
 
-        async def __aenter__(self) -> 'CachedSession':
+        async def __aenter__(self) -> CachedSession:
             return self

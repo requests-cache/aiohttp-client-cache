@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, AsyncIterable
 
 from motor.motor_asyncio import AsyncIOMotorClient

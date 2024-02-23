@@ -1,4 +1,6 @@
-from typing import Any, AsyncIterable, Optional
+from __future__ import annotations
+
+from typing import Any, AsyncIterable
 
 from redis.asyncio import Redis, from_url
 
@@ -46,7 +48,7 @@ class RedisCache(BaseCache):
         namespace: str,
         collection_name: str,
         address: str = DEFAULT_ADDRESS,
-        connection: Optional[Redis] = None,
+        connection: Redis | None = None,
         **kwargs: Any,
     ):
         # Pop off BaseCache kwargs and use the rest as Redis connection kwargs
@@ -64,7 +66,7 @@ class RedisCache(BaseCache):
 
     async def close(self):
         if self._connection:
-            await self._connection.aclose()
+            await self._connection.aclose()  # type: ignore[attr-defined]
             self._connection = None
 
     async def clear(self):

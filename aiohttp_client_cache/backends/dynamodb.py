@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import Any, AsyncIterable, Dict, Optional
+from typing import Any, AsyncIterable
 
 import aioboto3
 from aioboto3.session import ResourceCreatorContext
@@ -41,7 +43,7 @@ class DynamoDBBackend(CacheBackend):
         key_attr_name: str = 'k',
         val_attr_name: str = 'v',
         create_if_not_exists: bool = False,
-        context: Optional[ResourceCreatorContext] = None,
+        context: ResourceCreatorContext | None = None,
         **kwargs: Any,
     ):
         super().__init__(cache_name=cache_name, **kwargs)
@@ -127,10 +129,10 @@ class DynamoDbCache(BaseCache):
 
         return table
 
-    def _doc(self, key) -> Dict:
+    def _doc(self, key) -> dict:
         return {self.key_attr_name: f'{self.namespace}:{key}'}
 
-    async def _scan(self) -> AsyncIterable[Dict]:
+    async def _scan(self) -> AsyncIterable[dict]:
         table = await self.get_table()
         paginator = table.meta.client.get_paginator('scan')
         iterator = paginator.paginate(

@@ -1,9 +1,10 @@
 """Common tests to run for all backends"""
+from __future__ import annotations
 import asyncio
 import pickle
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, AsyncIterator, Dict, Type
+from typing import Any, AsyncIterator, cast
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -13,6 +14,7 @@ from itsdangerous.exc import BadSignature
 from itsdangerous.serializer import Serializer
 
 from aiohttp_client_cache import CacheBackend, CachedSession
+from aiohttp_client_cache.response import CachedResponse
 from test.conftest import (
     ALL_METHODS,
     CACHE_NAME,
@@ -31,8 +33,8 @@ pytestmark = pytest.mark.asyncio
 class BaseBackendTest:
     """Base class for testing cache backend classes"""
 
-    backend_class: Type[CacheBackend] = None  # type: ignore
-    init_kwargs: Dict[str, Any] = {}
+    backend_class: type[CacheBackend] = None  # type: ignore
+    init_kwargs: dict[str, Any] = {}
 
     @asynccontextmanager
     async def init_session(self, clear=True, **kwargs) -> AsyncIterator[CachedSession]:
@@ -115,18 +117,18 @@ class BaseBackendTest:
             del session
 
             session = await self._init_session(clear=False)
-            r = await session.get(httpbin('get'))
+            r = cast(CachedResponse, await session.get(httpbin('get')))
             assert r.from_cache is True
 
     async def test_request__expire_after(self):
         async with self.init_session() as session:
             await session.get(httpbin('get'), expire_after=1)
-            response = await session.get(httpbin('get'), expire_after=1)
+            response = cast(CachedResponse, await session.get(httpbin('get'), expire_after=1))
             assert response.from_cache is True
 
             # After 1 second, the response should be expired, and a new one should be fetched
             await asyncio.sleep(1)
-            response = await session.get(httpbin('get'), expire_after=1)
+            response = cast(CachedResponse, await session.get(httpbin('get'), expire_after=1))
             print(response.expires)
             assert response.from_cache is False
 
@@ -171,7 +173,7 @@ class BaseBackendTest:
         """Test that streaming requests work both for the original and cached responses"""
         async with self.init_session() as session:
             for _ in range(2):
-                response = await session.get(httpbin('stream-bytes/64'))
+                response = cast(CachedResponse, await session.get(httpbin('stream-bytes/64')))
                 lines = [line async for line in response.content]
                 assert len(b''.join(lines)) == 64
 
@@ -217,19 +219,21 @@ class BaseBackendTest:
             session.cache.cache_control = True
             now = datetime.utcnow()
             await session.get(httpbin('cache/60'), headers=request_headers)
-            response = await session.get(httpbin('cache/60'), headers=request_headers)
+            response = cast(
+                CachedResponse, await session.get(httpbin('cache/60'), headers=request_headers)
+            )
 
         if expected_expiration is None:
             assert response.expires is None
         else:
-            assert_delta_approx_equal(now, response.expires, expected_expiration)
+            assert_delta_approx_equal(now, response.expires, expected_expiration)  # type: ignore[arg-type]
 
     async def test_request__cache_control_disabled(self):
         """By default, no-cache request headers should be ignored"""
         async with self.init_session() as session:
             headers = {'Cache-Control': 'no-cache'}
             await session.get(httpbin('get'), headers=headers)
-            response = await session.get(httpbin('get'), headers=headers)
+            response = cast(CachedResponse, await session.get(httpbin('get'), headers=headers))
             assert response.from_cache is True
 
     async def test_request__skip_cache_read(self):
@@ -239,11 +243,12 @@ class BaseBackendTest:
         async with self.init_session(cache_control=True) as session:
             headers = {'Cache-Control': 'no-cache'}
             await session.get(httpbin('get'), headers=headers)
-            response = await session.get(httpbin('get'), headers=headers)
+            response = cast(CachedResponse, await session.get(httpbin('get'), headers=headers))
 
             assert response.from_cache is False
             assert await session.cache.responses.size() == 1
-            assert (await session.get(httpbin('get'))).from_cache is True
+            response = cast(CachedResponse, await session.get(httpbin('get')))
+            assert response.from_cache is True
 
     @pytest.mark.parametrize('directive', ['max-age=0', 'no-store'])
     async def test_request__skip_cache_read_write(self, directive):
@@ -251,19 +256,19 @@ class BaseBackendTest:
         async with self.init_session(cache_control=True) as session:
             headers = {'Cache-Control': directive}
             await session.get(httpbin('get'), headers=headers)
-            response = await session.get(httpbin('get'), headers=headers)
+            response = cast(CachedResponse, await session.get(httpbin('get'), headers=headers))
 
             assert response.from_cache is False
             assert await session.cache.responses.size() == 0
 
             await session.get(httpbin('get'))
-            assert (await session.get(httpbin('get'))).from_cache is True
+            assert (cast(CachedResponse, await session.get(httpbin('get')))).from_cache is True
 
     async def test_response__skip_cache_write(self):
         """max-age=0 response header should skip writing to the cache"""
         async with self.init_session(cache_control=True) as session:
             await session.get(httpbin('cache/0'))
-            response = await session.get(httpbin('cache/0'))
+            response = cast(CachedResponse, await session.get(httpbin('cache/0')))
 
             assert response.from_cache is False
             assert await session.cache.responses.size() == 0
@@ -280,14 +285,14 @@ class BaseBackendTest:
     async def test_autoclose(self):
         async with self.init_session(autoclose=True) as session:
             mock_close = MagicMock(wraps=session.cache.close)
-            session.cache.close = mock_close
+            session.cache.close = mock_close  # type: ignore[method-assign]
             await session.get(httpbin('get'))
         mock_close.assert_called_once()
 
     async def test_autoclose__disabled(self):
         async with self.init_session(autoclose=False) as session:
             mock_close = MagicMock(wraps=session.cache.close)
-            session.cache.close = mock_close
+            session.cache.close = mock_close  # type: ignore[method-assign]
             await session.get(httpbin('get'))
         mock_close.assert_not_called()
         # explicitly call close after the test has completed
@@ -320,13 +325,13 @@ class BaseBackendTest:
         """
         async with self.init_session() as session:
             # first request shall populate the cache
-            response = await session.request('GET', httpbin('cache/0'))
+            response = cast(CachedResponse, await session.request('GET', httpbin('cache/0')))
 
             assert response.from_cache is False
             assert await session.cache.responses.size() == 1
 
             # second request shall come from the cache
-            response = await session.request('GET', httpbin('cache/0'))
+            response = cast(CachedResponse, await session.request('GET', httpbin('cache/0')))
 
             assert response.from_cache is True
             assert await session.cache.responses.size() == 1
@@ -334,7 +339,7 @@ class BaseBackendTest:
             # now disable the cache, the response should not come from the cache
             # but the cache should be unmodified afterward.
             async with session.disabled():
-                response = await session.request('GET', httpbin('cache/0'))
+                response = cast(CachedResponse, await session.request('GET', httpbin('cache/0')))
 
                 assert response.from_cache is False
                 assert await session.cache.responses.size() == 1
@@ -351,15 +356,15 @@ class BaseBackendTest:
             from unittest.mock import AsyncMock
 
             mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
-            session._refresh_cached_response = mock_refresh
+            session._refresh_cached_response = mock_refresh  # type: ignore[method-assign]
 
-            response = await session.get(httpbin('cache'))
+            response = cast(CachedResponse, await session.get(httpbin('cache')))
             assert response.from_cache is False
             etag = response.headers['Etag']
             assert etag is not None
             mock_refresh.assert_not_awaited()
 
-            response = await session.get(httpbin('cache'), refresh=True)
+            response = cast(CachedResponse, await session.get(httpbin('cache'), refresh=True))
             assert response.from_cache is True
             assert etag == response.headers['Etag']
             mock_refresh.assert_awaited_once()
@@ -375,9 +380,9 @@ class BaseBackendTest:
             from unittest.mock import AsyncMock
 
             mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
-            session._refresh_cached_response = mock_refresh
+            session._refresh_cached_response = mock_refresh  # type: ignore[method-assign]
 
-            response = await session.get(httpbin_custom('cache/1'))
+            response = cast(CachedResponse, await session.get(httpbin_custom('cache/1')))
             assert response.from_cache is False
             etag = response.headers['Etag']
             assert etag is not None
@@ -387,7 +392,9 @@ class BaseBackendTest:
             # after 2s the ETag should have been expired and the server should respond
             # with a 200 response rather than a 304.
 
-            response = await session.get(httpbin_custom('cache/1'), refresh=True)
+            response = cast(
+                CachedResponse, await session.get(httpbin_custom('cache/1'), refresh=True)
+            )
             assert response.from_cache is False
             assert etag != response.headers['Etag']
             mock_refresh.assert_awaited_once()
@@ -406,14 +413,14 @@ class BaseBackendTest:
             from unittest.mock import AsyncMock
 
             mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
-            session._refresh_cached_response = mock_refresh
+            session._refresh_cached_response = mock_refresh  # type: ignore[method-assign]
 
-            response = await session.get(httpbin('cache/10'))
+            response = cast(CachedResponse, await session.get(httpbin('cache/10')))
             assert response.from_cache is False
             assert response.headers.get('Etag') is None
             mock_refresh.assert_not_awaited()
 
-            response = await session.get(httpbin('cache/10'), refresh=True)
+            response = cast(CachedResponse, await session.get(httpbin('cache/10'), refresh=True))
             assert response.from_cache is True
             assert response.headers.get('Etag') is None
             mock_refresh.assert_awaited_once()
