@@ -105,18 +105,18 @@ class CacheBackend:
         logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')  # type: ignore
         return not any(cache_criteria.values())
 
-    async def request(
+    def create_cache_actions(
         self,
-        method: str,
+        key: str,
         url: StrOrURL,
         expire_after: ExpirationTime = None,
         refresh: bool = False,
         **kwargs,
-    ) -> tuple[CachedResponse | None, CacheActions]:
-        """Fetch a cached response based on request info
+    ) -> CacheActions:
+        """Create cache actions based on request info
 
         Args:
-            method: HTTP method
+            key: key from create_key function
             url: Request URL
             expire_after: Expiration time to set only for this request; overrides
                 ``CachedSession.expire_after``, and accepts all the same values.
@@ -124,8 +124,7 @@ class CacheBackend:
                 (e.g., a "soft refresh", like F5 in a browser)
             kwargs: All other request arguments
         """
-        key = self.create_key(method, url, **kwargs)
-        actions = CacheActions.from_request(
+        return CacheActions.from_request(
             key,
             url=url,
             request_expire_after=expire_after,
@@ -137,9 +136,18 @@ class CacheBackend:
             **kwargs,
         )
 
+    async def request(
+        self,
+        actions: CacheActions,
+    ) -> CachedResponse | None:
+        """Fetch a cached response based on cache actions
+
+        Args:
+            actions: CacheActions from create_cache_actions function
+        """
         # Skip reading from the cache, if specified by request headers
         response = None if actions.skip_read else await self.get_response(actions.key)
-        return response, actions
+        return response
 
     async def get_response(self, key: str) -> CachedResponse | None:
         """Fetch a cached response based on a cache key"""

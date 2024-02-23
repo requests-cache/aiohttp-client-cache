@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import warnings
+from asyncio import Lock
 from contextlib import asynccontextmanager
 from logging import getLogger
 from typing import TYPE_CHECKING, cast
@@ -22,6 +23,20 @@ else:
 logger = getLogger(__name__)
 
 
+class nullcontext:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *excinfo):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *excinfo):
+        pass
+
+
 class CacheMixin(MIXIN_BASE):
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
 
@@ -34,6 +49,8 @@ class CacheMixin(MIXIN_BASE):
         **kwargs,
     ):
         self.cache = cache or CacheBackend()
+        self._locks: dict[str, Lock] = {}
+        self._null_lock = nullcontext()
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
         session_kwargs = get_valid_kwargs(super().__init__, {**kwargs, 'base_url': base_url})
@@ -50,40 +67,52 @@ class CacheMixin(MIXIN_BASE):
     ) -> CachedResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         # Attempt to fetch cached response
-        response, actions = await self.cache.request(
-            method, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
+        key = self.cache.create_key(method, str_or_url, **kwargs)
+        actions = self.cache.create_cache_actions(
+            key, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
         )
 
-        def restore_cookies(r):
-            self.cookie_jar.update_cookies(r.cookies or {}, r.url)
-            for redirect in r.history:
-                self.cookie_jar.update_cookies(redirect.cookies or {}, redirect.url)
+        lock: Lock | nullcontext = self._null_lock
+        if not actions.skip_read:
+            try:
+                lock = self._locks[key]
+            except KeyError:
+                self._locks[key] = Lock()
+                lock = self._locks[key]
 
-        if actions.revalidate and response:
-            from_cache, new_response = await self._refresh_cached_response(
-                method, str_or_url, response, actions, **kwargs
-            )
-            if not from_cache:
+        async with lock:
+            response = await self.cache.request(actions)
+
+            def restore_cookies(r):
+                self.cookie_jar.update_cookies(r.cookies or {}, r.url)
+                for redirect in r.history:
+                    self.cookie_jar.update_cookies(redirect.cookies or {}, redirect.url)
+
+            if actions.revalidate and response:
+                from_cache, new_response = await self._refresh_cached_response(
+                    method, str_or_url, response, actions, **kwargs
+                )
+                if not from_cache:
+                    return set_response_defaults(new_response)
+                else:
+                    restore_cookies(new_response)
+                    return cast(CachedResponse, new_response)
+
+            # Restore any cached cookies to the session
+            if response:
+                restore_cookies(response)
+                return response
+            # If the response was missing or expired, send and cache a new request
+            else:
+                if actions.skip_read:
+                    logger.debug(f'Reading from cache was skipped; making request to {str_or_url}')
+                else:
+                    logger.debug(f'Cached response not found; making request to {str_or_url}')
+                new_response = await super()._request(method, str_or_url, **kwargs)
+                actions.update_from_response(new_response)
+                if await self.cache.is_cacheable(new_response, actions):
+                    await self.cache.save_response(new_response, actions.key, actions.expires)
                 return set_response_defaults(new_response)
-            else:
-                restore_cookies(new_response)
-                return cast(CachedResponse, new_response)
-
-        # Restore any cached cookies to the session
-        if response:
-            restore_cookies(response)
-            return response
-        # If the response was missing or expired, send and cache a new request
-        else:
-            if actions.skip_read:
-                logger.debug(f'Reading from cache was skipped; making request to {str_or_url}')
-            else:
-                logger.debug(f'Cached response not found; making request to {str_or_url}')
-            new_response = await super()._request(method, str_or_url, **kwargs)
-            actions.update_from_response(new_response)
-            if await self.cache.is_cacheable(new_response, actions):
-                await self.cache.save_response(new_response, actions.key, actions.expires)
-            return set_response_defaults(new_response)
 
     async def _refresh_cached_response(
         self,
