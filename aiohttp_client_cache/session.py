@@ -1,5 +1,6 @@
 """Core functions for cache configuration"""
 from __future__ import annotations
+from collections import defaultdict
 import sys
 
 import warnings
@@ -45,7 +46,7 @@ class CacheMixin(MIXIN_BASE):
         **kwargs,
     ):
         self.cache = cache or CacheBackend()
-        self._locks: dict[str, Lock] = {}
+        self._locks: dict[str, Lock] = defaultdict(Lock)
         self._null_lock = nullcontext()
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
@@ -68,13 +69,10 @@ class CacheMixin(MIXIN_BASE):
             key, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
         )
 
-        lock: Lock | nullcontext = self._null_lock
-        if not actions.skip_read:
-            try:
-                lock = self._locks[key]
-            except KeyError:
-                self._locks[key] = Lock()
-                lock = self._locks[key]
+        if actions.skip_read:
+            lock: Lock | nullcontext = self._null_lock
+        else:
+            lock = self._locks[key]
 
         async with lock:
             response = await self.cache.request(actions)
