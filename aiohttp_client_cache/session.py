@@ -1,5 +1,6 @@
 """Core functions for cache configuration"""
 from __future__ import annotations
+import sys
 
 import warnings
 from asyncio import Lock
@@ -22,19 +23,14 @@ else:
 
 logger = getLogger(__name__)
 
+if sys.version_info >= (3, 10):
+    from contextlib import nullcontext
+else:
+    from contextlib import AbstractAsyncContextManager
 
-class nullcontext:
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *excinfo):
-        pass
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *excinfo):
-        pass
+    class nullcontext(AbstractAsyncContextManager):
+        async def __aexit__(self, *excinfo):
+            pass
 
 
 class CacheMixin(MIXIN_BASE):
