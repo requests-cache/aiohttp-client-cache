@@ -424,3 +424,14 @@ class BaseBackendTest:
             assert response.from_cache is True
             assert response.headers.get('Etag') is None
             mock_refresh.assert_awaited_once()
+
+    async def test_concurrent(self):
+        urls = [httpbin('get?page=0') for _ in range(100)]
+
+        async with self.init_session() as session:
+            tasks = [session.get(url) for url in urls]
+            responses = await asyncio.gather(*tasks)
+            num_write = 0
+            for response in responses:
+                num_write += 0 if cast(CachedResponse, response).from_cache else 1
+            assert num_write == 1
