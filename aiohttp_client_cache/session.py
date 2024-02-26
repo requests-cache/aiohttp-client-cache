@@ -1,6 +1,6 @@
 """Core functions for cache configuration"""
 from __future__ import annotations
-from collections import defaultdict
+from functools import lru_cache
 import sys
 
 import warnings
@@ -34,6 +34,11 @@ else:
             pass
 
 
+@lru_cache(maxsize=16384)
+def _get_lock(_: int, __: str) -> Lock:
+    return Lock()
+
+
 class CacheMixin(MIXIN_BASE):
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
 
@@ -46,7 +51,6 @@ class CacheMixin(MIXIN_BASE):
         **kwargs,
     ):
         self.cache = cache or CacheBackend()
-        self._locks: dict[str, Lock] = defaultdict(Lock)
         self._null_lock = nullcontext()
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
@@ -72,7 +76,7 @@ class CacheMixin(MIXIN_BASE):
         if actions.skip_read:
             lock: Lock | nullcontext = self._null_lock
         else:
-            lock = self._locks[key]
+            lock = _get_lock(id(self), key)
 
         async with lock:
             response = await self.cache.request(actions)
