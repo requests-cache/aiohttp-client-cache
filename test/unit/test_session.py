@@ -8,7 +8,6 @@ import pytest
 from yarl import URL
 
 from aiohttp_client_cache.backends import CacheBackend
-from aiohttp_client_cache.cache_control import CacheActions
 from aiohttp_client_cache.response import CachedResponse
 from aiohttp_client_cache.session import CachedSession, CacheMixin, ClientSession
 
@@ -76,7 +75,7 @@ async def test_session__init_posarg():
 async def test_session__cache_hit(mock_request):
     cache = MagicMock(spec=CacheBackend)
     response = AsyncMock(is_expired=False, url=URL('https://test.com'))
-    cache.request.return_value = response, CacheActions()
+    cache.request.return_value = response
 
     async with CachedSession(cache=cache) as session:
         await session.get('http://test.url')
@@ -87,7 +86,7 @@ async def test_session__cache_hit(mock_request):
 @patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
 async def test_session__cache_expired_or_invalid(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.request.return_value = None, CacheActions()
+    cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
         await session.get('http://test.url')
@@ -98,7 +97,7 @@ async def test_session__cache_expired_or_invalid(mock_request):
 @patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
 async def test_session__cache_miss(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.request.return_value = None, CacheActions()
+    cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
         await session.get('http://test.url')
@@ -109,7 +108,7 @@ async def test_session__cache_miss(mock_request):
 @patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
 async def test_session__request_expire_after(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.request.return_value = None, CacheActions()
+    cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
         await session.get('http://test.url', expire_after=10)
@@ -121,7 +120,7 @@ async def test_session__request_expire_after(mock_request):
 @patch.object(ClientSession, '_request', return_value=FakeClientResponse)
 async def test_session__default_attrs(mock_request):
     cache = MagicMock(spec=CacheBackend)
-    cache.request.return_value = None, CacheActions()
+    cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
         response = await session.get('http://test.url')
@@ -142,7 +141,7 @@ async def test_session__default_attrs(mock_request):
 async def test_all_param_types(mock_request, params) -> None:
     """Ensure that CachedSession.request() acceepts all the same parameter types as aiohttp"""
     cache = MagicMock(spec=CacheBackend)
-    cache.request.return_value = None, CacheActions()
+    cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
         response = await session.get('http://test.url', params=params)
@@ -158,7 +157,7 @@ async def test_session__cookies(mock_request):
         url=URL('https://test.com'),
         cookies=SimpleCookie({'test_cookie': 'value'}),
     )
-    cache.request.return_value = response, CacheActions()
+    cache.request.return_value = response
 
     async with CachedSession(cache=cache) as session:
         session.cookie_jar.clear()
@@ -173,7 +172,7 @@ async def test_session__empty_cookies(mock_request):
     """Previous versions didn't set cookies if they were empty. Just make sure it doesn't explode."""
     cache = MagicMock(spec=CacheBackend)
     response = AsyncMock(is_expired=False, url=URL('https://test.com'), cookies=None)
-    cache.request.return_value = response, CacheActions()
+    cache.request.return_value = response
 
     async with CachedSession(cache=cache) as session:
         session.cookie_jar.clear()
@@ -190,7 +189,7 @@ async def test_mixin(mock_request):
 
     cache = MagicMock(spec=CacheBackend)
     response = AsyncMock(is_expired=False, url=URL('https://test.com'))
-    cache.request.return_value = response, CacheActions()
+    cache.request.return_value = response
 
     async with CustomSession(cache=cache) as session:
         await session.get('http://test.url')
