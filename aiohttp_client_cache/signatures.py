@@ -10,6 +10,7 @@ Currently this is used to add the following backend-specific connection details:
 * Type annotations
 * Argument docs
 """
+
 from __future__ import annotations
 
 import inspect

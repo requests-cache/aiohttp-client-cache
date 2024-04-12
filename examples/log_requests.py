@@ -2,6 +2,7 @@
 """
 An example of testing the cache to prove that it's not making more requests than expected.
 """
+
 import asyncio
 from contextlib import asynccontextmanager
 from logging import basicConfig, getLogger

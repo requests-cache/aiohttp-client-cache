@@ -1,4 +1,5 @@
 """Functions for creating keys used for cache requests"""
+
 from __future__ import annotations
 
 import hashlib

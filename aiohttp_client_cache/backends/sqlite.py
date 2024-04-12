@@ -12,7 +12,12 @@ from typing import Any, AsyncIterable, AsyncIterator
 
 import aiosqlite
 
-from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
+from aiohttp_client_cache.backends import (
+    BaseCache,
+    CacheBackend,
+    ResponseOrKey,
+    get_valid_kwargs,
+)
 
 bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
 
@@ -163,7 +168,8 @@ class SQLiteCache(BaseCache):
         async with self.get_connection(commit=True) as db:
             placeholders = ', '.join('?' for _ in keys)
             await db.execute(
-                f'DELETE FROM `{self.table_name}` WHERE key IN ({placeholders})', tuple(keys)
+                f'DELETE FROM `{self.table_name}` WHERE key IN ({placeholders})',
+                tuple(keys),
             )
 
     async def delete(self, key: str):
