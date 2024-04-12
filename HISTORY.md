@@ -1,12 +1,16 @@
 # History
 
+## Unreleased
+
+- Fix compatibility with aiosqlite 0.20
+
 ## 0.11.0
 
-## Features
+### Features
 
 - Added support for Python 3.12.
 
-## Misc
+### Misc
 
 - (Internal/maintance) Renamed or slightly refactored some internal functions (that are not a part of the library public nterface).
 - Added more tests.
@@ -26,7 +30,7 @@
 - Move redirects cache for `FileBackend` into same directory as cached response files
 - Fix issue in which `CachedSession.disabled()` prevents only cache read but not write
 
-### 0.9.1 (2023-09-20)
+## 0.9.1 (2023-09-20)
 
 - Remove unintended optional dependencies in both PyPI and conda-forge packages
 
@@ -38,14 +42,14 @@
 - `python-forge` is no longer required and is now an optional dependency
 - Fix reading response content multiple times for memory backend
 
-### 0.8.2 (2023-07-14)
+## 0.8.2 (2023-07-14)
 
 - Add some missing type annotations to backend classes
 - Fix passing connection parameters to MongoDB backend
 - Revert closing backend connections on session context exit
 - Fix `CachedResponse.close()` method to match `ClientResponse.close()`
 
-### 0.8.1 (2023-01-05)
+## 0.8.1 (2023-01-05)
 
 - For SQLite backend, close database connection on `ClientSession` context exit
 
@@ -56,15 +60,15 @@
 - Fix concurrent usage of `SQLiteCache.bulk_commit()`
 - Add `fast_save` option for `SQLiteCache` (`PRAGMA` setting to improve write performance, with some tradeoffs)
 
-### 0.7.3 (2022-07-31)
+## 0.7.3 (2022-07-31)
 
 - Remove upper version constraint for `attrs` dependency
 
-### 0.7.2 (2022-07-13)
+## 0.7.2 (2022-07-13)
 
 - Fix `TypeError` bug when using `expire_after` param with `CachedSession._request()`
 
-### 0.7.1 (2022-06-22)
+## 0.7.1 (2022-06-22)
 
 - Fix possible deadlock with `SQLiteCache.init_db()` and `clear()`
 
@@ -83,7 +87,7 @@
 - Add support for async filter functions
 - Move repo to [requests-cache](https://github.com/requests-cache) organization
 
-### 0.6.1 (2022-02-13)
+## 0.6.1 (2022-02-13)
 
 - Migrate to aioredis 2.0
 - Fix issue with restoring empty session cookies
@@ -103,11 +107,11 @@
   - E.g., so `http://url.com?foo=bar&foo=baz` is cached separately from `http://url.com?foo=bar`
 - Update `ignored_params` to also apply to headers (if `include_headers=True`)
 
-### 0.5.2 (2021-11-03)
+## 0.5.2 (2021-11-03)
 
 - Fix compatibility with aiohttp 3.8
 
-### 0.5.1 (2021-09-10)
+## 0.5.1 (2021-09-10)
 
 - Fix issue with request params duplicated from request URL
 
@@ -127,17 +131,17 @@
 
 ---
 
-### 0.4.3 (2021-07-27)
+## 0.4.3 (2021-07-27)
 
 - Fix bug in which reponse header `Expires` was used for cache expiration even with `cache_control=False`
 - Fix bug in which HTTP dates parsed from response headers weren't converted to UTC
 - Add handling for invalid timestamps in `CachedResponse.is_expired`
 
-### 0.4.2 (2021-07-26)
+## 0.4.2 (2021-07-26)
 
 - Fix handling of `CachedResponse.encoding` when the response body is `None`
 
-### 0.4.1 (2021-07-09)
+## 0.4.1 (2021-07-09)
 
 - Fix initialziation of `SQLiteBackend` so it can be created outside main event loop
 

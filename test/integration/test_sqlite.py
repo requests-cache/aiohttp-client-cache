@@ -7,7 +7,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
+import aiosqlite
+from aiohttp_client_cache.backends.sqlite import (
+    SQLiteBackend,
+    SQLiteCache,
+    SQLitePickleCache,
+)
 from test.conftest import CACHE_NAME, httpbin
 from test.integration import BaseBackendTest, BaseStorageTest
 
@@ -102,6 +107,14 @@ class TestSQLiteCache(BaseStorageTest):
             await cache.close()
             await cache.close()  # Closing again should be a no-op
             assert cache._connection is None
+
+    async def test_failed_thread_close(self):
+        """If closing the connection thread fails, it should log a warning and continue"""
+        async with self.init_cache(self.storage_class) as cache:
+            async with cache.get_connection():
+                pass
+            with patch.object(aiosqlite.Connection, '_stop_running', side_effect=AttributeError):
+                del cache
 
     # TODO: Tests for unimplemented features
     # async def test_chunked_bulk_delete(self):

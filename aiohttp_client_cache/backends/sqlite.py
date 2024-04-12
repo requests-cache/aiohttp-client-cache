@@ -4,6 +4,7 @@ import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
+from logging import getLogger
 from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
@@ -20,6 +21,7 @@ from aiohttp_client_cache.backends import (
 )
 
 bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
+logger = getLogger(__name__)
 
 
 class SQLiteBackend(CacheBackend):
@@ -112,16 +114,17 @@ class SQLiteCache(BaseCache):
 
     def __del__(self):
         """If the aiosqlite connection is still open when this object is deleted, force its thread
-        to close by emptying its internal queue and setting its ``_running`` flag to ``False``.
-        This is basically a last resort to avoid hanging the application if this backend is used
-        without the CachedSession contextmanager.
+        to close by stopping its internal queue. This is basically a last resort to avoid hanging
+        the application if this backend is used without the CachedSession contextmanager.
 
         Note: Since this uses internal attributes, it has the potential to break in future versions
         of aiosqlite.
         """
         if self._connection is not None:
-            self._connection._tx.queue.clear()
-            self._connection._running = False
+            try:
+                self._connection._stop_running()
+            except (AttributeError, TypeError):
+                logger.warning('Could not close SQLite connection thread', exc_info=True)
             self._connection = None
 
     @asynccontextmanager
