@@ -40,7 +40,7 @@ url-normalize   = "^1.4"
 aioboto3        = {optional=true, version=">=9.0"}
 aiobotocore     = {optional=true, version=">=2.0"}
 aiofiles        = {optional=true, version=">=0.6.0"}
-aiosqlite       = {optional=true, version=">=0.16"}
+aiosqlite       = {optional=true, version=">=0.20"}
 motor           = {optional=true, version=">=3.1"}
 redis           = {optional=true, version=">=4.2"}
 
@@ -128,12 +128,14 @@ exclude = "dist|build"
 [tool.ruff]
 line-length = 100
 output-format = 'grouped'
-select = ['B', 'C4', 'C90', 'E', 'F', 'UP']
-ignore = ['B023', 'B027']
 target-version = 'py38'
 
 [tool.ruff.format]
 quote-style = 'single'
+
+[tool.ruff.lint]
+select = ['B', 'C4', 'C90', 'E', 'F', 'UP']
+ignore = ['B023', 'B027']
 
 [tool.ruff.lint.isort]
 known-first-party = ['test']
