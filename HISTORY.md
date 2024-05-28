@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix compatibility with aiosqlite 0.20
+- Remove usage of `datetime.utcnow()` (deprecated in python 3.12)
 
 ## 0.11.0
 

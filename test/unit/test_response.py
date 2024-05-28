@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest import mock
 
 import pytest
@@ -8,6 +8,7 @@ from aiohttp import ClientResponseError, web
 from multidict import MultiDictProxy
 from yarl import URL
 
+from aiohttp_client_cache.cache_control import utcnow
 from aiohttp_client_cache.response import CachedResponse, RequestInfo
 
 
@@ -62,17 +63,17 @@ async def test_basic_attrs(aiohttp_client):
     assert response._released is True
 
 
-@mock.patch('aiohttp_client_cache.response.datetime')
-async def test_is_expired(mock_datetime, aiohttp_client):
-    mock_datetime.utcnow = mock.Mock(return_value=datetime.utcnow())
-    expires = mock_datetime.utcnow() + timedelta(seconds=0.02)
+@mock.patch('aiohttp_client_cache.response.utcnow')
+async def test_is_expired(mock_utcnow, aiohttp_client):
+    mock_utcnow.return_value = utcnow()
+    expires = utcnow() + timedelta(seconds=0.02)
 
     response = await get_test_response(aiohttp_client, expires=expires)
 
     assert response.expires == expires
     assert response.is_expired is False
 
-    mock_datetime.utcnow.return_value += timedelta(0.02)
+    mock_utcnow.return_value += timedelta(0.02)
     assert response.is_expired is True
 
 

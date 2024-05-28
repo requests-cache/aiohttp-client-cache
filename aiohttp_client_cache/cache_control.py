@@ -161,7 +161,7 @@ def get_expiration_datetime(expire_after: ExpirationTime) -> datetime | None:
     if not isinstance(expire_after, timedelta):
         assert isinstance(expire_after, (int, float))
         expire_after = timedelta(seconds=expire_after)
-    return datetime.utcnow() + expire_after
+    return utcnow() + expire_after
 
 
 def get_cache_directives(headers: Mapping) -> dict:
@@ -226,6 +226,7 @@ if sys.version_info >= (3, 10):
         except ValueError:
             logger.debug(f'Failed to parse timestamp: {value}')
             return None
+
 else:  # pragma: no cover
 
     def parse_http_date(value: str) -> datetime | None:
@@ -257,6 +258,14 @@ def convert_to_utc_naive(dt: datetime):
         dt.astimezone(timezone.utc)
         dt = dt.replace(tzinfo=None)
     return dt
+
+
+# TODO: This could be replaced with timezone-aware datetimes, but this will cause problems with
+# existing cache data. It would be best to do this at the same time as a release that includes
+# changes to request matching logic (i.e., new cache keys).
+def utcnow() -> datetime:
+    """Get the current time in UTC, as a timezone-naive datetime"""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 @singledispatch
