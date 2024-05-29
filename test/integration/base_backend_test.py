@@ -1,21 +1,10 @@
 """Common tests to run for all backends"""
 
 from __future__ import annotations
+
 import asyncio
 import pickle
 from contextlib import asynccontextmanager
-from datetime import datetime
-from typing import Any, AsyncIterator, cast
-from unittest.mock import MagicMock
-from uuid import uuid4
-
-import pytest
-from async_timeout import timeout
-from itsdangerous.exc import BadSignature
-from itsdangerous.serializer import Serializer
-
-from aiohttp_client_cache import CacheBackend, CachedSession
-from aiohttp_client_cache.response import CachedResponse
 from test.conftest import (
     ALL_METHODS,
     CACHE_NAME,
@@ -27,6 +16,18 @@ from test.conftest import (
     httpbin,
     httpbin_custom,
 )
+from typing import Any, AsyncIterator, cast
+from unittest.mock import MagicMock
+from uuid import uuid4
+
+import pytest
+from async_timeout import timeout
+from itsdangerous.exc import BadSignature
+from itsdangerous.serializer import Serializer
+
+from aiohttp_client_cache import CacheBackend, CachedSession
+from aiohttp_client_cache.cache_control import utcnow
+from aiohttp_client_cache.response import CachedResponse
 
 pytestmark = pytest.mark.asyncio
 
@@ -218,7 +219,7 @@ class BaseBackendTest:
         """
         async with self.init_session() as session:
             session.cache.cache_control = True
-            now = datetime.utcnow()
+            now = utcnow()
             await session.get(httpbin('cache/60'), headers=request_headers)
             response = cast(
                 CachedResponse, await session.get(httpbin('cache/60'), headers=request_headers)

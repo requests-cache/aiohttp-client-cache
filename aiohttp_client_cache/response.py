@@ -1,14 +1,15 @@
 # TODO: CachedResponse may be better as a non-slotted subclass of ClientResponse.
 #     Will look into this when working on issue #67.
 from __future__ import annotations
+
 import asyncio
 import json
 from datetime import datetime
+from functools import singledispatch
 from http.cookies import SimpleCookie
 from logging import getLogger
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 from unittest.mock import Mock
-from functools import singledispatch
 
 import attr
 from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
@@ -18,6 +19,8 @@ from aiohttp.streams import StreamReader
 from aiohttp.typedefs import RawHeaders, StrOrURL
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
+
+from aiohttp_client_cache.cache_control import utcnow
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
@@ -33,7 +36,7 @@ EXCLUDE_ATTRS = {
     'request_info',
 }
 
-# Default attriutes to add to ClientResponse objects
+# Default attributes to add to ClientResponse objects
 CACHED_RESPONSE_DEFAULTS = {
     'created_at': None,
     'expires': None,
@@ -65,13 +68,13 @@ class CachedResponse(HeadersMixin):
     _content: StreamReader | None = attr.ib(default=None)
     _links: LinkItems = attr.ib(factory=list)
     cookies: SimpleCookie = attr.ib(factory=SimpleCookie)
-    created_at: datetime = attr.ib(factory=datetime.utcnow)
+    created_at: datetime = attr.ib(factory=utcnow)
     encoding: str = attr.ib(default='utf-8')
     expires: datetime | None = attr.ib(default=None)
     raw_headers: RawHeaders = attr.ib(factory=tuple)
     real_url: StrOrURL = attr.ib(default=None)
     history: tuple = attr.ib(factory=tuple)
-    last_used: datetime = attr.ib(factory=datetime.utcnow)
+    last_used: datetime = attr.ib(factory=utcnow)
 
     @classmethod
     async def from_client_response(
@@ -157,7 +160,7 @@ class CachedResponse(HeadersMixin):
         """Determine if this cached response is expired"""
         # If for any reason the expiration check fails, consider it expired and fetch a new response
         try:
-            return self.expires is not None and datetime.utcnow() > self.expires
+            return self.expires is not None and utcnow() > self.expires
         except (AttributeError, TypeError, ValueError):
             return False
 

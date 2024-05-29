@@ -1,29 +1,30 @@
 from __future__ import annotations
 
+import os
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
-import os
+from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 from typing import Any, Mapping
 from unittest.mock import MagicMock, patch
-from contextlib import nullcontext
 
 import pytest
+from faker import Faker
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
-from faker import Faker
 
 from aiohttp_client_cache.cache_control import (
     DO_NOT_CACHE,
     CacheActions,
+    compose_refresh_headers,
     convert_to_utc_naive,
     get_expiration_datetime,
-    compose_refresh_headers,
     parse_http_date,
     split_kv_directive,
     try_int,
     url_match,
+    utcnow,
 )
-from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 
 # Any random value, but to support `pytest-xdist` the value must be static during a Pytest session.
 DEFAULT_FAKER_SEED = os.getenv('CUSTOM_FAKER_SEED') or 42
@@ -214,8 +215,8 @@ def test_get_expiration_datetime__no_expiration():
     ],
 )
 def test_get_expiration_datetime__relative(expire_after, expected_expiration_delta):
-    expires = get_expiration_datetime(expire_after or datetime.utcnow())
-    expected_expiration = datetime.utcnow() + expected_expiration_delta
+    expires = get_expiration_datetime(expire_after or utcnow())
+    expected_expiration = utcnow() + expected_expiration_delta
     # Instead of mocking datetime (which adds some complications), check for approximate value
     assert abs((expires - expected_expiration).total_seconds()) < 1
 
@@ -342,7 +343,11 @@ def test_url_match(url: Any, pattern: str, expected_output: bool) -> None:
 @pytest.mark.parametrize(
     'value, expected_output, error',
     [
-        (str(random_int := fake.pyint()), random_int, None),  # `str` (numeric) to `int`.
+        (
+            str(random_int := fake.pyint()),
+            random_int,
+            None,
+        ),  # `str` (numeric) to `int`.
         ('0', 0, None),  # `str` (numeric) to `int`.
         (None, None, None),  # `None` to `None`.
         (random_int, random_int, None),  # `int` to `int`.
