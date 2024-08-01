@@ -1,12 +1,12 @@
 """Core functions for cache configuration"""
 
 from __future__ import annotations
-from functools import lru_cache
-import sys
 
+import sys
 import warnings
 from asyncio import Lock
 from contextlib import asynccontextmanager
+from functools import lru_cache
 from logging import getLogger
 from typing import TYPE_CHECKING, cast
 
@@ -19,7 +19,14 @@ from aiohttp_client_cache.response import AnyResponse, CachedResponse, set_respo
 from aiohttp_client_cache.signatures import extend_signature
 
 if TYPE_CHECKING:
+    from aiohttp.client import _RequestContextManager, _RequestOptions
+    from typing_extensions import Unpack
+
+    class _ExpandedRequestOptions(_RequestOptions, total=False):
+        expire_after: ExpirationTime
+
     MIXIN_BASE = ClientSession
+
 else:
     MIXIN_BASE = object
 
@@ -178,6 +185,51 @@ class CacheMixin(MIXIN_BASE):
     async def delete_expired_responses(self):
         """Remove all expired responses from the cache"""
         await self.cache.delete_expired_responses()
+
+    # The version check is unnecessary but since aiohttp has done it we're forced into it too.
+    if sys.version_info >= (3, 11) and TYPE_CHECKING:
+
+        def get(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
+
+        def options(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
+
+        def head(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
+
+        def post(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
+
+        def put(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
+
+        def patch(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
+
+        def delete(
+            self,
+            url: StrOrURL,
+            **kwargs: Unpack[_ExpandedRequestOptions],
+        ) -> _RequestContextManager: ...
 
 
 # Ignore aiohttp warning: "Inheritance from ClientSession is discouraged"
