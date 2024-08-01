@@ -1,8 +1,9 @@
 # History
 
-## Unreleased
+## 0.11.1
 
 - Fix compatibility with aiosqlite 0.20
+- Add complete type hints for `CachedSession.get()`, `post()`, etc. for compatibility with aiohttp 3.10
 - Remove usage of `datetime.utcnow()` (deprecated in python 3.12)
 
 ## 0.11.0

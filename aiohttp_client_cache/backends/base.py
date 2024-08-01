@@ -102,7 +102,7 @@ class CacheBackend:
             'disabled by headers or expiration params': actions and actions.skip_write,
             'expired': getattr(response, 'is_expired', False),
         }
-        logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')  # type: ignore
+        logger.debug(f'Pre-cache checks for response from {response.url}: {cache_criteria}')
         return not any(cache_criteria.values())
 
     def create_cache_actions(
