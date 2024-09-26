@@ -158,11 +158,11 @@ class CachedResponse(HeadersMixin):
     @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
-        # If for any reason the expiration check fails, consider it expired and fetch a new response
         try:
             return self.expires is not None and utcnow() > self.expires
         except (AttributeError, TypeError, ValueError):
-            return False
+            # Consider it expired and fetch a new response
+            return True
 
     @property
     def links(self) -> MultiDictProxy:
