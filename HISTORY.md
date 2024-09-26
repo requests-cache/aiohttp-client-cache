@@ -1,5 +1,9 @@
 # History
 
+# Unreleased
+
+- Fix `CachedResponse.is_expired` check to consider any errors as "expired"
+
 ## 0.11.1
 
 - Fix compatibility with aiosqlite 0.20
