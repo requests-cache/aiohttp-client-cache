@@ -310,10 +310,9 @@ class BaseCache(metaclass=ABCMeta):
         if isinstance(item, CachedResponse):
             item.from_cache = True
             return item
-        elif isinstance(item, str):
+        if isinstance(item, str):
             return item
-        deserialzied = self._serializer.loads(item)
-        return deserialzied
+        return self._serializer.loads(item)
 
     @staticmethod
     def _get_serializer(secret_key, salt):
