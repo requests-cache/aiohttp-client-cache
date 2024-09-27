@@ -7,7 +7,13 @@ from typing import AsyncIterator
 
 import pytest
 
-from aiohttp_client_cache import CachedResponse, CachedSession, SQLiteBackend
+from aiohttp_client_cache import CachedSession, SQLiteBackend
+
+logging.getLogger('faker.factory').setLevel(logging.INFO)  # Very annoying DEBUG logs.
+logging.getLogger('botocore').setLevel(logging.INFO)  # Very annoying DEBUG logs.
+logging.getLogger('aioboto3').setLevel(logging.INFO)  # Very annoying DEBUG logs.
+logging.getLogger('aiobotocore').setLevel(logging.INFO)  # Very annoying DEBUG logs.
+
 
 ALL_METHODS = ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
 CACHE_NAME = 'pytest_cache'
@@ -39,7 +45,7 @@ logging.basicConfig(level='INFO')
 
 def from_cache(*responses) -> bool:
     """Indicate whether one or more responses came from the cache"""
-    return all(isinstance(response, CachedResponse) for response in responses)
+    return all(response.from_cache for response in responses)
 
 
 def httpbin(path: str = ''):
