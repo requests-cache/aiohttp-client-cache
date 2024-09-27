@@ -73,8 +73,6 @@ class CachedResponse(ClientResponse):
             '_content',
         ):
             del state[k]
-        # for k, v in state.items():
-        #    logger.debug(f"{k=}, {type(v)=}, {v=}")
         return state
 
     def __setstate__(self, state):
