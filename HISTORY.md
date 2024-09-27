@@ -2,7 +2,8 @@
 
 # Unreleased
 
-- Fix `CachedResponse.is_expired` check to consider any errors as "expired"
+- Fixed `CachedResponse.is_expired` check to consider any errors as "expired". (!252)
+- Now `CachedResponse` inherits from the `aiohttp.ClientResponse`. (#251)
 
 ## 0.11.1
 
