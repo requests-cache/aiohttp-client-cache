@@ -1,17 +1,18 @@
 # History
 
-# Unreleased
+# 0.12.0 (2024-10-01)
 
-- Fixed `CachedResponse.is_expired` check to consider any errors as "expired". (!252)
-- Now `CachedResponse` inherits from the `aiohttp.ClientResponse`. (#251)
+- Fix `CachedResponse.is_expired` check to consider any errors as "expired". (!252)
+- Fix compatibility with aiohttp 3.10.6+ (#251)
+  - Now `CachedResponse` inherits from the `aiohttp.ClientResponse`.
 
-## 0.11.1
+## 0.11.1 (2024-08-01)
 
 - Fix compatibility with aiosqlite 0.20
 - Add complete type hints for `CachedSession.get()`, `post()`, etc. for compatibility with aiohttp 3.10
 - Remove usage of `datetime.utcnow()` (deprecated in python 3.12)
 
-## 0.11.0
+## 0.11.0 (2024-02-08)
 
 ### Features
 
