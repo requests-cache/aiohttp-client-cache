@@ -2,6 +2,7 @@
 
 # 0.12.0 (2024-10-01)
 
+- Add support for Python 3.13
 - Fix `CachedResponse.is_expired` check to consider any errors as "expired". (!252)
 - Fix compatibility with aiohttp 3.10.6+ (#251)
   - Now `CachedResponse` inherits from the `aiohttp.ClientResponse`.
@@ -14,20 +15,13 @@
 
 ## 0.11.0 (2024-02-08)
 
-### Features
-
-- Added support for Python 3.12.
-
-### Misc
-
-- (Internal/maintance) Renamed or slightly refactored some internal functions (that are not a part of the library public nterface).
-- Added more tests.
-- Added a Docker Compose file with [DragonflyDB](https://www.dragonflydb.io/) service that can be used as a Redis drop-in replacement.
-- Added minor performance improvements for MongoDB backend. (!203)
+- Add support for Python 3.12.
+- Add a Docker Compose file with [DragonflyDB](https://www.dragonflydb.io/) service that can be used as a Redis drop-in replacement.
+- Add minor performance improvements for MongoDB backend. (!203)
 
 ## Deprecations and Removals
 
-- Dropped support for Python 3.7.
+- Drop support for Python 3.7.
 
 ## 0.10.0 (2023-10-30)
 
