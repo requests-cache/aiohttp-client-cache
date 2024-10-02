@@ -86,11 +86,11 @@ set_type_checking_flag = False
 
 # Use apidoc to auto-generate rst sources
 apidoc_excluded_paths = ['forge_utils.py']
-apidoc_extra_args = ['--private', '--templatedir=_templates']
 apidoc_module_dir = PACKAGE_DIR
 apidoc_module_first = True
 apidoc_output_dir = 'modules'
 apidoc_separate_modules = True
+apidoc_template_dir = '_templates/apidoc'
 apidoc_toc_file = False
 add_module_names = False
 
