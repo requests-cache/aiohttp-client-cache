@@ -6,16 +6,15 @@ from logging import getLogger
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
 from unittest.mock import Mock
 
-from aiohttp.tracing import Trace
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.client_reqrep import RequestInfo
 from aiohttp.helpers import BaseTimerContext
 from aiohttp.streams import StreamReader
+from aiohttp.tracing import Trace
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
 
 from aiohttp_client_cache.cache_control import utcnow
-
 
 JsonResponse = Optional[Dict[str, Any]]
 DictItems = List[Tuple[str, str]]
@@ -55,6 +54,7 @@ class CachedResponse(ClientResponse):
             loop=loop,
             session=session,
         )
+        self._content: StreamReader | None = None
         self.created_at: datetime = utcnow()
         self.expires: datetime | None = None
         self.last_used: datetime = utcnow()
