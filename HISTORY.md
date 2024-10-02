@@ -1,8 +1,8 @@
 # History
 
-## 0.12.2 (unreleased)
+## 0.12.2 (2024-10-02)
 
-- Fixed a regression in `v0.12.0` when the `request_info` property was unavailable on a cached response.
+- Fixed a regression in `v0.12.0` when the `request_info` property was unavailable on a cached response. (!260)
 
 ## 0.12.1 (2024-10-02)
 
