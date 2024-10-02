@@ -1,5 +1,9 @@
 # History
 
+## 0.12.2 (unreleased)
+
+- Fixed a regression in `v0.12.0` when the `request_info` property was unavailable on a cached response.
+
 ## 0.12.1 (2024-10-02)
 
 - Fixed `get_encoding()` access after unpickling. (#256)
