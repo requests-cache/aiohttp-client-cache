@@ -1,10 +1,10 @@
 # History
 
-# 0.12.1 (unreleased)
+## 0.12.1 (2024-10-02)
 
 - Fixed `get_encoding()` access after unpickling. (#256)
 
-# 0.12.0 (2024-10-01)
+## 0.12.0 (2024-10-01)
 
 - Add support for Python 3.13
 - Fix `CachedResponse.is_expired` check to consider any errors as "expired". (!252)
