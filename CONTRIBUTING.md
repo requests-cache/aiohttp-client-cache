@@ -4,10 +4,10 @@
 
 To set up for local development (requires [poetry](https://python-poetry.org/docs/#installation)):
 
-```bash
+```sh
 $ git clone https://github.com/requests-cache/aiohttp-client-cache
 $ cd aiohttp-client-cache
-$ poetry install -E all -E docs
+$ poetry install -E all
 ```
 
 ## Pre-commit hooks
@@ -18,13 +18,13 @@ This is optional but recommended.
 
 To install pre-commit hooks:
 
-```bash
+```sh
 pre-commit install
 ```
 
 To manually run checks on all files:
 
-```bash
+```sh
 pre-commit run --all-files
 # Alternative alias with nox:
 nox -e lint
@@ -32,7 +32,7 @@ nox -e lint
 
 To disable pre-commit hooks:
 
-```bash
+```sh
 pre-commit uninstall
 ```
 
@@ -55,19 +55,19 @@ Tests are divided into unit and integration tests:
 For CI jobs (including PRs), these tests will be run for each supported python version.
 You can use [nox](https://nox.thea.codes) to do this locally, if needed:
 
-```bash
+```sh
 nox -e test
 ```
 
 Or to run tests for a specific python version:
 
-```bash
+```sh
 nox -e test-3.10
 ```
 
 To generate a coverage report:
 
-```bash
+```sh
 nox -e cov
 ```
 
@@ -81,7 +81,7 @@ and [install docker-compose](https://docs.docker.com/compose/install/).
 
 Then, run:
 
-```bash
+```sh
 docker-compose up -d
 pytest test/integration
 ```
@@ -93,15 +93,21 @@ No other changes are required, you can run related tests with e.g. `pytest test 
 
 [Sphinx](http://www.sphinx-doc.org/en/master/) is used to generate documentation.
 
+First, install documentation dependencies:
+
+```sh
+$ poetry install -E all --with docs
+```
+
 To build the docs locally:
 
-```bash
+```sh
 $ nox -e docs
 ```
 
 To preview:
 
-```bash
+```sh
 # MacOS:
 $ open docs/_build/index.html
 # Linux:
@@ -120,7 +126,7 @@ the docs. A configured build container is included in `docker-compose.yml` to si
 
 Run with:
 
-```bash
+```sh
 docker compose up -d --build
 docker exec readthedocs make all
 ```

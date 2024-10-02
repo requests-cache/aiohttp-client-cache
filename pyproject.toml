@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohttp-client-cache"
-version="0.11.2"
+version="0.12.0"
 description = "Persistent cache for aiohttp requests"
 authors = ["Jordan Cook"]
 license = "MIT License"
@@ -44,19 +44,6 @@ aiosqlite       = {optional=true, version=">=0.20"}
 motor           = {optional=true, version=">=3.1"}
 redis           = {optional=true, version=">=4.2"}
 
-# Documentation dependencies needed for Readthedocs builds
-furo                        = {optional=true, version="^2023.8"}
-linkify-it-py               = {optional=true, version=">=2.0"}
-markdown-it-py              = {optional=true, version=">=2.2"}
-myst-parser                 = {optional=true, version=">=2.0"}
-python-forge                = {optional=true, version="^18.6"}
-sphinx                      = {optional=true, version="7.1.2"}
-sphinx-automodapi           = {optional=true, version="^0.18.0"}
-sphinx-autodoc-typehints    = {optional=true, version="^1.23"}
-sphinx-copybutton           = {optional=true, version="^0.3"}
-sphinx-inline-tabs          = {optional=true, version=">=2023.4"}
-sphinxcontrib-apidoc        = {optional=true, version=">=0.3"}
-
 [tool.poetry.extras]
 all         = ["aioboto3", "aiobotocore", "aiofiles", "aiosqlite", "motor", "redis"]
 dynamodb    = ["aioboto3", "aiobotocore"]
@@ -64,9 +51,6 @@ filesystem  = ["aiofiles", "aiosqlite"]
 mongodb     = ["motor"]
 redis       = ["redis"]
 sqlite      = ["aiosqlite"]
-docs        = ["furo", "linkify-it-py", "markdown-it-py", "myst-parser", "python-forge",
-               "sphinx", "sphinx-automodapi","sphinx-autodoc-typehints", "sphinx-copybutton",
-               "sphinx-inline-tabs", "sphinxcontrib-apidoc"]
 
 [tool.poetry.group.dev.dependencies]
 # For unit + integration tests
@@ -84,8 +68,21 @@ Faker           = "^22.2.0"
 nox             = ">=2022.11"
 nox-poetry      = "^0.8.6"
 pre-commit      = ">=2.12"
-sphinx-autobuild= ">=2021.3"
 types-aiofiles  = ">=0.1.7"
+
+# Documentation dependencies needed for Readthedocs builds
+[tool.poetry.group.docs.dependencies]
+furo                        = {python=">=3.10", version="^2024.8"}
+linkify-it-py               = {python=">=3.10", version=">=2.0"}
+markdown-it-py              = {python=">=3.10", version=">=2.2"}
+myst-parser                 = {python=">=3.10", version=">=3.0"}
+python-forge                = {python=">=3.10", version="^18.6"}
+sphinx                      = {python=">=3.10", version="8.0.2"}
+sphinx-automodapi           = {python=">=3.10", version="^0.18.0"}
+sphinx-autodoc-typehints    = {python=">=3.10", version="^1.23"}
+sphinx-copybutton           = {python=">=3.10", version="^0.3"}
+sphinx-inline-tabs          = {python=">=3.10", version=">=2023.4"}
+sphinxcontrib-apidoc        = {python=">=3.10", version=">=0.3"}
 
 [tool.poetry.group.test-server.dependencies]
 flask = ">=2.0"
