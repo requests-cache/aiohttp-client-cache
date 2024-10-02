@@ -1,5 +1,9 @@
 # History
 
+# 0.12.1 (unreleased)
+
+- Fixed `get_encoding()` access after unpickling. (#256)
+
 # 0.12.0 (2024-10-01)
 
 - Add support for Python 3.13
