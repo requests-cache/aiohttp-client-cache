@@ -79,8 +79,8 @@ class CachedResponse(ClientResponse):
         self.__dict__.update(state)
         self._cache = {}
         self.from_cache = True
-        self.content = CachedStreamReader(self._body)
         self._content = None
+        self.content = CachedStreamReader(self._body)
 
         def decode_header(header):
             """Decode an individual (key, value) pair"""
@@ -90,6 +90,9 @@ class CachedResponse(ClientResponse):
             )
 
         self.headers = CIMultiDictProxy(CIMultiDict([decode_header(h) for h in self.raw_headers]))
+
+    def get_encoding(self):
+        return self._encoding
 
     # NOTE: We redefine the same just to get rid of the `@reify' that protects against writing.
     @property  # type: ignore[override]
@@ -104,7 +107,7 @@ class CachedResponse(ClientResponse):
         """Read response content, and reset StreamReader on original response.
 
         This can be called only on an instance after `ClientSession._request()` returns `CachedResponse`
-        because inside the `ClientSession._request()` headers are assgined at the very end (after `Response.start()`).
+        because inside the `ClientSession._request()` headers are assigined at the very end (after `Response.start()`).
         """
         assert isinstance(expires, datetime) or expires is None, type(expires)
 
@@ -117,6 +120,11 @@ class CachedResponse(ClientResponse):
 
         if self.history:
             self._history = (*[await cast(CachedResponse, r).postprocess() for r in self.history],)
+
+        # We must call `get_encoding` before pickling because pickling `_resolve_charset` raises
+        # _pickle.PicklingError: Can't pickle <function ClientSession.<lambda> at 0x7f94fdd13c40>:
+        # attribute lookup ClientSession.<lambda> on aiohttp.client failed
+        self._encoding: str = super().get_encoding()
 
         return self
 
