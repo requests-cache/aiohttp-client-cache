@@ -21,6 +21,7 @@ test-reports/
 # Sphinx
 docs/_build/
 docs/modules/
+docs/requirements.txt
 
 # JS
 node_modules/
