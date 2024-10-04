@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from copy import deepcopy
 import inspect
 import pickle
 from abc import ABCMeta, abstractmethod
@@ -9,16 +8,17 @@ from datetime import datetime
 from logging import getLogger
 from typing import Any, AsyncIterable, Awaitable, Callable, Iterable, Union
 
+from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.cache_control import CacheActions, ExpirationPatterns, ExpirationTime
 from aiohttp_client_cache.cache_keys import create_key
-from aiohttp_client_cache.response import CachedResponse
+from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
 ResponseOrKey = Union[CachedResponse, bytes, str, None]
 _FilterFn = Union[
-    Callable[[CachedResponse], bool],
-    Callable[[CachedResponse], Awaitable[bool]],
+    Callable[[AnyResponse], bool],
+    Callable[[AnyResponse], Awaitable[bool]],
 ]
 
 logger = getLogger(__name__)
@@ -84,7 +84,7 @@ class CacheBackend:
         self.ignored_params = set(ignored_params or [])
 
     async def is_cacheable(
-        self, response: CachedResponse | None, actions: CacheActions | None = None
+        self, response: AnyResponse | None, actions: CacheActions | None = None
     ) -> bool:
         """Perform all checks needed to determine if the given response should be cached"""
         if not response:
@@ -155,12 +155,12 @@ class CacheBackend:
         logger.debug(f'Attempting to get cached response for key: {key}')
         try:
             response = await self.responses.read(key) or await self._get_redirect_response(str(key))
-            # Catch "quiet" deserialization errors due to upgrading attrs  # TODO: Remove?
+            # Catch "quiet" deserialization errors due to upgrading attrs
             if response is not None:
                 assert response.method  # type: ignore
-        except (AssertionError, AttributeError, KeyError, TypeError, pickle.PickleError) as e:
-            logger.debug(repr(e))
+        except (AssertionError, AttributeError, KeyError, TypeError, pickle.PickleError):
             response = None
+
         if not response:
             logger.debug('No cached response found')
         # If the item is expired or filtered out, delete it from the cache
@@ -181,7 +181,7 @@ class CacheBackend:
 
     async def save_response(
         self,
-        response: CachedResponse,
+        response: ClientResponse,
         cache_key: str | None = None,
         expires: datetime | None = None,
     ):
@@ -193,7 +193,7 @@ class CacheBackend:
             expires: Expiration time to set for the response
         """
         cache_key = cache_key or self.create_key(response.method, response.url)
-        cached_response = await response.postprocess(expires)
+        cached_response = await CachedResponse.from_client_response(response, expires)
         await self.responses.write(cache_key, cached_response)
 
         # Alias any redirect requests to the same cache key
@@ -305,15 +305,9 @@ class BaseCache(metaclass=ABCMeta):
 
     def deserialize(self, item: ResponseOrKey) -> CachedResponse | str | None:
         """Deserialize a cached URL or response"""
-        if not item:
-            return None
-        if isinstance(item, CachedResponse):
-            item.from_cache = True
+        if isinstance(item, (CachedResponse, str)):
             return item
-        elif isinstance(item, str):
-            return item
-        deserialzied = self._serializer.loads(item)
-        return deserialzied
+        return self._serializer.loads(item) if item else None
 
     @staticmethod
     def _get_serializer(secret_key, salt):
@@ -415,8 +409,6 @@ class DictCache(BaseCache, UserDict):
             item.reset()
         except AttributeError:
             pass
-        else:
-            item.from_cache = True
         return item
 
     async def size(self) -> int:
@@ -427,7 +419,4 @@ class DictCache(BaseCache, UserDict):
             yield value
 
     async def write(self, key: str, item: ResponseOrKey):
-        # Keep a copy, as any change to the response will also change the cached value.
-        # While this should not be a problem for any use case I can imagine, we need to
-        # be consistent with other backends such as MongoDB, Redis, etc.
-        self.data[key] = deepcopy(item)
+        self.data[key] = item

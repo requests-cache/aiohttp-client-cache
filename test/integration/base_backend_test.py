@@ -12,6 +12,7 @@ from test.conftest import (
     HTTPBIN_METHODS,
     HTTPDATE_STR,
     assert_delta_approx_equal,
+    from_cache,
     httpbin,
     httpbin_custom,
 )
@@ -60,14 +61,9 @@ class BaseBackendTest:
         url = httpbin(method.lower())
         async with self.init_session() as session:
             for params in [{'param_1': 1}, {'param_1': 2}, {'param_2': 2}]:
-                response_1 = cast(
-                    CachedResponse, await session.request(method, url, **{field: params})
-                )
-                assert response_1.from_cache is False
-                response_2 = cast(
-                    CachedResponse, await session.request(method, url, **{field: params})
-                )
-                assert response_2.from_cache is True
+                response_1 = await session.request(method, url, **{field: params})
+                response_2 = await session.request(method, url, **{field: params})
+                assert not from_cache(response_1) and from_cache(response_2)
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
     @pytest.mark.parametrize('field', ['params', 'data', 'json', 'headers'])
@@ -83,23 +79,14 @@ class BaseBackendTest:
         async with self.init_session(
             allowed_codes=(200, 400), ignored_params=['ignored'], include_headers=True
         ) as session:
-            response_1 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_1})
-            )
-            assert response_1.from_cache is False
-            response_2 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_1})
-            )
-            assert response_2.from_cache is True
-            response_3 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_2})
-            )
-            assert response_3.from_cache is True
+            response_1 = await session.request(method, url, **{field: params_1})
+            response_2 = await session.request(method, url, **{field: params_1})
+            response_3 = await session.request(method, url, **{field: params_2})
             await session.request(method, url, params={'a': 'b'})
-            response_4 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_3})
-            )
-            assert response_4.from_cache is False
+            response_4 = await session.request(method, url, **{field: params_3})
+
+        assert not from_cache(response_1) and from_cache(response_2)
+        assert from_cache(response_3) and not from_cache(response_4)
 
     async def test_gather(self):
         # limit the maximum number of concurrent reads to 100 to avoid
@@ -179,14 +166,10 @@ class BaseBackendTest:
     async def test_include_headers(self):
         async with self.init_session(include_headers=True) as session:
             await session.get(httpbin('get'))
-            response_1 = cast(
-                CachedResponse, await session.get(httpbin('get'), headers={'key': 'value'})
-            )
-            assert response_1.from_cache is False
-            response_2 = cast(
-                CachedResponse, await session.get(httpbin('get'), headers={'key': 'value'})
-            )
-            assert response_2.from_cache is True
+            response_1 = await session.get(httpbin('get'), headers={'key': 'value'})
+            response_2 = await session.get(httpbin('get'), headers={'key': 'value'})
+
+        assert not from_cache(response_1) and from_cache(response_2)
 
     async def test_streaming_requests(self):
         """Test that streaming requests work both for the original and cached responses"""
@@ -450,5 +433,7 @@ class BaseBackendTest:
         async with self.init_session() as session:
             tasks = [session.get(url) for url in urls]
             responses = await asyncio.gather(*tasks)
-            assert len(responses) == 100
-            assert [cast(CachedResponse, r).from_cache for r in responses].count(False) == 1
+            num_write = 0
+            for response in responses:
+                num_write += 0 if cast(CachedResponse, response).from_cache else 1
+            assert num_write == 1
