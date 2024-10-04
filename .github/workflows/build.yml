@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: snok/install-poetry@v1.3
+      - uses: snok/install-poetry@v1.4
         with:
           virtualenvs-in-project: true
 
@@ -48,12 +48,12 @@ jobs:
       - uses: supercharge/redis-github-action@1.4.0
         with:
           redis-version: '6'
-      - uses: rrainn/dynamodb-action@v3.0.0
+      - uses: rrainn/dynamodb-action@v4.0.0
 
       # Cache packages per python version, and reuse until lockfile changes
       - name: Cache python packages
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
@@ -76,7 +76,7 @@ jobs:
       # Latest python version: send coverage report to codecov
       - name: 'Upload coverage report to Codecov'
         if: ${{ matrix.python-version == env.LATEST_PY_VERSION }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
   # Run code analysis checks
   analyze:
