@@ -437,3 +437,9 @@ class BaseBackendTest:
             for response in responses:
                 num_write += 0 if cast(CachedResponse, response).from_cache else 1
             assert num_write == 1
+
+    async def test_context_manager(self):
+        async with self.init_session() as session:
+            for _ in range(2):
+                async with session.get(httpbin()):
+                    pass
