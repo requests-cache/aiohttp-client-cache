@@ -31,7 +31,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python          = "^3.8"
-aiohttp         = "^3.8"
+aiohttp         = "<3.10.6"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
 url-normalize   = "^1.4"
