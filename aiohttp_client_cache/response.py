@@ -235,6 +235,9 @@ class CachedResponse(HeadersMixin):
     async def __aenter__(self) -> CachedResponse:
         return self
 
+    async def __aexit__(self, *exc: Any) -> None:
+        pass
+
     @property
     def closed(self) -> bool:
         return True
