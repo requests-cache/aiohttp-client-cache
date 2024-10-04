@@ -43,11 +43,6 @@ class CachedResponse(ClientResponse):
         loop: asyncio.AbstractEventLoop,
         session: ClientSession,
     ) -> None:
-        self._content: StreamReader | None = None
-        self.created_at: datetime = utcnow()
-        self.expires: datetime | None = None
-        self.last_used: datetime = utcnow()
-        self.from_cache = False
         super().__init__(
             method,
             url,
@@ -59,6 +54,11 @@ class CachedResponse(ClientResponse):
             loop=loop,
             session=session,
         )
+        self._content: StreamReader | None = None
+        self.created_at: datetime = utcnow()
+        self.expires: datetime | None = None
+        self.last_used: datetime = utcnow()
+        self.from_cache = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -80,6 +80,7 @@ class CachedResponse(ClientResponse):
         self._cache = {}
         self.from_cache = True
         self._content = None
+        self.content = CachedStreamReader(self._body)
 
         def decode_header(header):
             """Decode an individual (key, value) pair"""
@@ -92,15 +93,6 @@ class CachedResponse(ClientResponse):
 
     def get_encoding(self):
         return self._encoding
-
-    @property  # type: ignore[override]
-    def request_info(self) -> RequestInfo:
-        return RequestInfo(
-            url=self.url,
-            method=self.method,
-            headers=self.headers,
-            real_url=self.url,
-        )
 
     # NOTE: We redefine the same just to get rid of the `@reify' that protects against writing.
     @property  # type: ignore[override]
