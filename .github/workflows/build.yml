@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: snok/install-poetry@v1.3
+      - uses: snok/install-poetry@v1.4
         with:
           virtualenvs-in-project: true
 
