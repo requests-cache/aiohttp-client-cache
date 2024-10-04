@@ -61,7 +61,7 @@ pytest-aiohttp  = "^0.3"
 pytest-asyncio  = "^0.14"
 pytest-clarity  = ">=1.0"
 pytest-cov      = "^2.11"
-pytest-xdist    = "^2.3"
+pytest-xdist    = ">=2.3,<4.0"
 Faker           = "^22.2.0"
 
 # For convenience in local development; additional tools are managed by pre-commit
