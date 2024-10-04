@@ -1,21 +1,48 @@
+# TODO: CachedResponse may be better as a non-slotted subclass of ClientResponse.
+#     Will look into this when working on issue #67.
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime
+from functools import singledispatch
+from http.cookies import SimpleCookie
 from logging import getLogger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 from unittest.mock import Mock
 
-from aiohttp.tracing import Trace
-from aiohttp import ClientResponse, ClientSession
-from aiohttp.client_reqrep import RequestInfo
-from aiohttp.helpers import BaseTimerContext
+import attr
+from aiohttp import ClientResponse, ClientResponseError, hdrs, multipart
+from aiohttp.client_reqrep import ContentDisposition, MappingProxyType, RequestInfo
+from aiohttp.helpers import HeadersMixin
 from aiohttp.streams import StreamReader
+from aiohttp.typedefs import RawHeaders, StrOrURL
 from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
 
 from aiohttp_client_cache.cache_control import utcnow
 
+# CachedResponse attributes to not copy directly from ClientResponse
+EXCLUDE_ATTRS = {
+    '_body',
+    '_content',
+    '_links',
+    'created_at',
+    'encoding',
+    'expires',
+    'history',
+    'last_used',
+    'real_url',
+    'request_info',
+}
+
+# Default attributes to add to ClientResponse objects
+CACHED_RESPONSE_DEFAULTS = {
+    'created_at': None,
+    'expires': None,
+    'from_cache': False,
+    'is_expired': False,
+}
 
 JsonResponse = Optional[Dict[str, Any]]
 DictItems = List[Tuple[str, str]]
@@ -25,102 +52,62 @@ LinkMultiDict = MultiDictProxy[MultiDictProxy[Union[str, URL]]]
 logger = getLogger(__name__)
 
 
-class CachedResponse(ClientResponse):
+@attr.s(slots=True)
+class CachedResponse(HeadersMixin):
     """A dataclass containing cached response information, used for serialization.
     It will mostly behave the same as a :py:class:`aiohttp.ClientResponse` that has been read,
     with some additional cache-related info.
     """
 
-    def __init__(
-        self,
-        method: str,
-        url: URL,
-        *,
-        writer: asyncio.Task[None],
-        continue100: asyncio.Future[bool] | None,
-        timer: BaseTimerContext,
-        request_info: RequestInfo,
-        traces: list[Trace],
-        loop: asyncio.AbstractEventLoop,
-        session: ClientSession,
-    ) -> None:
-        super().__init__(
-            method,
-            url,
-            writer=writer,
-            continue100=continue100,
-            timer=timer,
-            request_info=request_info,
-            traces=traces,
-            loop=loop,
-            session=session,
-        )
-        self.created_at: datetime = utcnow()
-        self.expires: datetime | None = None
-        self.last_used: datetime = utcnow()
-        self.from_cache = False
+    method: str = attr.ib()
+    reason: str = attr.ib()
+    status: int = attr.ib()
+    url: URL = attr.ib(converter=URL)
+    version: str = attr.ib()
+    _body: Any = attr.ib(default=b'')
+    _content: StreamReader | None = attr.ib(default=None)
+    _links: LinkItems = attr.ib(factory=list)
+    cookies: SimpleCookie = attr.ib(factory=SimpleCookie)
+    created_at: datetime = attr.ib(factory=utcnow)
+    encoding: str = attr.ib(default='utf-8')
+    expires: datetime | None = attr.ib(default=None)
+    raw_headers: RawHeaders = attr.ib(factory=tuple)
+    real_url: StrOrURL = attr.ib(default=None)
+    history: tuple = attr.ib(factory=tuple)
+    last_used: datetime = attr.ib(factory=utcnow)
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        for k in (
-            '_request_info',
-            '_headers',
-            '_cache',
-            '_loop',
-            '_timer',
-            '_resolve_charset',
-            '_protocol',
-            '_content',
-        ):
-            del state[k]
-        # for k, v in state.items():
-        #    logger.debug(f"{k=}, {type(v)=}, {v=}")
-        return state
+    @classmethod
+    async def from_client_response(
+        cls, client_response: ClientResponse, expires: datetime | None = None
+    ):
+        """Convert a ClientResponse into a CachedReponse"""
+        # Copy most attributes over as is
+        copy_attrs = set(attr.fields_dict(cls).keys()) - EXCLUDE_ATTRS
+        response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
 
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._cache = {}
-        self.from_cache = True
-        self.content = CachedStreamReader(self._body)
-        self._content = None
+        # Read response content, and reset StreamReader on original response
+        if not client_response._released:
+            await client_response.read()
+        response._body = client_response._body
+        client_response.content = CachedStreamReader(client_response._body)
 
-        def decode_header(header):
-            """Decode an individual (key, value) pair"""
-            return (
-                header[0].decode('utf-8', 'surrogateescape'),
-                header[1].decode('utf-8', 'surrogateescape'),
+        # Set remaining attributes individually
+        response.expires = expires
+        response.links = client_response.links
+        response.real_url = client_response.request_info.real_url
+
+        # The encoding may be unset even if the response has been read, and
+        # get_encoding() does not handle certain edge cases like an empty response body
+        try:
+            response.encoding = client_response.get_encoding()
+        except (RuntimeError, TypeError):
+            pass
+
+        if client_response.history:
+            response.history = (
+                *[await cls.from_client_response(r) for r in client_response.history],
             )
-
-        self.headers = CIMultiDictProxy(CIMultiDict([decode_header(h) for h in self.raw_headers]))
-
-    # NOTE: We redefine the same just to get rid of the `@reify' that protects against writing.
-    @property  # type: ignore[override]
-    def headers(self) -> CIMultiDictProxy[str]:
-        return self._headers
-
-    @headers.setter
-    def headers(self, v) -> None:
-        self._headers = v
-
-    async def postprocess(self, expires: datetime | None = None) -> CachedResponse:
-        """Read response content, and reset StreamReader on original response.
-
-        This can be called only on an instance after `ClientSession._request()` returns `CachedResponse`
-        because inside the `ClientSession._request()` headers are assgined at the very end (after `Response.start()`).
-        """
-        assert isinstance(expires, datetime) or expires is None, type(expires)
-
-        if not self._released:
-            await self.read()
-
-        self.content = CachedStreamReader(self._body)
-
-        self.expires = expires
-
-        if self.history:
-            self._history = (*[await cast(CachedResponse, r).postprocess() for r in self.history],)
-
-        return self
+        return response
 
     @property
     def content(self) -> StreamReader:
@@ -133,6 +120,42 @@ class CachedResponse(ClientResponse):
         self._content = value
 
     @property
+    def content_disposition(self) -> ContentDisposition | None:
+        """Get Content-Disposition headers, if any"""
+        raw = self.headers.get(hdrs.CONTENT_DISPOSITION)
+        if raw is None:
+            return None
+        disposition_type, params_dct = multipart.parse_content_disposition(raw)
+        params = MappingProxyType(params_dct)
+        filename = multipart.content_disposition_filename(params)
+        return ContentDisposition(disposition_type, params, filename)
+
+    @property
+    def from_cache(self):
+        return True
+
+    @property
+    def _headers(self) -> CIMultiDictProxy[str]:  # type: ignore[override]
+        return self.headers
+
+    @property
+    def headers(self) -> CIMultiDictProxy[str]:
+        """Get headers as an immutable, case-insensitive multidict from raw headers"""
+
+        def decode_header(header):
+            """Decode an individual (key, value) pair"""
+            return (
+                header[0].decode('utf-8', 'surrogateescape'),
+                header[1].decode('utf-8', 'surrogateescape'),
+            )
+
+        return CIMultiDictProxy(CIMultiDict([decode_header(h) for h in self.raw_headers]))
+
+    @property
+    def host(self) -> str:
+        return self.url.host or ''
+
+    @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
         try:
@@ -141,9 +164,95 @@ class CachedResponse(ClientResponse):
             # Consider it expired and fetch a new response
             return True
 
+    @property
+    def links(self) -> MultiDictProxy:
+        """Convert stored links into the format returned by :attr:`ClientResponse.links`"""
+        items = [(k, _to_url_multidict(v)) for k, v in self._links]
+        return MultiDictProxy(MultiDict([(k, MultiDictProxy(v)) for k, v in items]))
+
+    @links.setter
+    def links(self, value: Mapping):
+        self._links = [(k, _to_str_tuples(v)) for k, v in value.items()]
+
+    @property
+    def ok(self) -> bool:
+        """Returns ``True`` if ``status`` is less than ``400``, ``False`` if not"""
+        return self.status < 400
+
+    @property
+    def request_info(self) -> RequestInfo:
+        return RequestInfo(
+            url=URL(self.url),
+            method=self.method,
+            headers=self.headers,
+            real_url=URL(str(self.real_url)),
+        )
+
+    def get_encoding(self):
+        return self.encoding
+
+    async def json(self, encoding: str | None = None, **kwargs) -> dict[str, Any] | None:
+        """Read and decode JSON response"""
+        stripped = self._body.strip()
+        if not stripped:
+            return None
+        return json.loads(stripped.decode(encoding or self.encoding))
+
+    def raise_for_status(self):
+        if self.status >= 400:
+            raise ClientResponseError(
+                self.request_info,
+                self.history,
+                status=self.status,
+                message=self.reason,
+                headers=self.headers,
+            )
+
+    async def read(self) -> bytes:
+        """Read response payload."""
+        return await self.content.read()
+
     def reset(self):
         """Reset the stream reader to re-read a streamed response"""
         self._content = None
+
+    async def text(self, encoding: str | None = None, errors: str = 'strict') -> str:
+        """Read response payload and decode"""
+        return self._body.decode(encoding or self.encoding, errors=errors)
+
+    # No-op/placeholder properties and methods that don't apply to a CachedResponse, but provide
+    # compatibility with aiohttp.ClientResponse
+    # ----------
+
+    @property
+    def _released(self):
+        return True
+
+    @property
+    def connection(self):
+        return None
+
+    async def __aenter__(self) -> CachedResponse:
+        return self
+
+    @property
+    def closed(self) -> bool:
+        return True
+
+    def close(self):
+        pass
+
+    async def wait_for_close(self):
+        pass
+
+    def release(self):
+        pass
+
+    async def start(self):
+        pass
+
+    async def terminate(self):
+        pass
 
 
 class CachedStreamReader(StreamReader):
@@ -155,9 +264,32 @@ class CachedStreamReader(StreamReader):
     def __init__(self, body: bytes | None = None):
         body = body or b''
         protocol = Mock(_reading_paused=False)
-        super().__init__(protocol, limit=len(body), loop=None)
+        super().__init__(protocol, limit=len(body), loop=asyncio.get_event_loop())
         self.feed_data(body)
         self.feed_eof()
+
+
+AnyResponse = Union[ClientResponse, CachedResponse]
+
+
+@singledispatch
+def set_response_defaults(response):
+    raise NotImplementedError
+
+
+@set_response_defaults.register
+def _(response: CachedResponse) -> CachedResponse:
+    return response
+
+
+@set_response_defaults.register
+def _(response: ClientResponse) -> ClientResponse:
+    """Set some default CachedResponse values on a ClientResponse object, so they can be
+    expected to always be present
+    """
+    for k, v in CACHED_RESPONSE_DEFAULTS.items():
+        setattr(response, k, v)
+    return response
 
 
 def _to_str_tuples(data: Mapping) -> DictItems:
