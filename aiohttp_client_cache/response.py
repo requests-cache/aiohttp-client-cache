@@ -80,7 +80,7 @@ class CachedResponse(HeadersMixin):
     async def from_client_response(
         cls, client_response: ClientResponse, expires: datetime | None = None
     ):
-        """Convert a ClientResponse into a CachedReponse"""
+        """Convert a ClientResponse into a CachedResponse"""
         # Copy most attributes over as is
         copy_attrs = set(attr.fields_dict(cls).keys()) - EXCLUDE_ATTRS
         response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
