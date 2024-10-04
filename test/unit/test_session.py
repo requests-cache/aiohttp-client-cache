@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from http.cookies import SimpleCookie
-from unittest import mock
 from unittest.mock import MagicMock, patch
+from aiohttp import ClientResponse
 
-from aiohttp.helpers import TimerNoop
 import pytest
 from yarl import URL
 
 from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.response import CachedResponse
 from aiohttp_client_cache.session import CachedSession, CacheMixin, ClientSession
-from test.conftest import httpbin
 
 pytestmark = [pytest.mark.asyncio]
 
@@ -22,16 +20,18 @@ except ImportError:
     pytestmark += [pytest.mark.skip(reason='Tests require AsyncMock from python 3.8+')]
 
 
-FakeCachedResponse = CachedResponse(
-    'get',
-    URL('http://proxy.example.com'),
-    request_info=mock.Mock(),
+FakeCachedResponse = CachedResponse(method='GET', reason='OK', status=200, url='url', version='1.1')
+FakeClientResponse = ClientResponse(
+    method='GET',
+    url=URL('http://example.com'),
     writer=None,  # type: ignore[arg-type]
     continue100=None,
-    timer=TimerNoop(),
-    traces=[],
-    loop=mock.MagicMock(),
-    session=mock.Mock(),
+    timer=None,  # type: ignore[arg-type]
+    request_info=None,  # type: ignore[arg-type]
+    traces=None,  # type: ignore[arg-type]
+    # loop=asyncio.get_event_loop(),
+    loop=MagicMock(),
+    session=None,  # type: ignore[arg-type]
 )
 
 
@@ -117,12 +117,13 @@ async def test_session__request_expire_after(mock_request):
     assert 'expire_after' not in mock_request.call_args
 
 
-async def test_session__default_attrs():
+@patch.object(ClientSession, '_request', return_value=FakeClientResponse)
+async def test_session__default_attrs(mock_request):
     cache = MagicMock(spec=CacheBackend)
     cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
-        response = await session.get(httpbin())
+        response = await session.get('http://test.url')
 
     assert response.from_cache is False and response.is_expired is False
 
@@ -136,13 +137,14 @@ async def test_session__default_attrs():
         'param',  # string
     ],
 )
-async def test_all_param_types(params) -> None:
+@patch.object(ClientSession, '_request', return_value=FakeClientResponse)
+async def test_all_param_types(mock_request, params) -> None:
     """Ensure that CachedSession.request() acceepts all the same parameter types as aiohttp"""
     cache = MagicMock(spec=CacheBackend)
     cache.request.return_value = None
 
     async with CachedSession(cache=cache) as session:
-        response = await session.get(httpbin(), params=params)
+        response = await session.get('http://test.url', params=params)
 
     assert response.from_cache is False
 

@@ -15,7 +15,7 @@ from aiohttp.typedefs import StrOrURL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
 from aiohttp_client_cache.cache_control import CacheActions, ExpirationTime, compose_refresh_headers
-from aiohttp_client_cache.response import CachedResponse
+from aiohttp_client_cache.response import AnyResponse, CachedResponse, set_response_defaults
 from aiohttp_client_cache.signatures import extend_signature
 
 if TYPE_CHECKING:
@@ -63,7 +63,6 @@ class CacheMixin(MIXIN_BASE):
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
         session_kwargs = get_valid_kwargs(super().__init__, {**kwargs, 'base_url': base_url})
-        session_kwargs['response_class'] = CachedResponse
         super().__init__(**session_kwargs)
 
     @extend_signature(ClientSession._request)
@@ -100,10 +99,10 @@ class CacheMixin(MIXIN_BASE):
                     method, str_or_url, response, actions, **kwargs
                 )
                 if not from_cache:
-                    return new_response
+                    return set_response_defaults(new_response)
                 else:
                     restore_cookies(new_response)
-                    return new_response
+                    return cast(CachedResponse, new_response)
 
             # Restore any cached cookies to the session
             if response:
@@ -115,13 +114,11 @@ class CacheMixin(MIXIN_BASE):
                     logger.debug(f'Reading from cache was skipped; making request to {str_or_url}')
                 else:
                     logger.debug(f'Cached response not found; making request to {str_or_url}')
-                new_response = cast(
-                    CachedResponse, await super()._request(method, str_or_url, **kwargs)
-                )
+                new_response = await super()._request(method, str_or_url, **kwargs)
                 actions.update_from_response(new_response)
                 if await self.cache.is_cacheable(new_response, actions):
                     await self.cache.save_response(new_response, actions.key, actions.expires)
-                return new_response
+                return set_response_defaults(new_response)
 
     async def _refresh_cached_response(
         self,
@@ -130,7 +127,7 @@ class CacheMixin(MIXIN_BASE):
         cached_response: CachedResponse,
         actions: CacheActions,
         **kwargs,
-    ) -> tuple[bool, CachedResponse]:
+    ) -> tuple[bool, AnyResponse]:
         """Checks if the cached response is still valid using conditional requests if supported"""
 
         # check whether we can do a conditional request,
@@ -142,9 +139,7 @@ class CacheMixin(MIXIN_BASE):
         if conditional_request_supported:
             logger.debug(f'Refreshing cached response; making request to {str_or_url}')
             kwargs['headers'] = refresh_headers
-            refreshed_response = cast(
-                CachedResponse, await super()._request(method, str_or_url, **kwargs)
-            )
+            refreshed_response = await super()._request(method, str_or_url, **kwargs)
 
             if refreshed_response.status == 304:
                 logger.debug('Cached response not modified; returning cached response')

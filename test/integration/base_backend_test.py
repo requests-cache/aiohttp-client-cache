@@ -5,10 +5,6 @@ from __future__ import annotations
 import asyncio
 import pickle
 from contextlib import asynccontextmanager
-
-from aiohttp import HttpVersion, RequestInfo
-from multidict import CIMultiDictProxy, MultiDictProxy
-from yarl import URL
 from test.conftest import (
     ALL_METHODS,
     CACHE_NAME,
@@ -16,6 +12,7 @@ from test.conftest import (
     HTTPBIN_METHODS,
     HTTPDATE_STR,
     assert_delta_approx_equal,
+    from_cache,
     httpbin,
     httpbin_custom,
 )
@@ -30,7 +27,7 @@ from itsdangerous.serializer import Serializer
 
 from aiohttp_client_cache import CacheBackend, CachedSession
 from aiohttp_client_cache.cache_control import utcnow
-from aiohttp_client_cache.response import CachedResponse, CachedStreamReader
+from aiohttp_client_cache.response import CachedResponse
 
 pytestmark = pytest.mark.asyncio
 
@@ -64,14 +61,9 @@ class BaseBackendTest:
         url = httpbin(method.lower())
         async with self.init_session() as session:
             for params in [{'param_1': 1}, {'param_1': 2}, {'param_2': 2}]:
-                response_1 = cast(
-                    CachedResponse, await session.request(method, url, **{field: params})
-                )
-                assert response_1.from_cache is False
-                response_2 = cast(
-                    CachedResponse, await session.request(method, url, **{field: params})
-                )
-                assert response_2.from_cache is True
+                response_1 = await session.request(method, url, **{field: params})
+                response_2 = await session.request(method, url, **{field: params})
+                assert not from_cache(response_1) and from_cache(response_2)
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
     @pytest.mark.parametrize('field', ['params', 'data', 'json', 'headers'])
@@ -87,23 +79,14 @@ class BaseBackendTest:
         async with self.init_session(
             allowed_codes=(200, 400), ignored_params=['ignored'], include_headers=True
         ) as session:
-            response_1 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_1})
-            )
-            assert response_1.from_cache is False
-            response_2 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_1})
-            )
-            assert response_2.from_cache is True
-            response_3 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_2})
-            )
-            assert response_3.from_cache is True
+            response_1 = await session.request(method, url, **{field: params_1})
+            response_2 = await session.request(method, url, **{field: params_1})
+            response_3 = await session.request(method, url, **{field: params_2})
             await session.request(method, url, params={'a': 'b'})
-            response_4 = cast(
-                CachedResponse, await session.request(method, url, **{field: params_3})
-            )
-            assert response_4.from_cache is False
+            response_4 = await session.request(method, url, **{field: params_3})
+
+        assert not from_cache(response_1) and from_cache(response_2)
+        assert from_cache(response_3) and not from_cache(response_4)
 
     async def test_gather(self):
         # limit the maximum number of concurrent reads to 100 to avoid
@@ -183,14 +166,10 @@ class BaseBackendTest:
     async def test_include_headers(self):
         async with self.init_session(include_headers=True) as session:
             await session.get(httpbin('get'))
-            response_1 = cast(
-                CachedResponse, await session.get(httpbin('get'), headers={'key': 'value'})
-            )
-            assert response_1.from_cache is False
-            response_2 = cast(
-                CachedResponse, await session.get(httpbin('get'), headers={'key': 'value'})
-            )
-            assert response_2.from_cache is True
+            response_1 = await session.get(httpbin('get'), headers={'key': 'value'})
+            response_2 = await session.get(httpbin('get'), headers={'key': 'value'})
+
+        assert not from_cache(response_1) and from_cache(response_2)
 
     async def test_streaming_requests(self):
         """Test that streaming requests work both for the original and cached responses"""
@@ -200,32 +179,23 @@ class BaseBackendTest:
                 lines = [line async for line in response.content]
                 assert len(b''.join(lines)) == 64
 
-                # Can read multiple times.
-                assert len(await response.read()) == 64
-                assert len(await response.read()) == 64
+            # Test some additional methods on the cached response
+            response.reset()
+            chunks = [c async for (c, _) in response.content.iter_chunks()]
+            assert len(b''.join(chunks)) == 64
+            response.reset()
 
-                response.reset()
-                chunks = [c async for (c, _) in response.content.iter_chunks()]
-                assert len(b''.join(chunks)) == 64
-                chunks = [c async for (c, _) in response.content.iter_chunks()]
-                assert len(b''.join(chunks)) == 0
-                response.reset()
+            chunks = [c async for c in response.content.iter_chunked(2)]
+            assert len(b''.join(chunks)) == 64
+            response.reset()
 
-                chunks = [c async for c in response.content.iter_chunked(2)]
-                assert len(b''.join(chunks)) == 64
-                chunks = [c async for c in response.content.iter_chunked(2)]
-                assert len(b''.join(chunks)) == 0
-                response.reset()
+            chunks = [c async for c in response.content.iter_any()]
+            assert len(b''.join(chunks)) == 64
+            response.reset()
 
-                chunks = [c async for c in response.content.iter_any()]
-                assert len(b''.join(chunks)) == 64
-                chunks = [c async for c in response.content.iter_any()]
-                assert len(b''.join(chunks)) == 0
-                response.reset()
-
-                # readany() should return empty bytes after being consumed
-                assert len(await response.content.readany()) == 64
-                assert await response.content.readany() == b''
+            # readany() should return empty bytes after being consumed
+            assert len(await response.content.readany()) == 64
+            assert await response.content.readany() == b''
 
     async def test_streaming_request__ignored(self):
         """If a streaming request is filtered out (expire_after=0), its body should be readable as usual"""
@@ -463,120 +433,13 @@ class BaseBackendTest:
         async with self.init_session() as session:
             tasks = [session.get(url) for url in urls]
             responses = await asyncio.gather(*tasks)
-            assert len(responses) == 100
-            assert [cast(CachedResponse, r).from_cache for r in responses].count(False) == 1
+            num_write = 0
+            for response in responses:
+                num_write += 0 if cast(CachedResponse, response).from_cache else 1
+            assert num_write == 1
 
-    async def test_response_attributes(self):
-        url = 'http://0.0.0.0:8080/json'
+    async def test_context_manager(self):
         async with self.init_session() as session:
-            response_1 = cast(CachedResponse, await session.get(url))
-            uncached_response_attributes = response_1.__dict__
-
-            for k in uncached_response_attributes:
-                v = getattr(response_1, k)
-                if k in {'_ClientResponse__writer'}:
-                    continue
-                if k in {
-                    'expires',
-                    'from_cache',
-                    'cookies',
-                    '_continue',
-                    '_history',
-                    '_traces',
-                    '_session',
-                    '_protocol',
-                    '_connection',
-                }:
-                    assert not v
-                else:
-                    assert v
-
-            assert isinstance(response_1._content, CachedStreamReader)
-            assert isinstance(response_1.content, CachedStreamReader)
-            assert isinstance(response_1.version, HttpVersion)
-            assert isinstance(response_1.status, int)
-            assert isinstance(response_1.reason, str)
-            assert isinstance(response_1.headers, CIMultiDictProxy)
-            assert isinstance(response_1.raw_headers, tuple)
-            assert isinstance(response_1.url, URL)
-            assert isinstance(response_1.real_url, URL)
-            assert isinstance(response_1.host, str)
-            assert isinstance(response_1.request_info, RequestInfo)
-            assert response_1.content_disposition is None  # Covered in `test_content_disposition`.
-            assert response_1.connection is None
-            assert isinstance(response_1.history, tuple)
-            assert isinstance(response_1.links, MultiDictProxy)
-            assert response_1.closed is True
-            assert response_1.ok is True
-            response_1.raise_for_status()
-            assert response_1.get_encoding() == 'utf-8'
-            assert response_1.headers['Content-Type'] == 'application/json'
-
-            # Loaded from the cache deserialized response has all attributes.
-            response_2 = cast(CachedResponse, await session.get(url))
-
-            cached_response_missing_attributes = {
-                '_request_info',
-                '_timer',
-                '_loop',
-                '_resolve_charset',
-                '_protocol',
-            }
-
-            for k in uncached_response_attributes:
-                if k in cached_response_missing_attributes:
-                    continue
-                if k == '_content':
-                    assert getattr(response_2, k) is None
-                    continue
-                v = getattr(response_2, k)
-                if k in {'_ClientResponse__writer'}:
-                    continue
-                elif k in {
-                    'expires',
-                    'cookies',
-                    '_continue',
-                    '_history',
-                    '_traces',
-                    '_session',
-                    '_protocol',
-                    '_connection',
-                }:
-                    assert not v
-                else:
-                    assert v
-
-            assert response_2._content is None
-            assert isinstance(response_2.content, CachedStreamReader)
-            assert isinstance(response_2._content, CachedStreamReader)
-            assert isinstance(response_2.version, HttpVersion)  # type: ignore[unreachable]
-            assert isinstance(response_2.status, int)
-            assert isinstance(response_2.reason, str)
-            assert isinstance(response_2.headers, CIMultiDictProxy)
-            assert isinstance(response_2.raw_headers, tuple)
-            assert isinstance(response_2.url, URL)
-            assert isinstance(response_2.real_url, URL)
-            assert isinstance(response_2.host, str)
-            assert isinstance(response_2.request_info, RequestInfo)
-            assert response_2.content_disposition is None  # Covered in `test_content_disposition`.
-            assert response_2.connection is None
-            assert isinstance(response_2.history, tuple)
-            assert isinstance(response_2.links, MultiDictProxy)
-            assert response_2.closed is True
-            assert response_2.ok is True
-            response_2.raise_for_status()
-            assert response_2.get_encoding() == 'utf-8'
-            assert response_2.headers['Content-Type'] == 'application/json'
-
-            assert await response_1.content.read() == await response_2.content.read()
-            assert response_1.version == response_2.version
-            assert response_1.status == response_2.status
-            assert response_1.reason == response_2.reason
-            assert response_1.headers == response_2.headers
-            assert response_1.raw_headers == response_2.raw_headers
-            assert response_1.url == response_2.url
-            assert response_1.real_url == response_2.real_url
-            assert response_1.host == response_2.host
-            assert response_1.request_info == response_2.request_info
-            assert response_1.history == response_2.history
-            assert response_1.links == response_2.links
+            for _ in range(2):
+                async with session.get(httpbin()):
+                    pass
