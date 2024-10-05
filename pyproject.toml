@@ -61,7 +61,7 @@ pytest          = ">=6.2"
 pytest-aiohttp  = "^0.3"
 pytest-asyncio  = "^0.14"
 pytest-clarity  = ">=1.0"
-pytest-cov      = "^2.11"
+pytest-cov      = ">=2.11,<6.0"
 pytest-xdist    = "^3.6"
 
 # For convenience in local development; additional tools are managed by pre-commit
