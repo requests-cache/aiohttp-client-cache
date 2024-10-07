@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import pickle
 from contextlib import asynccontextmanager
+
 from test.conftest import (
     ALL_METHODS,
     CACHE_NAME,
@@ -174,28 +175,37 @@ class BaseBackendTest:
     async def test_streaming_requests(self):
         """Test that streaming requests work both for the original and cached responses"""
         async with self.init_session() as session:
-            for _ in range(2):
-                response = cast(CachedResponse, await session.get(httpbin('stream-bytes/64')))
+            for i in range(2):
+                any_response = await session.get(httpbin('stream-bytes/64'))
+
+                # Can read multiple times.
+                assert {len(await any_response.read()) for _ in range(3)} == {64}
+
+                if i == 0:
+                    continue
+
+                response = cast(CachedResponse, any_response)
+
                 lines = [line async for line in response.content]
                 assert len(b''.join(lines)) == 64
 
-            # Test some additional methods on the cached response
-            response.reset()
-            chunks = [c async for (c, _) in response.content.iter_chunks()]
-            assert len(b''.join(chunks)) == 64
-            response.reset()
+                # Test some additional methods on the cached response
+                response.reset()
+                chunks = [c async for (c, _) in response.content.iter_chunks()]
+                assert len(b''.join(chunks)) == 64
+                response.reset()
 
-            chunks = [c async for c in response.content.iter_chunked(2)]
-            assert len(b''.join(chunks)) == 64
-            response.reset()
+                chunks = [c async for c in response.content.iter_chunked(2)]
+                assert len(b''.join(chunks)) == 64
+                response.reset()
 
-            chunks = [c async for c in response.content.iter_any()]
-            assert len(b''.join(chunks)) == 64
-            response.reset()
+                chunks = [c async for c in response.content.iter_any()]
+                assert len(b''.join(chunks)) == 64
+                response.reset()
 
-            # readany() should return empty bytes after being consumed
-            assert len(await response.content.readany()) == 64
-            assert await response.content.readany() == b''
+                # readany() should return empty bytes after being consumed
+                assert len(await response.content.readany()) == 64
+                assert await response.content.readany() == b''
 
     async def test_streaming_request__ignored(self):
         """If a streaming request is filtered out (expire_after=0), its body should be readable as usual"""
