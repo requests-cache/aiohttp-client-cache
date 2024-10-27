@@ -159,7 +159,7 @@ class CachedResponse(HeadersMixin):
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
         try:
-            return self.expires is not None and utcnow() > self.expires
+            return self.expires is not None and utcnow() > self.expires.replace(tzinfo=None)
         except (AttributeError, TypeError, ValueError):
             # Consider it expired and fetch a new response
             return True
