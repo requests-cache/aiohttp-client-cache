@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from unittest import mock
 
 import pytest
@@ -80,6 +80,12 @@ async def test_is_expired(mock_utcnow, aiohttp_client):
 async def test_is_expired__invalid(aiohttp_client):
     response = await get_test_response(aiohttp_client, expires='asdf')
     assert response.is_expired is True
+
+
+async def test_is_expired__timezone_aware(aiohttp_client):
+    expires = datetime.now(timezone.utc) + timedelta(days=1)
+    response = await get_test_response(aiohttp_client, expires=expires)
+    assert response.is_expired is False
 
 
 async def test_content_disposition(aiohttp_client):
