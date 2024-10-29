@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import pytest
@@ -9,7 +9,7 @@ from multidict import MultiDictProxy
 from yarl import URL
 
 from aiohttp_client_cache.cache_control import utcnow
-from aiohttp_client_cache.response import CachedResponse, RequestInfo
+from aiohttp_client_cache.response import CachedResponse, RequestInfo, UnsupportedExpiresError
 
 
 async def get_test_response(client_factory, url='/', **kwargs):
@@ -78,8 +78,10 @@ async def test_is_expired(mock_utcnow, aiohttp_client):
 
 
 async def test_is_expired__invalid(aiohttp_client):
-    response = await get_test_response(aiohttp_client, expires='asdf')
-    assert response.is_expired is True
+    with pytest.raises(AttributeError, match="'str' object has no attribute 'tzinfo'"):
+        await get_test_response(aiohttp_client, expires='asdf')
+    with pytest.raises(UnsupportedExpiresError, match='Expected a naive datetime'):
+        await get_test_response(aiohttp_client, expires=datetime.now(timezone.utc))
 
 
 async def test_content_disposition(aiohttp_client):
