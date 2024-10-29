@@ -52,6 +52,11 @@ LinkMultiDict = MultiDictProxy[MultiDictProxy[Union[str, URL]]]
 logger = getLogger(__name__)
 
 
+class UnsupportedExpiresError(Exception):
+    def __init__(self, expires: datetime):
+        super().__init__(f'Expected a naive datetime, but got {expires}.')
+
+
 @attr.s(slots=True)
 class CachedResponse(HeadersMixin):
     """A dataclass containing cached response information, used for serialization.
@@ -81,6 +86,10 @@ class CachedResponse(HeadersMixin):
         cls, client_response: ClientResponse, expires: datetime | None = None
     ):
         """Convert a ClientResponse into a CachedResponse"""
+        if expires is not None and expires.tzinfo is not None:
+            # An unrecoverable error (wrong library low-level API usage).
+            raise UnsupportedExpiresError(expires)
+
         # Copy most attributes over as is
         copy_attrs = set(attr.fields_dict(cls).keys()) - EXCLUDE_ATTRS
         response = cls(**{k: getattr(client_response, k) for k in copy_attrs})
@@ -91,7 +100,7 @@ class CachedResponse(HeadersMixin):
         response._body = client_response._body
         client_response.content = CachedStreamReader(client_response._body)
 
-        # Set remaining attributes individually
+        # Set remaining attributes individually.
         response.expires = expires
         response.links = client_response.links
         response.real_url = client_response.request_info.real_url
@@ -158,11 +167,7 @@ class CachedResponse(HeadersMixin):
     @property
     def is_expired(self) -> bool:
         """Determine if this cached response is expired"""
-        try:
-            return self.expires is not None and utcnow() > self.expires
-        except (AttributeError, TypeError, ValueError):
-            # Consider it expired and fetch a new response
-            return True
+        return self.expires is not None and utcnow() > self.expires
 
     @property
     def links(self) -> MultiDictProxy:
