@@ -1,5 +1,9 @@
 # History
 
+## (unreleased)
+
+- Fixed a bug that allowed users to use `save_response()` and `from_client_response()` with an incorrect `expires` argument without throwing any warnings or errors.
+
 ## 0.12.3 (2024-10-04)
 
 - Revert some changes from `v0.12.0`, and add alternative fix for compatibility with aiohttp 3.10.6+
