@@ -1,4 +1,4 @@
-__version__ = '0.12.3'
+__version__ = '0.12.4'
 
 # flake8: noqa: F401, F403
 from aiohttp_client_cache.backends import *
