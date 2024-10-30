@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    tags: ['v*']
+    tags: ['*']
   workflow_dispatch:
     inputs:
       pre-release-suffix:
