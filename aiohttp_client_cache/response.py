@@ -215,8 +215,8 @@ class CachedResponse(HeadersMixin):
 
     async def read(self) -> bytes:
         """Read response payload."""
-        if self._body is None:
-            self._body = await self.content.read()
+        # We are ready to return the body because `read()`
+        # was called on a `CachedResponse` creation.
         return self._body
 
     def reset(self):
