@@ -1,6 +1,6 @@
 # History
 
-## 0.12.4 (unreleased)
+## 0.12.4 (2024-10-30)
 
 - Fixed a bug that allowed users to use `save_response()` and `from_client_response()` with an incorrect `expires` argument without throwing any warnings or errors.
 
