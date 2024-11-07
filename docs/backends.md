@@ -108,3 +108,47 @@ You can then use your custom backend in a {py:class}`.CachedSession` with the `c
 ```python
 >>> session = CachedSession(cache=CustomCache())
 ```
+
+## Can I reuse a cache backend instance across multiple `CachedSession` instances?
+
+First of all, read the following warning in the [`aiohttp` documentation](https://docs.aiohttp.org/en/stable/client_quickstart.html#make-a-request) to make sure you need multiple `CachedSession` or `Session`:
+
+> Don’t create a session per request. Most likely you need a session per application which performs all requests together.
+>
+> More complex cases may require a session per site, e.g. one for Github and other one for Facebook APIs. Anyway making a session for every request is a very bad idea.
+>
+> A session contains a connection pool inside. Connection reusage and keep-alive (both are on by default) may speed up total performance.
+
+It depends on your application design, but you have at least three options:
+
+- Create a cache instance per `CachedSession`:
+
+  ```py
+  github_api = CachedSession(SQLiteBackend())
+  gitlab_api = CachedSession(SQLiteBackend())
+  ```
+
+- Create a single cache instance, but keep all `CachedSession` open:
+
+  ```py
+  cache_backend = CacheBackend()
+  sessions_pool = [...]  # Manage multiple `Cachedsession` with a single cached backend.
+
+  # Make requests...
+
+  for s in sessions:
+      await s.close()
+  ```
+
+- Override the `close` method and close the cache backed manually:
+
+  ```py
+  class CustomSQLiteBackend(SQLiteBackend):
+    def close(self): pass  # Override to prevent disconnecting.
+
+  cache = CustomSQLiteBackend()
+  async with CachedSession(cache): ...
+
+  # It is up to you to close the connection when you exit the application.
+  await cache._connection.close()
+  ```
