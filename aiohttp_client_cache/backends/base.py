@@ -296,6 +296,7 @@ class BaseCache(metaclass=ABCMeta):
     ):
         super().__init__()
         self._serializer = serializer or self._get_serializer(secret_key, salt)
+        self._closed = False
 
     def serialize(self, item: ResponseOrKey = None) -> bytes | None:
         """Serialize a URL or response into bytes"""
