@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ['*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -36,7 +36,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
       - uses: snok/install-poetry@v1.4
         with:
           virtualenvs-in-project: true

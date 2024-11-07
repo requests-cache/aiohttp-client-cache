@@ -3,6 +3,7 @@
 ## (unreleased)
 
 - Fixed `CachedResponse.read()` to be consistent with `ClientResponse.read()` by allowing to call `read()` multiple times. (#289)
+- Now a warning is raised when a cache backend is accessed after disconnecting (after exiting the `CachedSession` context manager). (#241)
 
 ## 0.12.4 (2024-10-30)
 

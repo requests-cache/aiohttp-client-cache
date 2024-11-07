@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import functools
+import warnings
 import asyncio
 import sqlite3
 from contextlib import asynccontextmanager
@@ -22,6 +24,15 @@ from aiohttp_client_cache.backends import (
 
 bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
 logger = getLogger(__name__)
+
+
+closed_session_warning = functools.partial(
+    warnings.warn,
+    'Cache access after closing the `Cachedsession` context manager '
+    + 'is discouraged and can be forbidden in the future to prevent '
+    + 'errors related to a closed database connection.',
+    stacklevel=2,
+)
 
 
 class SQLiteBackend(CacheBackend):
@@ -99,7 +110,11 @@ class SQLiteCache(BaseCache):
             if self._connection is None:
                 self._connection = await aiosqlite.connect(self.filename, **self.connection_kwargs)
                 await self._init_db()
+
         yield self._connection
+
+        if self._closed:
+            closed_session_warning()
         if commit and not bulk_commit_var.get():
             await self._connection.commit()
 
@@ -154,6 +169,7 @@ class SQLiteCache(BaseCache):
 
     async def close(self):
         """Close any open connections"""
+        self._closed = True
         async with self._lock:
             if self._connection is not None:
                 await self._connection.close()
@@ -187,6 +203,8 @@ class SQLiteCache(BaseCache):
 
     async def read(self, key: str) -> ResponseOrKey:
         async with self.get_connection() as db:
+            if self._closed:
+                closed_session_warning()
             cursor = await db.execute(f'SELECT value FROM `{self.table_name}` WHERE key=?', (key,))
             row = await cursor.fetchone()
             return row[0] if row else None
