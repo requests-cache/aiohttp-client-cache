@@ -69,7 +69,7 @@ class CachedResponse(HeadersMixin):
     status: int = attr.ib()
     url: URL = attr.ib(converter=URL)
     version: str = attr.ib()
-    _body: Any = attr.ib(default=b'')
+    _body: Any = attr.ib(default=None)
     _content: StreamReader | None = attr.ib(default=None)
     _links: LinkItems = attr.ib(factory=list)
     cookies: SimpleCookie = attr.ib(factory=SimpleCookie)
@@ -215,7 +215,9 @@ class CachedResponse(HeadersMixin):
 
     async def read(self) -> bytes:
         """Read response payload."""
-        return await self.content.read()
+        # We are ready to return the body because `read()`
+        # was called on a `CachedResponse` creation.
+        return self._body
 
     def reset(self):
         """Reset the stream reader to re-read a streamed response"""
