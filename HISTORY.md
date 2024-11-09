@@ -156,7 +156,7 @@
 
 ## 0.4.3 (2021-07-27)
 
-- Fix bug in which reponse header `Expires` was used for cache expiration even with `cache_control=False`
+- Fix bug in which response header `Expires` was used for cache expiration even with `cache_control=False`
 - Fix bug in which HTTP dates parsed from response headers weren't converted to UTC
 - Add handling for invalid timestamps in `CachedResponse.is_expired`
 
