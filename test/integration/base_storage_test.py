@@ -27,7 +27,7 @@ class BaseStorageTest:
     async def init_cache(
         self, storage_class: type[BaseCacheT] | None = None, index=0, **kwargs
     ) -> AsyncIterator[BaseCacheT]:
-        self.test_data = picklable_test_data if self.picklable else str_test_data  # type: ignore
+        self.test_data = picklable_test_data if self.picklable else str_test_data
         cache_class = storage_class or self.storage_class
         assert cache_class
         cache = cache_class(CACHE_NAME, f'table_{index}', **self.init_kwargs, **kwargs)

@@ -24,7 +24,7 @@ FakeCachedResponse = CachedResponse(method='GET', reason='OK', status=200, url='
 FakeClientResponse = ClientResponse(
     method='GET',
     url=URL('http://example.com'),
-    writer=None,  # type: ignore[arg-type]
+    writer=None,
     continue100=None,
     timer=None,  # type: ignore[arg-type]
     request_info=None,  # type: ignore[arg-type]
