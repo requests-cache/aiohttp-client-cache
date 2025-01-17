@@ -30,7 +30,7 @@ classifiers = [
 "Documentation" = "https://aiohttp-client-cache.readthedocs.io"
 
 [tool.poetry.dependencies]
-python          = "^3.8"
+python          = "^3.9"
 aiohttp         = "^3.8"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
@@ -111,7 +111,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = 3.8
+python_version = 3.9
 ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -125,7 +125,7 @@ exclude = "dist|build"
 [tool.ruff]
 line-length = 100
 output-format = 'grouped'
-target-version = 'py38'
+target-version = 'py39'
 
 [tool.ruff.format]
 quote-style = 'single'
