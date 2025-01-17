@@ -1,6 +1,6 @@
 from inspect import Parameter, signature
 from logging import getLogger
-from typing import Callable, Dict
+from typing import Callable
 
 from aiohttp_client_cache.backends.base import (  # noqa: F401
     BaseCache,
@@ -25,7 +25,7 @@ def get_placeholder_backend(original_exception):
     return PlaceholderBackend
 
 
-def get_valid_kwargs(func: Callable, kwargs: Dict, accept_varkwargs: bool = True) -> Dict:
+def get_valid_kwargs(func: Callable, kwargs: dict, accept_varkwargs: bool = True) -> dict:
     """Get the subset of non-None ``kwargs`` that are valid params for ``func``"""
     params = signature(func).parameters
 

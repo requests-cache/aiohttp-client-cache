@@ -77,9 +77,10 @@ class TestSQLiteCache(BaseStorageTest):
             assert mock_connection.commit.call_count == 5
 
     async def test_fast_save(self):
-        async with self.init_cache(
-            self.storage_class, index=1, fast_save=True
-        ) as cache_1, self.init_cache(self.storage_class, index=2, fast_save=True) as cache_2:
+        async with (
+            self.init_cache(self.storage_class, index=1, fast_save=True) as cache_1,
+            self.init_cache(self.storage_class, index=2, fast_save=True) as cache_2,
+        ):
             for i in range(1000):
                 await cache_1.write(i, i)  # type: ignore[arg-type]
                 await cache_2.write(i, i)  # type: ignore[arg-type]

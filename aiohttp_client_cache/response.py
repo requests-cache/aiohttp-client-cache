@@ -8,7 +8,8 @@ from datetime import datetime
 from functools import singledispatch
 from http.cookies import SimpleCookie
 from logging import getLogger
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Any, Optional, Union
+from collections.abc import Mapping
 from unittest.mock import Mock
 
 import attr
@@ -44,9 +45,9 @@ CACHED_RESPONSE_DEFAULTS = {
     'is_expired': False,
 }
 
-JsonResponse = Optional[Dict[str, Any]]
-DictItems = List[Tuple[str, str]]
-LinkItems = List[Tuple[str, DictItems]]
+JsonResponse = Optional[dict[str, Any]]
+DictItems = list[tuple[str, str]]
+LinkItems = list[tuple[str, DictItems]]
 LinkMultiDict = MultiDictProxy[MultiDictProxy[Union[str, URL]]]
 
 logger = getLogger(__name__)

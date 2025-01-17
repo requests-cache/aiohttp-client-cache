@@ -17,7 +17,8 @@ from test.conftest import (
     httpbin,
     httpbin_custom,
 )
-from typing import Any, AsyncIterator, cast
+from typing import Any, cast
+from collections.abc import AsyncIterator
 from unittest.mock import MagicMock
 from uuid import uuid4
 

@@ -24,7 +24,7 @@ client requests, based on [requests-cache](https://github.com/reclosedev/request
 
 # Quickstart
 
-First, install with pip (python 3.8+ required):
+First, install with pip (python 3.9+ required):
 
 ```bash
 pip install aiohttp-client-cache[all]

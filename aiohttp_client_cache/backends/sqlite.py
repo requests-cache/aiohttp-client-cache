@@ -11,7 +11,8 @@ from os import makedirs
 from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, AsyncIterable, AsyncIterator
+from typing import Any
+from collections.abc import AsyncIterable, AsyncIterator
 
 import aiosqlite
 

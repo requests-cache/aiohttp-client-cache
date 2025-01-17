@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from http.cookies import SimpleCookie
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 from aiohttp import ClientResponse
 
 import pytest
@@ -12,12 +12,6 @@ from aiohttp_client_cache.response import CachedResponse
 from aiohttp_client_cache.session import CachedSession, CacheMixin, ClientSession
 
 pytestmark = [pytest.mark.asyncio]
-
-# AsyncMock was added to the stdlib in python 3.8
-try:
-    from unittest.mock import AsyncMock
-except ImportError:
-    pytestmark += [pytest.mark.skip(reason='Tests require AsyncMock from python 3.8+')]
 
 
 FakeCachedResponse = CachedResponse(method='GET', reason='OK', status=200, url='url', version='1.1')
