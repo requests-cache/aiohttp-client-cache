@@ -5,7 +5,8 @@ from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
 from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 from unittest.mock import MagicMock, patch
 
 import pytest

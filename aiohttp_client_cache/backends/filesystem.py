@@ -7,7 +7,8 @@ from pathlib import Path
 from pickle import PickleError
 from shutil import rmtree
 from tempfile import gettempdir
-from typing import Any, AsyncIterable
+from typing import Any
+from collections.abc import AsyncIterable
 
 import aiofiles
 import aiofiles.os

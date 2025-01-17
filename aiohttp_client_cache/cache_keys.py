@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Mapping
-from typing import Any, Iterable, Sequence, Union
+from typing import Any, Union
+from collections.abc import Iterable, Sequence
 
 from aiohttp.typedefs import StrOrURL
 from multidict import MultiDict

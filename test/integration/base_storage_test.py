@@ -1,7 +1,8 @@
 from __future__ import annotations
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, AsyncIterator, TypeVar
+from typing import Any, TypeVar
+from collections.abc import AsyncIterator
 
 import pytest
 

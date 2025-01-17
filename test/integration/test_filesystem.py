@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from os.path import isfile
 from shutil import rmtree
 from tempfile import gettempdir
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from aiohttp_client_cache.backends.filesystem import FileBackend, FileCache
 from aiohttp_client_cache.session import CachedSession

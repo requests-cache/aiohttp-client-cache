@@ -9,7 +9,8 @@ from fnmatch import fnmatch
 from functools import singledispatch
 from itertools import chain
 from logging import getLogger
-from typing import Any, Dict, Mapping, NoReturn, Tuple, Union
+from typing import Any, NoReturn, Union
+from collections.abc import Mapping
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -32,9 +33,9 @@ REQUEST_CACHE_HEADERS = [
 ]
 RESPONSE_CACHE_HEADERS = ['Cache-Control', 'ETag', 'Expires', 'Age']
 
-CacheDirective = Tuple[str, Union[None, int, bool]]
+CacheDirective = tuple[str, Union[None, int, bool]]
 ExpirationTime = Union[None, int, float, str, datetime, timedelta]
-ExpirationPatterns = Dict[str, ExpirationTime]
+ExpirationPatterns = dict[str, ExpirationTime]
 logger = getLogger(__name__)
 
 

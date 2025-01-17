@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from os import getenv
 from tempfile import NamedTemporaryFile
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest
 
