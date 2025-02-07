@@ -4,21 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import pickle
-from contextlib import asynccontextmanager
-
-from test.conftest import (
-    ALL_METHODS,
-    CACHE_NAME,
-    HTTPBIN_FORMATS,
-    HTTPBIN_METHODS,
-    HTTPDATE_STR,
-    assert_delta_approx_equal,
-    from_cache,
-    httpbin,
-    httpbin_custom,
-)
-from typing import Any, cast
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import Any, cast
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -30,6 +18,17 @@ from itsdangerous.serializer import Serializer
 from aiohttp_client_cache import CacheBackend, CachedSession
 from aiohttp_client_cache.cache_control import utcnow
 from aiohttp_client_cache.response import CachedResponse
+from test.conftest import (
+    ALL_METHODS,
+    CACHE_NAME,
+    HTTPBIN_FORMATS,
+    HTTPBIN_METHODS,
+    HTTPDATE_STR,
+    assert_delta_approx_equal,
+    from_cache,
+    httpbin,
+    httpbin_custom,
+)
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from aiohttp_client_cache.backends.base import CacheBackend, DictCache
 from test.conftest import httpbin
 from test.integration import BaseBackendTest, BaseStorageTest

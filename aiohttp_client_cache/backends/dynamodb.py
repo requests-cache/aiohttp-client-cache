@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
 from logging import getLogger
 from typing import Any
-from collections.abc import AsyncIterable
 
 import aioboto3
 from aioboto3.session import ResourceCreatorContext

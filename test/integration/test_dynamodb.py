@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from os import urandom
 from typing import Any
 

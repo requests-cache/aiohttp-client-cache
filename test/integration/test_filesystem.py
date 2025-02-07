@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from os.path import isfile
 from shutil import rmtree
 from tempfile import gettempdir
-from collections.abc import AsyncIterator
 
 from aiohttp_client_cache.backends.filesystem import FileBackend, FileCache
 from aiohttp_client_cache.session import CachedSession

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from http.cookies import SimpleCookie
-from unittest.mock import MagicMock, patch, AsyncMock
-from aiohttp import ClientResponse
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aiohttp import ClientResponse
 from yarl import URL
 
 from aiohttp_client_cache.backends import CacheBackend

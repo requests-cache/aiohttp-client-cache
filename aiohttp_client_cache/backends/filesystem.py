@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterable
 from contextlib import contextmanager
 from os import listdir, makedirs
 from os.path import abspath, expanduser, isabs, isfile, join
@@ -8,7 +9,6 @@ from pickle import PickleError
 from shutil import rmtree
 from tempfile import gettempdir
 from typing import Any
-from collections.abc import AsyncIterable
 
 import aiofiles
 import aiofiles.os

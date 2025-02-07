@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
-from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 from typing import Any
-from collections.abc import Mapping
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -26,6 +25,7 @@ from aiohttp_client_cache.cache_control import (
     url_match,
     utcnow,
 )
+from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 
 # Any random value, but to support `pytest-xdist` the value must be static during a Pytest session.
 DEFAULT_FAKER_SEED = os.getenv('CUSTOM_FAKER_SEED') or 42

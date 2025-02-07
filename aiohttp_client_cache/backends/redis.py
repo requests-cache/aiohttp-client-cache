@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
 from collections.abc import AsyncIterable
+from typing import Any
 
 from redis.asyncio import Redis, from_url
 

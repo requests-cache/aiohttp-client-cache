@@ -1,13 +1,14 @@
 from __future__ import annotations
+
 import asyncio
 import os
 from contextlib import asynccontextmanager
 from tempfile import gettempdir
 from unittest.mock import MagicMock, patch
 
+import aiosqlite
 import pytest
 
-import aiosqlite
 from aiohttp_client_cache.backends.sqlite import (
     SQLiteBackend,
     SQLiteCache,

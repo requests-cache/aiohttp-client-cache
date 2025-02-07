@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Mapping
 from datetime import datetime
 from functools import singledispatch
 from http.cookies import SimpleCookie
 from logging import getLogger
 from typing import Any, Optional, Union
-from collections.abc import Mapping
 from unittest.mock import Mock
 
 import attr

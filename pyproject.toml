@@ -131,7 +131,7 @@ target-version = 'py39'
 quote-style = 'single'
 
 [tool.ruff.lint]
-select = ['B', 'C4', 'C90', 'E', 'F', 'UP']
+select = ['B', 'C4', 'C90', 'E', 'F', 'I', 'UP']
 ignore = ['B023', 'B027']
 
 [tool.ruff.lint.isort]

@@ -4,10 +4,10 @@ import inspect
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
+from collections.abc import AsyncIterable, Awaitable, Iterable
 from datetime import datetime
 from logging import getLogger
 from typing import Any, Callable, Union
-from collections.abc import AsyncIterable, Awaitable, Iterable
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL

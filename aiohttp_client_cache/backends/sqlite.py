@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import functools
-import warnings
 import asyncio
+import functools
 import sqlite3
+import warnings
+from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from logging import getLogger
@@ -12,7 +13,6 @@ from os.path import abspath, basename, dirname, expanduser, isabs, join
 from pathlib import Path
 from tempfile import gettempdir
 from typing import Any
-from collections.abc import AsyncIterable, AsyncIterator
 
 import aiosqlite
 
