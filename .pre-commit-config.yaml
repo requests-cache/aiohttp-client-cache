@@ -8,13 +8,13 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.3
+    rev: v0.9.5
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.15.0
     hooks:
       - id: mypy
         additional_dependencies: [attrs, aiohttp, types-aiofiles, types-redis]
@@ -23,6 +23,6 @@ repos:
     hooks:
       - id: prettier
   - repo: https://github.com/crate-ci/typos
-    rev: dictgen-v0.3.1
+    rev: typos-dict-v0.12.4
     hooks:
       - id: typos
