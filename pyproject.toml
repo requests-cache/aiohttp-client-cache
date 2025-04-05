@@ -34,7 +34,7 @@ python          = "^3.9"
 aiohttp         = "^3.8"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
-url-normalize   = "^1.4"
+url-normalize   = ">=1.4,<3.0"
 
 # Optional backend dependencies
 aioboto3        = {optional=true, version=">=9.0"}
