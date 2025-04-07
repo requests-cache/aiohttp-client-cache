@@ -21,6 +21,7 @@ from aiohttp_client_cache.cache_keys import create_key
         ('https://example.com?param=1&foo=bar', {}),
         ('https://example.com?param=1', {'foo': 'bar'}),
         ('https://example.com?foo=bar', {'param': '1'}),
+        ('https://example.com', {'param': '1', 'foo': 'bar'}),
         ('https://example.com', {'foo': 'bar', 'param': '1'}),
         ('https://example.com', {'foo': 'bar', 'param': 1}),
         ('https://example.com?', {'foo': 'bar', 'param': '1'}),
