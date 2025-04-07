@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohttp-client-cache"
-version="0.12.4"
+version="0.13.0"
 description = "Persistent cache for aiohttp requests"
 authors = ["Jordan Cook"]
 license = "MIT License"
@@ -34,7 +34,7 @@ python          = "^3.9"
 aiohttp         = "^3.8"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
-url-normalize   = "^1.4"
+url-normalize   = "^2.2"
 
 # Optional backend dependencies
 aioboto3        = {optional=true, version=">=9.0"}
@@ -67,7 +67,7 @@ pytest-xdist    = "^3.6"
 # For convenience in local development; additional tools are managed by pre-commit
 nox             = ">=2022.11"
 nox-poetry      = ">=1.0"
-pre-commit      = ">=2.12"
+pre-commit      = ">=4.2"
 types-aiofiles  = ">=0.1.7"
 
 # Documentation dependencies needed for Readthedocs builds
