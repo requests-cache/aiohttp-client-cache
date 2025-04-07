@@ -58,13 +58,15 @@ def normalize_url_params(url: StrOrURL, params: RequestParams | None = None) -> 
     if isinstance(url, str):
         url = URL(url)
 
-    # Handle `params` argument, and combine with URL query string if it exists
-    if params:
-        norm_params = MultiDict(url.query)
-        norm_params.extend(url.with_query(params).query)
-        url = url.with_query(norm_params)
+    # Handle trailing empty param
+    norm_params = MultiDict([i for i in url.query.items() if i != ('', '')])
 
-    # Apply additional normalization and convert back to URL object
+    # Combine `params` argument with URL query string if needed
+    if params:
+        norm_params.extend(url.with_query(params).query)
+
+    # Sort params, apply additional normalization, and convert back to URL object
+    url = url.with_query(sorted(norm_params.items()))
     return URL(url_normalize(str(url)))
 
 

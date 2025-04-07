@@ -1,9 +1,10 @@
 # History
 
-## (unreleased)
+## 0.13.0 (unreleased)
 
 - Fixed `CachedResponse.read()` to be consistent with `ClientResponse.read()` by allowing to call `read()` multiple times. (#289)
 - Now a warning is raised when a cache backend is accessed after disconnecting (after exiting the `CachedSession` context manager). (#241)
+- Fix compatibility with `url-normalize` 2.0
 - Dropped Python 3.8 support due to the EOL.
 
 ## 0.12.4 (2024-10-30)
