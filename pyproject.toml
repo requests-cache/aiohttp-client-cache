@@ -78,7 +78,7 @@ markdown-it-py              = {python=">=3.10", version=">=2.2"}
 myst-parser                 = {python=">=3.10", version=">=3.0"}
 python-forge                = {python=">=3.10", version="^18.6"}
 sphinx                      = {python=">=3.10", version="8.0.2"}
-sphinx-automodapi           = {python=">=3.10", version="^0.18.0"}
+sphinx-automodapi           = {python=">=3.10", version=">=0.18,<0.20"}
 sphinx-autodoc-typehints    = {python=">=3.10", version="^2.4"}
 sphinx-copybutton           = {python=">=3.10", version="^0.5"}
 sphinx-inline-tabs          = {python=">=3.10", version=">=2023.4"}
