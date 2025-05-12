@@ -128,27 +128,14 @@ It depends on your application design, but you have at least three options:
   gitlab_api = CachedSession(SQLiteBackend())
   ```
 
-- Create a single cache instance, but keep all `CachedSession` open:
+- Create a single cache instance and use `autoclose=False`:
 
   ```py
   cache_backend = CacheBackend()
+
   sessions_pool = [...]  # Manage multiple `Cachedsession` with a single cached backend.
 
   # Make requests...
 
-  for s in sessions:
-      await s.close()
-  ```
-
-- Override the `close` method and close the cache backed manually:
-
-  ```py
-  class CustomSQLiteBackend(SQLiteBackend):
-    def close(self): pass  # Override to prevent disconnecting.
-
-  cache = CustomSQLiteBackend()
-  async with CachedSession(cache): ...
-
-  # It is up to you to close the connection when you exit the application.
-  await cache._connection.close()
+  cache_backend.close()
   ```
