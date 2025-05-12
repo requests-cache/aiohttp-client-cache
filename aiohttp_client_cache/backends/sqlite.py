@@ -31,7 +31,9 @@ closed_session_warning = functools.partial(
     warnings.warn,
     'Cache access after closing the `Cachedsession` context manager '
     + 'is discouraged and can be forbidden in the future to prevent '
-    + 'errors related to a closed database connection.',
+    + 'errors related to a closed database connection. Use `autoclose=False` '
+    + 'if you are managing the cache backend connection on your side or '
+    + 'reusing a single cache class instance in multiple `CachedSession`.',
     stacklevel=2,
 )
 
