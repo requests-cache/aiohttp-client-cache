@@ -7,7 +7,7 @@ import pickle
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -365,8 +365,6 @@ class BaseBackendTest:
         async with self.init_session() as session:
             # mock the _refresh_cached_response method to verify
             # that a conditional request is being made
-            from unittest.mock import AsyncMock
-
             mock_refresh = AsyncMock(wraps=session._refresh_cached_response)
             session._refresh_cached_response = mock_refresh  # type: ignore[method-assign]
 

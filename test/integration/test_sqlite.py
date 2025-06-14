@@ -2,18 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sqlite3
 from contextlib import asynccontextmanager
 from tempfile import gettempdir
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiosqlite
 import pytest
 
-from aiohttp_client_cache.backends.sqlite import (
-    SQLiteBackend,
-    SQLiteCache,
-    SQLitePickleCache,
-)
+from aiohttp_client_cache.backends.sqlite import SQLiteBackend, SQLiteCache, SQLitePickleCache
 from test.conftest import CACHE_NAME, httpbin
 from test.integration import BaseBackendTest, BaseStorageTest
 
@@ -52,17 +49,18 @@ class TestSQLiteCache(BaseStorageTest):
             assert keys == {f'key_{i}' for i in range(n_items)}
             assert values == {f'value_{i}' for i in range(n_items)}
 
-    @patch('aiohttp_client_cache.backends.sqlite.aiosqlite')
-    async def test_concurrent_bulk_commit(self, mock_sqlite):
+    async def test_concurrent_bulk_commit(self):
         """Multiple concurrent bulk commits should not interfere with each other"""
-        from unittest.mock import AsyncMock
-
-        mock_connection = AsyncMock()
-        mock_sqlite.connect = AsyncMock(return_value=mock_connection)
+        mock_connection = AsyncMock(spec=aiosqlite.Connection)
+        mock_connection._connection = MagicMock(spec=sqlite3.Connection)
+        # Note: this AsyncMock behavior is implicit in python 3.13+
+        mock_connection.commit = AsyncMock()
+        mock_connection.execute = AsyncMock()
 
         @asynccontextmanager
         async def bulk_commit_ctx():
             async with self.init_cache(self.storage_class) as cache:
+                cache._connection = mock_connection
 
                 async def bulk_commit_items(n_items):
                     async with cache.bulk_commit():
@@ -72,10 +70,9 @@ class TestSQLiteCache(BaseStorageTest):
                 yield bulk_commit_items
 
         async with bulk_commit_ctx() as bulk_commit_items:
-            assert mock_connection.commit.call_count == 1
             tasks = [asyncio.create_task(bulk_commit_items(n)) for n in [10, 100, 1000, 10000]]
             await asyncio.gather(*tasks)
-            assert mock_connection.commit.call_count == 5
+            assert mock_connection.commit.call_count == 4
 
     async def test_fast_save(self):
         async with (
@@ -93,14 +90,11 @@ class TestSQLiteCache(BaseStorageTest):
             assert keys_1 == keys_2 == set(range(1000))
             assert values_1 == values_2 == set(range(1000))
 
-    @patch('aiohttp_client_cache.backends.sqlite.aiosqlite')
+    @patch('sqlite3.connect')
     async def test_connection_kwargs(self, mock_sqlite):
         """A spot check to make sure optional connection kwargs gets passed to connection"""
-        from unittest.mock import AsyncMock
-
-        mock_sqlite.connect = AsyncMock()
         async with self.init_cache(self.storage_class, timeout=0.5, invalid_kwarg='???') as cache:
-            mock_sqlite.connect.assert_called_with(cache.filename, timeout=0.5)
+            mock_sqlite.assert_called_with(cache.filename, timeout=0.5)
 
     async def test_close(self):
         async with self.init_cache(self.storage_class) as cache:
@@ -166,6 +160,13 @@ class TestSQLitePickleCache(BaseStorageTest):
 class TestSQLiteBackend(BaseBackendTest):
     backend_class = SQLiteBackend
     init_kwargs = {'use_temp': True}
+
+    async def test_shared_connection(self, *args, **kwargs):
+        async with self.init_session() as session:
+            assert session.cache.responses._lock is session.cache.redirects._lock
+            await session.get(httpbin('get'))
+            assert session.cache.responses._connection is session.cache.redirects._connection
+            assert isinstance(session.cache.responses._connection._connection, sqlite3.Connection)
 
     async def test_autoclose__default(self):
         """By default, the backend should be closed when the session is closed"""

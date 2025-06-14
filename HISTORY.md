@@ -1,5 +1,9 @@
 # History
 
+## Unreleased
+
+- Fixed a race condition in SQLite backend that could lead to `sqlite3.OperationalError: database is locked` errors
+
 ## 0.13.0 (2025-04-08)
 
 - Fixed `CachedResponse.read()` to be consistent with `ClientResponse.read()` by allowing to call `read()` multiple times. (#289)
