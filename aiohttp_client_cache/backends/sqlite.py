@@ -16,12 +16,7 @@ from typing import Any
 
 import aiosqlite
 
-from aiohttp_client_cache.backends import (
-    BaseCache,
-    CacheBackend,
-    ResponseOrKey,
-    get_valid_kwargs,
-)
+from aiohttp_client_cache.backends import BaseCache, CacheBackend, ResponseOrKey, get_valid_kwargs
 
 bulk_commit_var: ContextVar[bool] = ContextVar('bulk_commit', default=False)
 logger = getLogger(__name__)
@@ -70,7 +65,9 @@ class SQLiteBackend(CacheBackend):
         self.responses = SQLitePickleCache(
             cache_name, 'responses', use_temp=use_temp, fast_save=fast_save, **kwargs
         )
-        self.redirects = SQLiteCache(cache_name, 'redirects', use_temp=use_temp, **kwargs)
+        self.redirects = SQLiteCache(
+            cache_name, 'redirects', use_temp=use_temp, lock=self.responses._lock, **kwargs
+        )
 
 
 class SQLiteCache(BaseCache):
@@ -105,7 +102,7 @@ class SQLiteCache(BaseCache):
         self.table_name = table_name
 
         self._connection: aiosqlite.Connection | None = None
-        self._lock = asyncio.Lock()
+        self._lock = kwargs.pop('lock', asyncio.Lock())
 
     @asynccontextmanager
     async def get_connection(self, commit: bool = False) -> AsyncIterator[aiosqlite.Connection]:
