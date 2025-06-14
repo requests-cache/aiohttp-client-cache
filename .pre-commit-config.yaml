@@ -17,6 +17,7 @@ repos:
     rev: v1.16.0
     hooks:
       - id: mypy
+        files: aiohttp_client_cache
         additional_dependencies: [attrs, aiohttp, types-aiofiles, types-redis]
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
