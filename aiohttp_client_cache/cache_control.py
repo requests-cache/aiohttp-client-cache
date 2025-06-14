@@ -172,7 +172,7 @@ def get_cache_directives(headers: Mapping) -> dict:
     if not hasattr(headers, 'getall'):
         headers = CIMultiDict(headers)
 
-    header_values = headers.getall('Cache-Control', [])  # type: ignore
+    header_values = headers.getall('Cache-Control', [])
     cache_directives = [v.split(',') for v in header_values if v]
     cache_directives = list(chain.from_iterable(cache_directives))
     kv_directives = dict([split_kv_directive(value) for value in cache_directives])

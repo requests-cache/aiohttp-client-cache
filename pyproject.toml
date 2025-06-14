@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohttp-client-cache"
-version="0.13.0"
+version="0.13.1"
 description = "Persistent cache for aiohttp requests"
 authors = ["Jordan Cook"]
 license = "MIT License"
@@ -57,11 +57,11 @@ sqlite      = ["aiosqlite"]
 async-timeout   = ">=4.0"
 brotli          = ">=1.0"
 faker           = ">=30.0"
-pytest          = ">=6.2"
-pytest-aiohttp  = ">=0.3,<1.2"
-pytest-asyncio  = ">=0.14,<0.26"
+pytest          = ">=8.4"
+pytest-aiohttp  = ">=1.1"
+pytest-asyncio  = ">=1.0"
 pytest-clarity  = ">=1.0"
-pytest-cov      = ">=2.11,<7.0"
+pytest-cov      = ">=6.2"
 pytest-xdist    = "^3.6"
 
 # For convenience in local development; additional tools are managed by pre-commit
@@ -121,6 +121,10 @@ show_column_numbers = true
 check_untyped_defs=true
 pretty = true
 exclude = "dist|build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100
