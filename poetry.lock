@@ -2378,22 +2378,23 @@ testing = ["covdefaults (>=2.3)", "coverage (>=7.6.1)", "defusedxml (>=0.7.1)", 
 
 [[package]]
 name = "sphinx-automodapi"
-version = "0.18.0"
+version = "0.20.0"
 description = "Sphinx extension for auto-generating API documentation for entire modules"
 optional = false
 python-versions = ">=3.8"
 groups = ["docs"]
 markers = "python_version >= \"3.10\""
 files = [
-    {file = "sphinx_automodapi-0.18.0-py3-none-any.whl", hash = "sha256:022860385590768f52d4f6e19abb83b2574772d2721fb4050ecdb6e593a1a440"},
-    {file = "sphinx_automodapi-0.18.0.tar.gz", hash = "sha256:7bf9d9a2cb67a5389c51071cfd86674ca3892ca5d5943f95de4553d6f35dddae"},
+    {file = "sphinx_automodapi-0.20.0-py3-none-any.whl", hash = "sha256:1d205d4f07c22b1024b270a0340b245b5f819bc4c625ca10db8c06e437cf5d5e"},
+    {file = "sphinx_automodapi-0.20.0.tar.gz", hash = "sha256:24cc97323f163aeefcefb9bdae9cd0a8ea7b699ece34feab116a2557a44949ac"},
 ]
 
 [package.dependencies]
+packaging = "*"
 sphinx = ">=4"
 
 [package.extras]
-rtd = ["sphinx (<7)", "sphinx-rtd-theme"]
+rtd = ["sphinx-rtd-theme"]
 test = ["coverage", "cython", "pytest", "pytest-cov", "setuptools ; python_version >= \"3.12\""]
 
 [[package]]
@@ -3021,4 +3022,4 @@ sqlite = ["aiosqlite"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "f840ef1f1675219ab90dab8b13b02d657b7c7d3bc8ce401c26e7faf028707ae9"
+content-hash = "aba4b535828beb51b4707d528634956e90144b882ca02c4ce43d99492c2c3ca2"
