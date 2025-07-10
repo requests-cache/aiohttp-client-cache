@@ -335,6 +335,9 @@ def test_convert_to_utc_naive(dt: datetime, dt_utc: datetime) -> None:
         (URL('https://httpbin.org/stream/2'), 'httpbin.org/*/1', False),
         (URL('https://httpbin.org/stream/1'), 'httpbin.org/*/1', True),
         (URL('https://httpbin.org/stream/2'), 'httpbin.org/*/1', False),
+        (URL('https://httpbin.org/stream/2'), URL('httpbin.org/*/1'), False),
+        (URL('https://httpbin.org/stream/1'), URL('httpbin.org/*/1'), True),
+        (URL('https://httpbin.org/stream/2'), URL('httpbin.org/*/1'), False),
     ],
 )
 def test_url_match(url: Any, pattern: str, expected_output: bool) -> None:

@@ -304,7 +304,7 @@ def _(value: str):
         return None
 
 
-def url_match(url: StrOrURL, pattern: str) -> bool:
+def url_match(url: StrOrURL, pattern: StrOrURL) -> bool:
     """Determine if a URL matches a pattern
 
     Args:
@@ -322,5 +322,5 @@ def url_match(url: StrOrURL, pattern: str) -> bool:
     if not url:
         return False
     url = str(url).split('://')[-1]
-    pattern = pattern.split('://')[-1].rstrip('*') + '**'
+    pattern = str(pattern).split('://')[-1].rstrip('*') + '**'
     return fnmatch(url, pattern)
