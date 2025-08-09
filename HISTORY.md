@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Fixed a race condition in SQLite backend that could lead to `sqlite3.OperationalError: database is locked` errors
+- Fixed a race condition in SQLite backend that could lead to `sqlite3.OperationalError: database is locked` errors.
+- Fixed an issue where `CachedResponse.request_info` contained response headers instead of request headers.
 
 ## 0.13.0 (2025-04-08)
 

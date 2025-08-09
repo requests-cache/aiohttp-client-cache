@@ -35,6 +35,7 @@ EXCLUDE_ATTRS = {
     'last_used',
     'real_url',
     'request_info',
+    'request_raw_headers',
 }
 
 # Default attributes to add to ClientResponse objects
@@ -78,6 +79,7 @@ class CachedResponse(HeadersMixin):
     encoding: str = attr.ib(default='utf-8')
     expires: datetime | None = attr.ib(default=None)
     raw_headers: RawHeaders = attr.ib(factory=tuple)
+    request_raw_headers: RawHeaders = attr.ib(factory=tuple)
     real_url: StrOrURL = attr.ib(default=None)
     history: tuple = attr.ib(factory=tuple)
     last_used: datetime = attr.ib(factory=utcnow)
@@ -105,6 +107,10 @@ class CachedResponse(HeadersMixin):
         response.expires = expires
         response.links = client_response.links
         response.real_url = client_response.request_info.real_url
+        response.request_raw_headers = tuple(
+            (k.encode('utf-8'), v.encode('utf-8'))
+            for k, v in client_response.request_info.headers.items()
+        )
 
         # The encoding may be unset even if the response has been read, and
         # get_encoding() does not handle certain edge cases like an empty response body
@@ -186,11 +192,24 @@ class CachedResponse(HeadersMixin):
         return self.status < 400
 
     @property
+    def request_headers(self) -> CIMultiDictProxy[str]:
+        """Get request headers as an immutable, case-insensitive multidict from raw headers"""
+
+        def decode_header(header):
+            """Decode an individual (key, value) pair"""
+            return (
+                header[0].decode('utf-8', 'surrogateescape'),
+                header[1].decode('utf-8', 'surrogateescape'),
+            )
+
+        return CIMultiDictProxy(CIMultiDict([decode_header(h) for h in self.request_raw_headers]))
+
+    @property
     def request_info(self) -> RequestInfo:
         return RequestInfo(
             url=URL(self.url),
             method=self.method,
-            headers=self.headers,
+            headers=self.request_headers,
             real_url=URL(str(self.real_url)),
         )
 

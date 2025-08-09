@@ -12,14 +12,14 @@ from aiohttp_client_cache.cache_control import utcnow
 from aiohttp_client_cache.response import CachedResponse, RequestInfo, UnsupportedExpiresError
 
 
-async def get_test_response(client_factory, url='/', **kwargs):
+async def get_test_response(client_factory, url='/', headers=None, **kwargs):
     app = web.Application()
     app.router.add_route('GET', '/valid_url', mock_handler)
     app.router.add_route('GET', '/json', json_mock_handler)
     app.router.add_route('GET', '/empty_content', empty_mock_handler)
     app.router.add_route('GET', '/null_content', null_mock_handler)
     client = await client_factory(app)
-    client_response = await client.get(url)
+    client_response = await client.get(url, headers=headers)
 
     return await CachedResponse.from_client_response(client_response, **kwargs)
 
@@ -97,14 +97,16 @@ async def test_encoding(aiohttp_client):
 
 
 async def test_request_info(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/valid_url')
+    response = await get_test_response(
+        aiohttp_client, '/valid_url', headers={'Custom-Header': 'value'}
+    )
     request_info = response.request_info
 
     assert isinstance(request_info, RequestInfo)
     assert request_info.method == 'GET'
     assert request_info.url == request_info.real_url
     assert str(request_info.url).endswith('/valid_url')
-    assert 'Content-Type' in request_info.headers and 'Content-Length' in request_info.headers
+    assert request_info.headers['Custom-Header'] == 'value'
 
 
 async def test_headers(aiohttp_client):
