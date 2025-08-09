@@ -72,7 +72,7 @@ types-aiofiles  = ">=0.1.7"
 
 # Documentation dependencies needed for Readthedocs builds
 [tool.poetry.group.docs.dependencies]
-furo                        = {python=">=3.10", version="^2024.8"}
+furo                        = {python=">=3.10", version="^2025.7"}
 linkify-it-py               = {python=">=3.10", version=">=2.0"}
 markdown-it-py              = {python=">=3.10", version=">=2.2"}
 myst-parser                 = {python=">=3.10", version=">=3.0"}
