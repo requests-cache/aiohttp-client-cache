@@ -28,7 +28,7 @@ class TestSQLiteCache(BaseStorageTest):
         except Exception:
             pass
 
-    def test_use_temp(self):
+    async def test_use_temp(self):
         relative_path = self.storage_class(CACHE_NAME).filename
         temp_path = self.storage_class(CACHE_NAME, use_temp=True).filename
         assert not relative_path.startswith(gettempdir())
