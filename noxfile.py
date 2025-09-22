@@ -1,5 +1,5 @@
 """Notes:
-* 'test' command: nox will use poetry.lock to determine dependency versions
+* 'test' command: nox will use uv.lock to determine dependency versions
 * 'lint' command: tools and environments are managed by pre-commit
 * All other commands: the current environment will be used instead of creating new ones
 """
@@ -9,7 +9,6 @@ from pathlib import Path
 from shutil import rmtree
 
 import nox
-from nox_poetry import session
 
 nox.options.reuse_existing_virtualenvs = True
 nox.options.sessions = ['lint', 'cov']
@@ -29,17 +28,17 @@ COVERAGE_ARGS = (
 XDIST_ARGS = '--numprocesses=auto --dist=loadfile'  # Run tests in parallel, grouped by test module
 
 
-@session(python=['3.9', '3.10', '3.11', '3.12'])
+@nox.session(python=['3.9', '3.10', '3.11', '3.12'])
 def test(session):
     """Run tests for a specific python version"""
     test_paths = session.posargs or [UNIT_TESTS]
-    session.install('.', 'pytest', 'pytest-aiohttp', 'pytest-asyncio', 'pytest-xdist')
+    session.run('uv', 'sync', '--python', session.python, '--only-dev', external=True)
 
-    cmd = f'pytest -rs {XDIST_ARGS}'
-    session.run(*cmd.split(' '), *test_paths)
+    cmd = f'uv run pytest -rs {XDIST_ARGS}'
+    session.run(*cmd.split(' '), *test_paths, external=True)
 
 
-@session(python=False)
+@nox.session(python=False)
 def clean(session):
     """Clean up temporary build + documentation files"""
     for dir in CLEAN_DIRS:
@@ -47,23 +46,23 @@ def clean(session):
         rmtree(dir, ignore_errors=True)  # type: ignore[arg-type]
 
 
-@session(python=False, name='cov')
+@nox.session(python=False, name='cov')
 def coverage(session):
     """Run tests and generate coverage report"""
-    cmd_1 = f'pytest {UNIT_TESTS} -rs {XDIST_ARGS} {COVERAGE_ARGS}'
-    cmd_2 = f'pytest {INTEGRATION_TESTS} -rs {XDIST_ARGS} {COVERAGE_ARGS} --cov-append'
-    session.run(*cmd_1.split(' '))
-    session.run(*cmd_2.split(' '))
+    cmd_1 = f'uv run pytest {UNIT_TESTS} -rs {XDIST_ARGS} {COVERAGE_ARGS}'
+    cmd_2 = f'uv run pytest {INTEGRATION_TESTS} -rs {XDIST_ARGS} {COVERAGE_ARGS} --cov-append'
+    session.run(*cmd_1.split(' '), external=True)
+    session.run(*cmd_2.split(' '), external=True)
 
 
-@session(python=False)
+@nox.session(python=False)
 def docs(session):
     """Build Sphinx documentation"""
-    cmd = 'sphinx-build docs docs/_build/html -j auto'
-    session.run(*cmd.split(' '))
+    cmd = 'uv run sphinx-build docs docs/_build/html -j auto'
+    session.run(*cmd.split(' '), external=True)
 
 
-@session(python=False)
+@nox.session(python=False)
 def livedocs(session):
     """Auto-build docs with live reload in browser.
     Add `--open` to also open the browser after starting.
@@ -76,12 +75,12 @@ def livedocs(session):
         args.append('--open-browser')
 
     clean(session)
-    cmd = 'sphinx-autobuild docs docs/_build/html ' + ' '.join(args)
-    session.run(*cmd.split(' '))
+    cmd = 'uv run sphinx-autobuild docs docs/_build/html ' + ' '.join(args)
+    session.run(*cmd.split(' '), external=True)
 
 
-@session(python=False)
+@nox.session(python=False)
 def lint(session):
     """Run linters and code formatters via pre-commit"""
-    cmd = 'pre-commit run --all-files'
-    session.run(*cmd.split(' '))
+    cmd = 'uv run pre-commit run --all-files'
+    session.run(*cmd.split(' '), external=True)

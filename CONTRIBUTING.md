@@ -2,12 +2,12 @@
 
 ## Dev Installation
 
-To set up for local development (requires [poetry](https://python-poetry.org/docs/#installation)):
+To set up for local development (requires [uv](https://docs.astral.sh/uv/getting-started/installation/)):
 
 ```sh
 $ git clone https://github.com/requests-cache/aiohttp-client-cache
 $ cd aiohttp-client-cache
-$ poetry install -E all
+$ uv sync --all-extras
 ```
 
 ## Pre-commit hooks
@@ -48,9 +48,9 @@ Tests are divided into unit and integration tests:
 
 ### Running Tests
 
-- Run `pytest` to run all tests
-- Run `pytest test/unit` to run only unit tests
-- Run `pytest test/integration` to run only integration tests
+- Run `uv run pytest` to run all tests
+- Run `uv run pytest test/unit` to run only unit tests
+- Run `uv run pytest test/integration` to run only integration tests
 
 For CI jobs (including PRs), these tests will be run for each supported python version.
 You can use [nox](https://nox.thea.codes) to do this locally, if needed:
@@ -83,11 +83,11 @@ Then, run:
 
 ```sh
 docker-compose up -d
-pytest test/integration
+uv run pytest test/integration
 ```
 
 To test DragonflyDB you need to stop a Redis container (if running) and run `docker compose -f dragonflydb.yaml up`.
-No other changes are required, you can run related tests with e.g. `pytest test -k redis`.
+No other changes are required, you can run related tests with e.g. `uv run pytest test -k redis`.
 
 ## Documentation
 
@@ -96,7 +96,7 @@ No other changes are required, you can run related tests with e.g. `pytest test 
 First, install documentation dependencies:
 
 ```sh
-$ poetry install -E all --with docs
+$ uv sync --all-extras
 ```
 
 To build the docs locally:
