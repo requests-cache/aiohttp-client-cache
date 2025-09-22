@@ -30,7 +30,7 @@ classifiers = [
 "Documentation" = "https://aiohttp-client-cache.readthedocs.io"
 
 [tool.poetry.dependencies]
-python          = "^3.9"
+python          = ">=3.9"
 aiohttp         = "^3.8"
 attrs           = ">=21.2"
 itsdangerous    = ">=2.0"
