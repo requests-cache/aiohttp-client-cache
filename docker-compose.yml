@@ -48,8 +48,22 @@ services:
     volumes:
       - 'redis_data:/bitnami/redis/data'
 
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: aiohttp_cache
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5433:5432
+    volumes:
+      - 'postgres_data:/var/lib/postgresql/data'
+
 volumes:
   mongodb_data:
     driver: local
   redis_data:
+    driver: local
+  postgres_data:
     driver: local
