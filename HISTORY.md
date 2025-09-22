@@ -1,5 +1,9 @@
 # History
 
+## Unreleased
+
+- Packaging and project config are now handled with [uv](https://docs.astral.sh/uv/). For users, installation still works the same. For developers, see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/contributing.html) for details.
+
 ## 0.14.1 (2025-10-01)
 
 - Update type annotation for `CachedSession.__aenter__` with `Self` type
@@ -195,8 +199,6 @@
   - `Expires`
 - Add support for HTTP timestamps (RFC 5322) in `expire_after` parameters
 - Add a `use_temp` option to `SQLiteBackend` to use a tempfile
-- Packaging is now handled with Poetry. For users, installation still works the same. For developers,
-  see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/contributing.html) for details
 - Published package on [conda-forge](https://anaconda.org/conda-forge/aiohttp-client-cache)
 
 ## 0.3.0 (2021-04-09)

@@ -8,7 +8,7 @@ on:
     branches: [main]
   workflow_dispatch:
 env:
-  LATEST_PY_VERSION: '3.12'
+  LATEST_PY_VERSION: '3.13'
   COVERAGE_ARGS: '--cov --cov-report=term --cov-report=xml'
   XDIST_ARGS: '--numprocesses=auto --dist=loadfile'
 
@@ -24,6 +24,7 @@ jobs:
           - '3.11'
           - '3.10'
           - '3.9'
+          - '3.14-rc2'
     services:
       nginx:
         image: kennethreitz/httpbin
@@ -31,46 +32,34 @@ jobs:
           - 8080:80
 
     steps:
+      # Install dependencies, with caching
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: ${{ matrix.python-version }}
-      - uses: snok/install-poetry@v1.4
-        with:
-          version: 1.8.5
-          virtualenvs-in-project: true
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install dependencies
+        run: |
+          uv python install ${{ matrix.python-version }}
+          uv sync --all-extras
 
       # Start integration test databases
       - uses: supercharge/mongodb-github-action@1.12.0
         with:
-          mongodb-version: 4.4
+          mongodb-version: '5.0'
       - uses: supercharge/redis-github-action@1.8.0
         with:
           redis-version: '6'
       - uses: rrainn/dynamodb-action@v4.0.0
-
-      # Cache packages per python version, and reuse until lockfile changes
-      - name: Cache python packages
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: poetry install -v -E all
-
       - name: Run custom test server
         run: |
-          source $VENV
-          cd test && gunicorn -D -c server/gunicorn-cfg.py server:app
+          cd test && uv run gunicorn -D -c server/gunicorn-cfg.py server:app
 
       # Run tests with coverage report
       - name: Run tests
         run: |
-          source $VENV
-          pytest -rs test/unit ${{ env.XDIST_ARGS }} ${{ env.COVERAGE_ARGS }}
-          pytest -rs test/integration --cov-append ${{ env.XDIST_ARGS }} ${{ env.COVERAGE_ARGS }}
+          uv run pytest -rs test/unit ${{ env.XDIST_ARGS }} ${{ env.COVERAGE_ARGS }}
+          uv run pytest -rs test/integration --cov-append ${{ env.XDIST_ARGS }} ${{ env.COVERAGE_ARGS }}
 
       # Latest python version: send coverage report to codecov
       - name: 'Upload coverage report to Codecov'
