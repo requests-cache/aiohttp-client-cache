@@ -1,23 +1,23 @@
-FROM python:3.10.10-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
 ENV PIP_DEFAULT_TIMEOUT=100 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1 \
-    POETRY_VERSION=1.4.0
+    PIP_NO_CACHE_DIR=1
 
 COPY test ./test
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock README.md ./
 
-RUN pip install "poetry==$POETRY_VERSION"
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-RUN poetry config virtualenvs.in-project true && \
-    poetry install --only=test-server --no-root
+# Install dependencies
+RUN uv sync --extra test-server --no-dev
 
 # set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH="$PYTHONPATH:/app/test"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app/test"
 
-ENTRYPOINT ["poetry", "run", "gunicorn", "server:app", "-c", "test/server/gunicorn-cfg.py"]
+ENTRYPOINT ["uv", "run", "gunicorn", "server:app", "-c", "test/server/gunicorn-cfg.py"]

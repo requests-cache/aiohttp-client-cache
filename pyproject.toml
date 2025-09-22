@@ -1,97 +1,98 @@
-[tool.poetry]
+[project]
 name = "aiohttp-client-cache"
-version = "0.14.1"
+version = "0.14.2"
 description = "Persistent cache for aiohttp requests"
-authors = ["Jordan Cook", "Alessio Locatelli"]
-license = "MIT License"
+authors = [{name = "Jordan Cook"}, {name = "Alessio Locatelli"}]
+license = {text = "MIT License"}
 readme = "README.md"
-homepage = "https://github.com/requests-cache/aiohttp-client-cache"
-repository = "https://github.com/requests-cache/aiohttp-client-cache"
 keywords = ["aiohttp", "async", "asyncio", "cache", "cache-backends", "client", "http",
             "persistence", "requests", "sqlite", "redis", "mongodb", "dynamodb", "dragonflydb"]
-include = [
-    { path = "*.md", format = "sdist" },
-    { path = "*.yml", format = "sdist" },
-    { path = "aiohttp_client_cache/py.typed" },
-    { path = "docs", format = "sdist" },
-    { path = "examples", format = "sdist" },
-    { path = "test", format = "sdist" }
-]
 classifiers = [
     "Development Status :: 4 - Beta",
-    'Framework :: AsyncIO',
-    'Framework :: aiohttp',
+    "Framework :: AsyncIO",
+    "Framework :: aiohttp",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
+requires-python = ">=3.9"
+dependencies = [
+    "aiohttp            >=3.8",
+    "attrs              >=21.2",
+    "itsdangerous       >=2.0",
+    "url-normalize      >=2.2",
+    "typing-extensions  >=4 ; python_version<='3.10'",  # For Self type addition
+]
 
-[tool.poetry.urls]
-"Documentation" = "https://aiohttp-client-cache.readthedocs.io"
-
-[tool.poetry.dependencies]
-python          = ">=3.9"
-aiohttp         = "^3.8"
-attrs           = ">=21.2"
-itsdangerous    = ">=2.0"
-typing-extensions = {python="<=3.10", version=">=4"}  # Pin v4 for Self addition
-url-normalize   = "^2.2"
-
+[project.optional-dependencies]
 # Optional backend dependencies
-aioboto3        = {optional=true, version=">=9.0"}
-aiobotocore     = {optional=true, version=">=2.0"}
-aiofiles        = {optional=true, version=">=0.6.0"}
-aiosqlite       = {optional=true, version=">=0.20"}
-motor           = {optional=true, version=">=3.1"}
-redis           = {optional=true, version=">=4.2"}
+all         = ["aioboto3>=9.0", "aiobotocore>=2.0", "aiofiles>=0.6.0", "aiosqlite>=0.20", "motor>=3.1", "redis>=4.2"]
+dynamodb    = ["aioboto3>=9.0", "aiobotocore>=2.0"]
+filesystem  = ["aiofiles>=0.6.0", "aiosqlite>=0.20"]
+mongodb     = ["motor>=3.1"]
+redis       = ["redis>=4.2"]
+sqlite      = ["aiosqlite>=0.20"]
 
-[tool.poetry.extras]
-all         = ["aioboto3", "aiobotocore", "aiofiles", "aiosqlite", "motor", "redis"]
-dynamodb    = ["aioboto3", "aiobotocore"]
-filesystem  = ["aiofiles", "aiosqlite"]
-mongodb     = ["motor"]
-redis       = ["redis"]
-sqlite      = ["aiosqlite"]
-
-[tool.poetry.group.dev.dependencies]
-# For unit + integration tests
-async-timeout   = ">=4.0"
-brotli          = ">=1.0"
-faker           = ">=30.0"
-pytest          = ">=8.4"
-pytest-aiohttp  = ">=1.1"
-pytest-asyncio  = ">=1.2"
-pytest-clarity  = ">=1.0"
-pytest-cov      = ">=6.2"
-pytest-xdist    = "^3.6"
-
-# For convenience in local development; additional tools are managed by pre-commit
-nox             = ">=2022.11"
-nox-poetry      = ">=1.0"
-pre-commit      = ">=4.2"
-types-aiofiles  = ">=0.1.7"
+# Development dependencies
+dev = [
+    # For unit + integration tests
+    "async-timeout  >=4.0",
+    "brotli         >=1.0",
+    "faker          >=30.0",
+    "pytest         >=8.4",
+    "pytest-aiohttp >=1.1",
+    "pytest-asyncio >=1.2",
+    "pytest-clarity >=1.0",
+    "pytest-cov     >=6.2",
+    "pytest-xdist   >=3.6",
+    # For convenience in local development; additional tools are managed by pre-commit
+    "nox            >=2022.11",
+    "pre-commit     >=4.2",
+    "types-aiofiles >=0.1.7",
+]
 
 # Documentation dependencies needed for Readthedocs builds
-[tool.poetry.group.docs.dependencies]
-furo                        = {python=">=3.10", version="^2025.7"}
-linkify-it-py               = {python=">=3.10", version=">=2.0"}
-markdown-it-py              = {python=">=3.10", version=">=2.2"}
-myst-parser                 = {python=">=3.10", version=">=3.0"}
-python-forge                = {python=">=3.10", version="^18.6"}
-sphinx                      = {python=">=3.10", version="8.1.3"}
-sphinx-automodapi           = {python=">=3.10", version=">=0.18,<0.21"}
-sphinx-autodoc-typehints    = {python=">=3.10", version="^2.4"}
-sphinx-copybutton           = {python=">=3.10", version="^0.5"}
-sphinx-inline-tabs          = {python=">=3.10", version=">=2023.4"}
-sphinxcontrib-apidoc        = {python=">=3.10", version=">=0.3"}
+docs = [
+    "furo                       >=2025.9; python_version>='3.11'",
+    "linkify-it-py              >=2.0; python_version>='3.11'",
+    "markdown-it-py             >=2.2; python_version>='3.11'",
+    "myst-parser                >=3.0; python_version>='3.11'",
+    "python-forge               >=18.6; python_version>='3.11'",
+    "sphinx                     ~=8.2; python_version>='3.11'",
+    "sphinx-automodapi          >=0.18,<0.21; python_version>='3.11'",
+    "sphinx-autodoc-typehints   >=2.4; python_version>='3.11'",
+    "sphinx-copybutton          >=0.5; python_version>='3.11'",
+    "sphinx-inline-tabs         >=2023.4; python_version>='3.11'",
+    "sphinxcontrib-apidoc       >=0.3; python_version>='3.11'",
+]
 
-[tool.poetry.group.test-server.dependencies]
-flask = ">=2.0"
-gunicorn = ">=21.2"
+# Test server dependencies
+test-server = [
+    "flask>=2.0",
+    "gunicorn>=21.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/requests-cache/aiohttp-client-cache"
+Repository = "https://github.com/requests-cache/aiohttp-client-cache"
+Documentation = "https://aiohttp-client-cache.readthedocs.io"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aiohttp_client_cache"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "*.md",
+    "*.yml",
+    "aiohttp_client_cache/",
+    "docs/",
+    "examples/",
+    "test/",
+]
 
 [tool.coverage.html]
 directory = 'test-reports'
@@ -112,7 +113,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = 3.9
+python_version = "3.9"
 ignore_missing_imports = true
 warn_redundant_casts = true
 warn_unused_ignores = true
