@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
 from collections.abc import Mapping
 from datetime import datetime
 from functools import singledispatch
@@ -22,6 +23,11 @@ from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
 
 from aiohttp_client_cache.cache_control import utcnow
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
@@ -259,7 +265,7 @@ class CachedResponse(HeadersMixin):
     def connection(self):
         return None
 
-    async def __aenter__(self) -> CachedResponse:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *exc: Any) -> None:

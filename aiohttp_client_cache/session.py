@@ -42,6 +42,12 @@ else:
             pass
 
 
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
+
 @lru_cache(maxsize=16384)
 def _get_lock(_: int, __: str) -> Lock:
     return Lock()
@@ -245,5 +251,5 @@ with warnings.catch_warnings():
                 options. If not provided, an in-memory cache will be used.
         """
 
-        async def __aenter__(self) -> CachedSession:
+        async def __aenter__(self) -> Self:
             return self
