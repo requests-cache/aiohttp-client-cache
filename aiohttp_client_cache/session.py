@@ -184,9 +184,9 @@ class CacheMixin(MIXIN_BASE):
             >>>         # Will return a new response, not a cached one
             >>>         await session.get('http://httpbin.org/ip')
         """
-        self.cache.disabled = True
+        token = self.cache._disabled.set(True)
         yield
-        self.cache.disabled = False
+        self.cache._disabled.reset(token)
 
     async def delete_expired_responses(self):
         """Remove all expired responses from the cache"""

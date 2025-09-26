@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextvars
 import inspect
 import pickle
 from abc import ABCMeta, abstractmethod
@@ -75,7 +76,7 @@ class CacheBackend:
         self.cache_control = cache_control
         self.filter_fn = filter_fn
         self.autoclose = autoclose
-        self.disabled = False
+        self._disabled = contextvars.ContextVar('_disabled', default=False)
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
         self.redirects: BaseCache = DictCache()
@@ -83,6 +84,14 @@ class CacheBackend:
 
         self.include_headers = include_headers
         self.ignored_params = set(ignored_params or [])
+
+    @property
+    def disabled(self):
+        return self._disabled.get()
+
+    @disabled.setter
+    def disabled(self, value):
+        return self._disabled.set(value)
 
     async def is_cacheable(
         self, response: AnyResponse | None, actions: CacheActions | None = None
