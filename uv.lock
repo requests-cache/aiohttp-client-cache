@@ -197,6 +197,25 @@ all = [
     { name = "motor" },
     { name = "redis" },
 ]
+dynamodb = [
+    { name = "aioboto3" },
+    { name = "aiobotocore" },
+]
+filesystem = [
+    { name = "aiofiles" },
+    { name = "aiosqlite" },
+]
+mongodb = [
+    { name = "motor" },
+]
+redis = [
+    { name = "redis" },
+]
+sqlite = [
+    { name = "aiosqlite" },
+]
+
+[package.dev-dependencies]
 dev = [
     { name = "async-timeout" },
     { name = "brotli" },
@@ -224,23 +243,6 @@ docs = [
     { name = "sphinx-inline-tabs", marker = "python_full_version >= '3.11'" },
     { name = "sphinxcontrib-apidoc", marker = "python_full_version >= '3.11'" },
 ]
-dynamodb = [
-    { name = "aioboto3" },
-    { name = "aiobotocore" },
-]
-filesystem = [
-    { name = "aiofiles" },
-    { name = "aiosqlite" },
-]
-mongodb = [
-    { name = "motor" },
-]
-redis = [
-    { name = "redis" },
-]
-sqlite = [
-    { name = "aiosqlite" },
-]
 test-server = [
     { name = "flask" },
     { name = "gunicorn" },
@@ -258,41 +260,49 @@ requires-dist = [
     { name = "aiosqlite", marker = "extra == 'all'", specifier = ">=0.20" },
     { name = "aiosqlite", marker = "extra == 'filesystem'", specifier = ">=0.20" },
     { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.20" },
-    { name = "async-timeout", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "attrs", specifier = ">=21.2" },
-    { name = "brotli", marker = "extra == 'dev'", specifier = ">=1.0" },
-    { name = "faker", marker = "extra == 'dev'", specifier = ">=30.0" },
-    { name = "flask", marker = "extra == 'test-server'", specifier = ">=2.0" },
-    { name = "furo", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=2025.9" },
-    { name = "gunicorn", marker = "extra == 'test-server'", specifier = ">=21.2" },
     { name = "itsdangerous", specifier = ">=2.0" },
-    { name = "linkify-it-py", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=2.0" },
-    { name = "markdown-it-py", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=2.2" },
     { name = "motor", marker = "extra == 'all'", specifier = ">=3.1" },
     { name = "motor", marker = "extra == 'mongodb'", specifier = ">=3.1" },
-    { name = "myst-parser", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=3.0" },
-    { name = "nox", marker = "extra == 'dev'", specifier = ">=2022.11" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4" },
-    { name = "pytest-aiohttp", marker = "extra == 'dev'", specifier = ">=1.1" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.2" },
-    { name = "pytest-clarity", marker = "extra == 'dev'", specifier = ">=1.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.2" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6" },
-    { name = "python-forge", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=18.6" },
     { name = "redis", marker = "extra == 'all'", specifier = ">=4.2" },
     { name = "redis", marker = "extra == 'redis'", specifier = ">=4.2" },
-    { name = "sphinx", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = "~=8.2" },
-    { name = "sphinx-autodoc-typehints", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=2.4" },
-    { name = "sphinx-automodapi", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=0.18,<0.21" },
-    { name = "sphinx-copybutton", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=0.5" },
-    { name = "sphinx-inline-tabs", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=2023.4" },
-    { name = "sphinxcontrib-apidoc", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = ">=0.3" },
-    { name = "types-aiofiles", marker = "extra == 'dev'", specifier = ">=0.1.7" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'", specifier = ">=4" },
     { name = "url-normalize", specifier = ">=2.2" },
 ]
-provides-extras = ["all", "dynamodb", "filesystem", "mongodb", "redis", "sqlite", "dev", "docs", "test-server"]
+provides-extras = ["all", "dynamodb", "filesystem", "mongodb", "redis", "sqlite"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "async-timeout", specifier = ">=4.0" },
+    { name = "brotli", specifier = ">=1.0" },
+    { name = "faker", specifier = ">=30.0" },
+    { name = "nox", specifier = ">=2022.11" },
+    { name = "pre-commit", specifier = ">=4.2" },
+    { name = "pytest", specifier = ">=8.4" },
+    { name = "pytest-aiohttp", specifier = ">=1.1" },
+    { name = "pytest-asyncio", specifier = ">=1.2" },
+    { name = "pytest-clarity", specifier = ">=1.0" },
+    { name = "pytest-cov", specifier = ">=6.2" },
+    { name = "pytest-xdist", specifier = ">=3.6" },
+    { name = "types-aiofiles", specifier = ">=0.1.7" },
+]
+docs = [
+    { name = "furo", marker = "python_full_version >= '3.11'", specifier = ">=2025.9" },
+    { name = "linkify-it-py", marker = "python_full_version >= '3.11'", specifier = ">=2.0" },
+    { name = "markdown-it-py", marker = "python_full_version >= '3.11'", specifier = ">=2.2" },
+    { name = "myst-parser", marker = "python_full_version >= '3.11'", specifier = ">=3.0" },
+    { name = "python-forge", marker = "python_full_version >= '3.11'", specifier = ">=18.6" },
+    { name = "sphinx", marker = "python_full_version >= '3.11'", specifier = "~=8.2" },
+    { name = "sphinx-autodoc-typehints", marker = "python_full_version >= '3.11'", specifier = ">=2.4" },
+    { name = "sphinx-automodapi", marker = "python_full_version >= '3.11'", specifier = ">=0.18,<0.21" },
+    { name = "sphinx-copybutton", marker = "python_full_version >= '3.11'", specifier = ">=0.5" },
+    { name = "sphinx-inline-tabs", marker = "python_full_version >= '3.11'", specifier = ">=2023.4" },
+    { name = "sphinxcontrib-apidoc", marker = "python_full_version >= '3.11'", specifier = ">=0.3" },
+]
+test-server = [
+    { name = "flask", specifier = ">=2.0" },
+    { name = "gunicorn", specifier = ">=21.2" },
+]
 
 [[package]]
 name = "aioitertools"
@@ -1071,7 +1081,7 @@ name = "importlib-metadata"
 version = "8.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp", marker = "python_full_version < '3.10'" },
+    { name = "zipp", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/76/66/650a33bd90f786193e4de4b3ad86ea60b53c89b669a5c7be931fac31cdb0/importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000", size = 56641, upload-time = "2025-04-27T15:29:01.736Z" }
 wheels = [

@@ -7,7 +7,7 @@ To set up for local development (requires [uv](https://docs.astral.sh/uv/getting
 ```sh
 $ git clone https://github.com/requests-cache/aiohttp-client-cache
 $ cd aiohttp-client-cache
-$ uv sync --all-extras
+$ uv sync --frozen --all-extras --all-groups
 ```
 
 ## Pre-commit hooks
@@ -91,15 +91,7 @@ No other changes are required, you can run related tests with e.g. `uv run pytes
 
 ## Documentation
 
-[Sphinx](http://www.sphinx-doc.org/en/master/) is used to generate documentation.
-
-First, install documentation dependencies:
-
-```sh
-$ uv sync --all-extras
-```
-
-To build the docs locally:
+[Sphinx](http://www.sphinx-doc.org/en/master/) is used to generate documentation. To build the docs locally:
 
 ```sh
 $ nox -e docs

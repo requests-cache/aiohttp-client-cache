@@ -33,6 +33,7 @@ mongodb     = ["motor>=3.1"]
 redis       = ["redis>=4.2"]
 sqlite      = ["aiosqlite>=0.20"]
 
+[dependency-groups]
 # Development dependencies
 dev = [
     # For unit + integration tests
