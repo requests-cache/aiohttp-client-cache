@@ -1,5 +1,10 @@
 # History
 
+## 0.14.1 (2025-10-01)
+
+- Update type annotation for `CachedSession.__aenter__` with `Self` type
+- Fix behavior of `CachedSession.disabled()` when using multiple session instances
+
 ## 0.14.0 (2025-09-22)
 
 - Fixed a race condition in SQLite backend that could lead to `sqlite3.OperationalError: database is locked` errors.

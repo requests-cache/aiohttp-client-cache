@@ -47,7 +47,7 @@ def test_normalize_url_params(url, params):
 )
 def test_encode_duplicate_params(url, params):
     """All means of providing request params with duplicate parameter names should result in a
-    cache key distict from a request with only one of that parameter name.
+    cache key distinct from a request with only one of that parameter name.
     """
     assert (
         create_key('GET', url, params=params)

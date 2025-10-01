@@ -133,7 +133,7 @@ async def test_session__default_attrs(mock_request):
 )
 @patch.object(ClientSession, '_request', return_value=FakeClientResponse)
 async def test_all_param_types(mock_request, params) -> None:
-    """Ensure that CachedSession.request() acceepts all the same parameter types as aiohttp"""
+    """Ensure that CachedSession.request() accepts all the same parameter types as aiohttp"""
     cache = MagicMock(spec=CacheBackend)
     cache.request.return_value = None
 
