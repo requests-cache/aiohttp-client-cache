@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv python install ${{ matrix.python-version }}
-          uv sync --all-extras
+          uv sync --all-extras --group test-server
 
       # Start integration test databases
       - uses: supercharge/mongodb-github-action@1.12.0
