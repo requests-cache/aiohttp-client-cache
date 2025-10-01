@@ -13,6 +13,7 @@ from faker import Faker
 from multidict import CIMultiDict, CIMultiDictProxy
 from yarl import URL
 
+from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.cache_control import (
     DO_NOT_CACHE,
     CacheActions,
@@ -25,6 +26,7 @@ from aiohttp_client_cache.cache_control import (
     url_match,
     utcnow,
 )
+from aiohttp_client_cache.session import CachedSession
 from test.conftest import HTTPDATE_DATETIME, HTTPDATE_STR
 
 # Any random value, but to support `pytest-xdist` the value must be static during a Pytest session.
@@ -183,6 +185,22 @@ def test_update_from_response__disabled():
     actions = CacheActions(key='key', cache_control=False, expire_after=30)
     actions.update_from_response(response)
     assert actions.expire_after == 30
+
+
+async def test_session__disabled_context():
+    cache = CacheBackend()
+
+    async with CachedSession(cache=cache) as session:
+        assert not cache.disabled
+        async with session.disabled():
+            assert cache.disabled
+
+    async with CachedSession(cache=cache) as session2:
+        assert not cache.disabled
+        async with session2.disabled():
+            assert cache.disabled
+
+    assert not cache.disabled
 
 
 @pytest.mark.parametrize('directive', IGNORED_DIRECTIVES)
