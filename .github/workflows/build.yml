@@ -8,7 +8,7 @@ on:
     branches: [main]
   workflow_dispatch:
 env:
-  LATEST_PY_VERSION: '3.13'
+  LATEST_PY_VERSION: '3.14'
   COVERAGE_ARGS: '--cov --cov-report=term --cov-report=xml'
   XDIST_ARGS: '--numprocesses=auto --dist=loadfile'
 
@@ -19,12 +19,12 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
+          - '3.14'
           - '3.13'
           - '3.12'
           - '3.11'
           - '3.10'
           - '3.9'
-          - '3.14-rc2'
     services:
       nginx:
         image: kennethreitz/httpbin
