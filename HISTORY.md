@@ -1,8 +1,9 @@
 # History
 
-## Unreleased
+## 0.14.2 (2025-10-30)
 
-- Add support for python 3.14
+- Fixed `include_headers` to apply to `CachedSession.headers`
+- Added support for python 3.14
 - Packaging and project config are now handled with [uv](https://docs.astral.sh/uv/). For users, installation still works the same. For developers, see [Contributing Guide](https://aiohttp-client-cache.readthedocs.io/en/stable/contributing.html) for details.
 
 ## 0.14.1 (2025-10-01)
