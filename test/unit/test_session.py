@@ -189,3 +189,17 @@ async def test_mixin(mock_request):
         await session.get('http://test.url')
 
     assert mock_request.called is False
+
+
+@patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
+async def test_session__cache_include_headers(mock_request):
+    async with CachedSession(cache=CacheBackend(include_headers=True)) as session:
+        await session.get('https://test.com')
+
+        assert mock_request.called is True
+        mock_request.called = False
+
+        session.headers.update({'key': 'value'})
+        await session.get('https://test.com')
+
+        assert mock_request.called is True

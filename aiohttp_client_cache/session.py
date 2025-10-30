@@ -82,6 +82,8 @@ class CacheMixin(MIXIN_BASE):
     ) -> CachedResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
         # Attempt to fetch cached response
+        headers = self._prepare_headers(kwargs.get('headers', None))
+        kwargs['headers'] = headers
         key = self.cache.create_key(method, str_or_url, **kwargs)
         actions = self.cache.create_cache_actions(
             key, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
