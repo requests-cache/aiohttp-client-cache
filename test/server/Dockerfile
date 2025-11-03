@@ -13,7 +13,7 @@ COPY pyproject.toml uv.lock README.md ./
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Install dependencies
-RUN uv sync --extra test-server --no-dev
+RUN uv sync --group test-server --no-dev
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
