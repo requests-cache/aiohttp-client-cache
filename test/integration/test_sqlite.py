@@ -109,7 +109,7 @@ class TestSQLiteCache(BaseStorageTest):
         async with self.init_cache(self.storage_class) as cache:
             async with cache.get_connection():
                 pass
-            with patch.object(aiosqlite.Connection, '_stop_running', side_effect=AttributeError):
+            with patch.object(aiosqlite.Connection, 'stop', side_effect=AttributeError):
                 del cache
 
     # TODO: Tests for unimplemented features

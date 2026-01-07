@@ -1,6 +1,6 @@
 [project]
 name = "aiohttp-client-cache"
-version = "0.14.2"
+version = "0.14.3"
 description = "Persistent cache for aiohttp requests"
 authors = [{name = "Jordan Cook"}, {name = "Alessio Locatelli"}]
 license = {text = "MIT License"}

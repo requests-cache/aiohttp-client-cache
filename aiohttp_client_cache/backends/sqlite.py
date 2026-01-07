@@ -149,13 +149,15 @@ class SQLiteCache(BaseCache):
         """If the aiosqlite connection is still open when this object is deleted, force its thread
         to close by stopping its internal queue. This is basically a last resort to avoid hanging
         the application if this backend is used without the CachedSession contextmanager.
-
-        Note: Since this uses internal attributes, it has the potential to break in future versions
-        of aiosqlite.
         """
         if self._connection is not None:
             try:
-                self._connection._stop_running()
+                # aiosqlite >= 0.22.1
+                if hasattr(self._connection, 'stop'):
+                    self._connection.stop()
+                # aiosqlite <= 0.22.0
+                else:
+                    self._connection._stop_running()
             except (AttributeError, TypeError):
                 logger.warning('Could not close SQLite connection thread', exc_info=True)
             self._connection = None

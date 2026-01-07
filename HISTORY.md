@@ -1,5 +1,9 @@
 # History
 
+## 0.14.3 (2026-01-07)
+
+- Fix compatibility with aiosqlite 0.22.1+
+
 ## 0.14.2 (2025-10-30)
 
 - Fixed `include_headers` to apply to `CachedSession.headers`
