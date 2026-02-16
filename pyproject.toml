@@ -57,7 +57,7 @@ docs = [
     "furo                       >=2025.9; python_version>='3.11'",
     "linkify-it-py              >=2.0; python_version>='3.11'",
     "markdown-it-py             >=2.2; python_version>='3.11'",
-    "myst-parser                >=3.0; python_version>='3.11'",
+    "myst-parser                >=5.0; python_version>='3.11'",
     "python-forge               >=18.6; python_version>='3.11'",
     "sphinx                     ~=8.2; python_version>='3.11'",
     "sphinx-automodapi          >=0.18,<0.21; python_version>='3.11'",
