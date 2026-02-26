@@ -1,8 +1,37 @@
 # Contributing Guide
 
-## Dev Installation
+## How to Contribute
 
-To set up for local development (requires [uv](https://docs.astral.sh/uv/getting-started/installation/)):
+### AI Policy
+
+AI-assisted contributions are fine, as long as:
+
+- Contents are fully **reviewed, tested, and understood by a human contributor**
+- Any user-facing documentation is human-written (excluding minor edits/docstring boilerplate)
+
+Contributions require time to review and ongoing effort to maintain, so low-effort automated PRs
+are likely to be closed.
+
+### Pull Requests
+
+Here are some general guidelines for submitting a pull request:
+
+- In most cases, please submit an issue describing the proposed change prior to submitting a PR
+- Or, if the changes are trivial (minor bugfixes, documentation edits, etc.), you can just explain
+  the changes in the PR description without requiring an issue first.
+- Add unit test coverage for your changes
+- If your changes add or modify user-facing behavior, add documentation describing those changes
+- Submit the PR to be merged into the `main` branch
+- Use the PR template
+
+## Development Setup
+
+To get set up for development, first install these tools:
+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (required)
+- [docker][docker] and [docker compose][docker-compose] (required for integration tests)
+
+Next, clone the repository and install dependencies:
 
 ```sh
 $ git clone https://github.com/requests-cache/aiohttp-client-cache
@@ -10,7 +39,7 @@ $ cd aiohttp-client-cache
 $ uv sync --frozen --all-extras --all-groups
 ```
 
-## Pre-commit hooks
+### Pre-commit hooks
 
 CI jobs will run code style checks, type checks, linting, etc. If you would like to run these same
 checks locally, you can use [pre-commit](https://github.com/pre-commit/pre-commit).
@@ -122,16 +151,6 @@ Run with:
 docker compose up -d --build
 docker exec readthedocs make all
 ```
-
-## Pull Requests
-
-Here are some general guidelines for submitting a pull request:
-
-- If the changes are trivial, just briefly explain the changes in the PR description.
-- Otherwise, please submit an issue describing the proposed change prior to submitting a PR.
-- Add unit test coverage for your changes
-- If your changes add or modify user-facing behavior, add documentation describing those changes
-- Submit the PR to be merged into the `main` branch.
 
 ## Notes for Maintainers
 

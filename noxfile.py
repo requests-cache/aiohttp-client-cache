@@ -39,7 +39,7 @@ def install_deps(session):
     )
 
 
-@nox.session(python=['3.9', '3.10', '3.11', '3.12', '3.13', '3.14'])
+@nox.session(python=['3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15'])
 def test(session):
     """Run tests for a specific python version"""
     test_paths = session.posargs or [UNIT_TESTS]
