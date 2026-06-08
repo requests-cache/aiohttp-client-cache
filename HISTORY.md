@@ -1,5 +1,9 @@
 # History
 
+## Not released
+
+- Added `_ExpandedRequestOptions.refresh` to satisfy Pyright type checking.
+
 ## 0.14.3 (2026-01-07)
 
 - Fix compatibility with aiosqlite 0.22.1+

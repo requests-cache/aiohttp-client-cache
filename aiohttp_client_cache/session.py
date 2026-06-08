@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 
     class _ExpandedRequestOptions(_RequestOptions, total=False):
         expire_after: ExpirationTime
+        refresh: bool
 
     MIXIN_BASE = ClientSession
 
