@@ -1,12 +1,10 @@
 # Containers needed to test all backend services locally
 services:
   httpbin:
-    image: kennethreitz/httpbin
+    image: mccutchen/go-httpbin
     container_name: httpbin
     ports:
-      # Use an unprivileged port to support running the Docker daemon as a non-root user (Rootless mode).
-      # See https://docs.docker.com/engine/security/rootless/#networking-errors
-      - ${HTTPBIN_CUSTOM_PORT:-8080}:80
+      - ${HTTPBIN_CUSTOM_PORT:-8080}:8080
 
   httpbin-custom:
     container_name: httpbin-custom
