@@ -3,6 +3,7 @@ from __future__ import annotations
 from http.cookies import SimpleCookie
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 from aiohttp import ClientResponse
 from yarl import URL
@@ -13,7 +14,8 @@ from aiohttp_client_cache.session import CachedSession, CacheMixin, ClientSessio
 
 pytestmark = [pytest.mark.asyncio]
 
-
+aiohttp_314 = tuple(int(x) for x in aiohttp.__version__.split('.')[:2]) >= (3, 14)
+extra_args = {'stream_writer': MagicMock()} if aiohttp_314 else {}
 FakeCachedResponse = CachedResponse(method='GET', reason='OK', status=200, url='url', version='1.1')
 FakeClientResponse = ClientResponse(
     method='GET',
@@ -26,6 +28,7 @@ FakeClientResponse = ClientResponse(
     # loop=asyncio.get_event_loop(),
     loop=MagicMock(),
     session=None,  # type: ignore[arg-type]
+    **extra_args,  # type: ignore[arg-type]
 )
 
 
