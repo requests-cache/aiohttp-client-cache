@@ -26,10 +26,10 @@ jobs:
           - '3.10'
           - '3.9'
     services:
-      nginx:
-        image: kennethreitz/httpbin
+      httpbin:
+        image: mccutchen/go-httpbin
         ports:
-          - 8080:80
+          - 8080:8080
 
     steps:
       # Install dependencies, with caching

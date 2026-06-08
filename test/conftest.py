@@ -13,7 +13,6 @@ ALL_METHODS = ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
 CACHE_NAME = 'pytest_cache'
 HTTPBIN_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 HTTPBIN_FORMATS = [
-    'brotli',
     'deflate',
     'deny',
     'encoding/utf8',

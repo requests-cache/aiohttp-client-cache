@@ -291,7 +291,7 @@ class BaseBackendTest:
             session.cookie_jar.clear()
             await session.get(httpbin('cookies/set?test_cookie=value'))
 
-        cookies = session.cookie_jar.filter_cookies(httpbin())
+        cookies = session.cookie_jar.filter_cookies(httpbin('cookies'))
         assert cookies['test_cookie'].value == 'value'
 
     async def test_autoclose(self):
