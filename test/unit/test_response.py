@@ -12,7 +12,7 @@ from aiohttp_client_cache.cache_control import utcnow
 from aiohttp_client_cache.response import CachedResponse, RequestInfo, UnsupportedExpiresError
 
 
-async def get_test_response(client_factory, url='/', headers=None, **kwargs):
+async def fetch_test_response(client_factory, url='/', headers=None, **kwargs):
     app = web.Application()
     app.router.add_route('GET', '/valid_url', mock_handler)
     app.router.add_route('GET', '/json', json_mock_handler)
@@ -50,7 +50,7 @@ async def null_mock_handler(request):
 
 
 async def test_basic_attrs(aiohttp_client):
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
 
     assert response.method == 'GET'
     assert response.reason == 'Not Found'
@@ -68,7 +68,7 @@ async def test_is_expired(mock_utcnow, aiohttp_client):
     mock_utcnow.return_value = utcnow()
     expires = utcnow() + timedelta(seconds=0.02)
 
-    response = await get_test_response(aiohttp_client, expires=expires)
+    response = await fetch_test_response(aiohttp_client, expires=expires)
 
     assert response.expires == expires
     assert response.is_expired is False
@@ -79,25 +79,25 @@ async def test_is_expired(mock_utcnow, aiohttp_client):
 
 async def test_is_expired__invalid(aiohttp_client):
     with pytest.raises(AttributeError, match="'str' object has no attribute 'tzinfo'"):
-        await get_test_response(aiohttp_client, expires='asdf')
+        await fetch_test_response(aiohttp_client, expires='asdf')
     with pytest.raises(UnsupportedExpiresError, match='Expected a naive datetime'):
-        await get_test_response(aiohttp_client, expires=datetime.now(timezone.utc))
+        await fetch_test_response(aiohttp_client, expires=datetime.now(timezone.utc))
 
 
 async def test_content_disposition(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/valid_url')
+    response = await fetch_test_response(aiohttp_client, '/valid_url')
     assert response.content_disposition.type == 'attachment'
     assert response.content_disposition.filename == 'img.jpg'
     assert response.content_disposition.parameters.get('name') == 'test-param'
 
 
 async def test_encoding(aiohttp_client):
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
     assert response.encoding == response.get_encoding() == 'utf-8'
 
 
 async def test_request_info(aiohttp_client):
-    response = await get_test_response(
+    response = await fetch_test_response(
         aiohttp_client, '/valid_url', headers={'Custom-Header': 'value'}
     )
     request_info = response.request_info
@@ -110,7 +110,7 @@ async def test_request_info(aiohttp_client):
 
 
 async def test_headers(aiohttp_client):
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
     raw_headers = dict(response.raw_headers)
 
     assert b'Content-Type' in raw_headers and b'Content-Length' in raw_headers
@@ -121,7 +121,7 @@ async def test_headers(aiohttp_client):
 
 
 async def test_headers__mixin_attributes(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/valid_url')
+    response = await fetch_test_response(aiohttp_client, '/valid_url')
     assert response.charset == 'utf-8'
     assert response.content_length == 12
     assert response.content_type == 'text/plain'
@@ -129,7 +129,7 @@ async def test_headers__mixin_attributes(aiohttp_client):
 
 async def test_headers__case_insensitive_multidict(aiohttp_client):
     """Headers should be case-insensitive and allow multiple values"""
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
     response.raw_headers += ((b'Cache-Control', b'public'),)
     response.raw_headers += ((b'Cache-Control', b'max-age=360'),)
 
@@ -140,7 +140,7 @@ async def test_headers__case_insensitive_multidict(aiohttp_client):
 
 
 async def test_links(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/valid_url')
+    response = await fetch_test_response(aiohttp_client, '/valid_url')
     expected_links = [('preconnect', [('rel', 'preconnect'), ('url', 'https://example.com')])]
     assert response._links == expected_links
     assert isinstance(response.links, MultiDictProxy)
@@ -153,52 +153,52 @@ async def test_history(aiohttp_client):
 
 
 async def test_json(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/json')
+    response = await fetch_test_response(aiohttp_client, '/json')
     assert await response.json() == {'key': 'value'}
 
 
 async def test_json__empty_content(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/empty_content')
+    response = await fetch_test_response(aiohttp_client, '/empty_content')
     assert await response.json() is None
 
 
 async def test_json__null_content(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/null_content')
+    response = await fetch_test_response(aiohttp_client, '/null_content')
     assert await response.json() is None
 
 
 async def test_json__non_json_content(aiohttp_client):
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
     with pytest.raises(ValueError):
         await response.json()
 
 
 async def test_raise_for_status__200(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/valid_url')
+    response = await fetch_test_response(aiohttp_client, '/valid_url')
     assert not response.raise_for_status()
     assert response.ok is True
 
 
 async def test_raise_for_status__404(aiohttp_client):
-    response = await get_test_response(aiohttp_client, '/invalid_url')
+    response = await fetch_test_response(aiohttp_client, '/invalid_url')
     with pytest.raises(ClientResponseError):
         response.raise_for_status()
     assert response.ok is False
 
 
 async def test_text(aiohttp_client):
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
     assert await response.text() == '404: Not Found'
 
 
 async def test_read(aiohttp_client):
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
     assert await response.read() == b'404: Not Found'
 
 
 async def test_no_ops(aiohttp_client):
     # Just make sure CachedResponse doesn't explode if extra ClientResponse methods are called
-    response = await get_test_response(aiohttp_client)
+    response = await fetch_test_response(aiohttp_client)
 
     await response.start()
     response.release()
