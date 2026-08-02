@@ -72,8 +72,7 @@ class MongoDBCache(BaseCache):
         await self.collection.delete_many(spec)
 
     async def delete(self, key: str):
-        spec = {'_id': key}
-        await self.collection.delete_one(spec)
+        await self.collection.delete_one({'_id': key})
 
     async def keys(self) -> AsyncIterable[str]:
         async for doc in self.collection.find({}, {'_id': True}):
@@ -96,8 +95,7 @@ class MongoDBCache(BaseCache):
             yield doc['data']
 
     async def write(self, key: str, item: ResponseOrKey):
-        update = {'$set': {'data': item}}
-        await self.collection.update_one({'_id': key}, update, upsert=True)
+        await self.collection.update_one({'_id': key}, {'$set': {'data': item}}, upsert=True)
 
 
 class MongoDBPickleCache(MongoDBCache):
