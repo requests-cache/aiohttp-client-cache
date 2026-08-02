@@ -46,7 +46,11 @@ def create_key(
     return key.hexdigest()
 
 
-def filter_ignored_params(data, ignored_params: Iterable[str]):
+def filter_ignored_params(
+    data,
+    # Always a set internally, but keep the public utility parameter as-is to avoid breaking changes.
+    ignored_params: Iterable[str],
+):
     """Remove any ignored params from an object, if it's dict-like"""
     if not isinstance(data, Mapping) or not ignored_params:
         return data
