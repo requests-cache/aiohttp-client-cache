@@ -37,7 +37,7 @@ def extend_signature(super_function: Callable, *extra_functions: Callable) -> Ca
     def wrapper(target_function: Callable):
         try:
             target_function = copy_docstrings(target_function, super_function, *extra_functions)
-            revision = get_combined_revision(target_function, super_function, *extra_functions)
+            revision = merge_signatures(target_function, super_function, *extra_functions)
             return revision(target_function)
         except Exception as e:
             logger.debug(e)
@@ -46,7 +46,7 @@ def extend_signature(super_function: Callable, *extra_functions: Callable) -> Ca
     return wrapper
 
 
-def get_combined_revision(*functions: Callable):
+def merge_signatures(*functions: Callable):
     """Combine the parameters of all revisions into a single revision"""
     import forge
 
