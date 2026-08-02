@@ -11,7 +11,7 @@ from aiohttp_client_cache.backends import CacheBackend, DictCache, get_placehold
 TEST_URL = 'https://test.com'
 
 
-def get_mock_response(**kwargs):
+def make_mock_cached_response(**kwargs):
     response_kwargs = {
         'url': TEST_URL,
         'method': 'GET',
@@ -40,7 +40,7 @@ def test_get_placeholder_backend():
 
 async def test_get_response__cache_response_hit():
     cache = CacheBackend()
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -50,7 +50,7 @@ async def test_get_response__cache_response_hit():
 async def test_get_response__cache_redirect_hit():
     # Set up a cache with a couple cached items and a redirect
     cache = CacheBackend()
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
     await cache.responses.write('request-key', mock_response)
     await cache.redirects.write('redirect-key', 'request-key')
 
@@ -71,7 +71,7 @@ async def test_get_response__cache_miss(mock_delete):
 @patch.object(CacheBackend, 'is_cacheable', return_value=False)
 async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
     cache = CacheBackend()
-    mock_response = get_mock_response(is_expired=True)
+    mock_response = make_mock_cached_response(is_expired=True)
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -85,7 +85,7 @@ async def test_get_response__cache_expired(mock_is_cacheable, mock_delete):
 async def test_get_response__cache_invalid(mock_read, mock_delete, error_type):
     cache = CacheBackend()
     mock_read.side_effect = error_type
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -99,7 +99,7 @@ async def test_get_response__quiet_serde_error(mock_read):
     missing
     """
     cache = CacheBackend()
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
     await cache.responses.write('request-key', mock_response)
 
     response = await cache.get_response('request-key')
@@ -108,7 +108,7 @@ async def test_get_response__quiet_serde_error(mock_read):
 
 async def test_save_response():
     cache = CacheBackend()
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
     mock_response.history = [MagicMock(method='GET', url='test')]
     redirect_key = cache.create_key('GET', 'test')
 
@@ -121,7 +121,7 @@ async def test_save_response():
 async def test_save_response__manual_save():
     """Manually save a response with no cache key provided"""
     cache = CacheBackend()
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
 
     await cache.save_response(mock_response)
     cached_response = [r async for r in cache.responses.values()][0]
@@ -140,7 +140,7 @@ async def test_clear():
 
 async def test_delete():
     cache = CacheBackend()
-    mock_response = get_mock_response()
+    mock_response = make_mock_cached_response()
     mock_response.history = [MagicMock(method='GET', url='test')]
     redirect_key = cache.create_key('GET', 'test')
 
@@ -155,8 +155,8 @@ async def test_delete():
 
 async def test_delete_expired_responses():
     cache = CacheBackend()
-    await cache.responses.write('request-key-1', get_mock_response(is_expired=False))
-    await cache.responses.write('request-key-2', get_mock_response(is_expired=True))
+    await cache.responses.write('request-key-1', make_mock_cached_response(is_expired=False))
+    await cache.responses.write('request-key-2', make_mock_cached_response(is_expired=True))
 
     assert await cache.responses.size() == 2
     await cache.delete_expired_responses()
@@ -165,7 +165,7 @@ async def test_delete_expired_responses():
 
 async def test_delete_url():
     cache = CacheBackend()
-    mock_response = await CachedResponse.from_client_response(get_mock_response())
+    mock_response = await CachedResponse.from_client_response(make_mock_cached_response())
     cache_key = cache.create_key('GET', TEST_URL, params={'param': 'value'})
 
     await cache.responses.write(cache_key, mock_response)
@@ -176,7 +176,7 @@ async def test_delete_url():
 
 async def test_has_url():
     cache = CacheBackend()
-    mock_response = await CachedResponse.from_client_response(get_mock_response())
+    mock_response = await CachedResponse.from_client_response(make_mock_cached_response())
     cache_key = cache.create_key('GET', TEST_URL, params={'param': 'value'})
 
     await cache.responses.write(cache_key, mock_response)
@@ -204,7 +204,7 @@ async def test_create_key(mock_create_key):
 async def test_get_urls():
     cache = CacheBackend()
     for i in range(7):
-        mock_response = get_mock_response(url=f'https://test.com/{i}')
+        mock_response = make_mock_cached_response(url=f'https://test.com/{i}')
         await cache.responses.write(f'request-key-{i}', mock_response)
 
     urls = {url async for url in cache.get_urls()}
@@ -223,7 +223,7 @@ async def test_get_urls():
     ],
 )
 async def test_is_cacheable(method, status, disabled, expired, filter_return, expected_result):
-    mock_response = get_mock_response(
+    mock_response = make_mock_cached_response(
         method=method,
         status=status,
         is_expired=expired,
@@ -251,7 +251,9 @@ async def test_is_cacheable_inspect(method, status, disabled, expired, body, exp
 
         return json_resp['success']
 
-    mock_response = get_mock_response(method=method, status=status, is_expired=expired, _body=body)
+    mock_response = make_mock_cached_response(
+        method=method, status=status, is_expired=expired, _body=body
+    )
 
     cache = CacheBackend()
     cache.filter_fn = filter
