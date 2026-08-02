@@ -164,7 +164,7 @@ class CacheBackend:
         # Attempt to fetch the cached response
         logger.debug(f'Attempting to get cached response for key: {key}')
         try:
-            response = await self.responses.read(key) or await self._get_redirect_response(str(key))
+            response = await self.responses.read(key) or await self._get_redirect_response(key)
             # Catch "quiet" deserialization errors due to upgrading attrs
             if response is not None:
                 assert response.method  # type: ignore
