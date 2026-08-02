@@ -12,13 +12,13 @@ from test.integration import BaseBackendTest, BaseStorageTest
 def is_db_running():
     """Test if a Redis server is running locally on the default port"""
 
-    async def get_db_info():
+    async def probe_redis():
         client = await from_url(DEFAULT_ADDRESS)
         await client.info()
         await client.aclose()  # type: ignore[attr-defined]
 
     try:
-        asyncio.run(get_db_info())
+        asyncio.run(probe_redis())
         return True
     except OSError as e:
         print(e)
