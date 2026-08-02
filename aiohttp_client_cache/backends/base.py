@@ -83,6 +83,8 @@ class CacheBackend:
         self.responses: BaseCache = DictCache()
 
         self.include_headers = include_headers
+
+        # Converted to `set` for fast `in` checks inside `filter_ignored_params`.
         self.ignored_params = set(ignored_params or [])
 
     @property
