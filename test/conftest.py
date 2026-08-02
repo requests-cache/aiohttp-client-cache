@@ -1,13 +1,8 @@
 import logging
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from datetime import datetime
 from os import getenv
-from tempfile import NamedTemporaryFile
 
-import pytest
-
-from aiohttp_client_cache import CachedResponse, CachedSession, SQLiteBackend
+from aiohttp_client_cache import CachedResponse
 
 ALL_METHODS = ['GET', 'HEAD', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
 CACHE_NAME = 'pytest_cache'
@@ -51,22 +46,6 @@ def httpbin_custom(path: str = ''):
     """Get the url for a local httpbin_custom instance"""
     base_url = 'http://localhost:8181/'
     return base_url + path
-
-
-@pytest.fixture(scope='function')
-async def tempfile_session():
-    """:py:func:`.get_tempfile_session` as a pytest fixture"""
-    async with get_tempfile_session() as session:
-        yield session
-
-
-@asynccontextmanager
-async def get_tempfile_session(**kwargs) -> AsyncIterator[CachedSession]:
-    """Get a CachedSession using a temporary SQLite db"""
-    with NamedTemporaryFile(suffix='.db') as temp:
-        cache = SQLiteBackend(cache_name=temp.name, allowed_methods=ALL_METHODS, **kwargs)
-        async with CachedSession(cache=cache) as session:
-            yield session
 
 
 def assert_delta_approx_equal(dt1: datetime, dt2: datetime, target_delta, threshold_seconds=2):
