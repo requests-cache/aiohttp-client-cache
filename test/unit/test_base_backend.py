@@ -60,9 +60,8 @@ async def test_get_response__cache_redirect_hit():
 
 @patch.object(CacheBackend, 'delete')
 async def test_get_response__cache_miss(mock_delete):
-    cache = CacheBackend()
 
-    response_1 = await cache.get_response('nonexistent-key')
+    response_1 = await CacheBackend().get_response('nonexistent-key')
     assert response_1 is None
     mock_delete.assert_not_called()
 
