@@ -398,7 +398,7 @@ class DictCache(BaseCache, UserDict):
         except KeyError:
             pass
 
-    async def clear(self):
+    async def clear(self):  # type: ignore[override]
         self.data.clear()
 
     async def contains(self, key: str) -> bool:
