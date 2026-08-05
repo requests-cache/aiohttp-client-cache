@@ -194,6 +194,22 @@ async def test_mixin(mock_request):
     assert mock_request.called is False
 
 
+@patch.object(ClientSession, '_request', return_value=FakeClientResponse)
+async def test_session__locks_do_not_leak(mock_request):
+    """Locks are only needed while requests are actively contending for a cache key, so distinct
+    keys should not accumulate indefinitely.
+    """
+    cache = MagicMock(spec=CacheBackend)
+    cache.request.return_value = None
+    cache.create_key.side_effect = lambda method, url, **kwargs: str(url)
+
+    async with CachedSession(cache=cache) as session:
+        for i in range(1000):
+            await session.get(f'http://test.url/{i}')
+
+        assert len(session._locks) == 0
+
+
 @patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
 async def test_session__cache_include_headers(mock_request):
     async with CachedSession(cache=CacheBackend(include_headers=True)) as session:
