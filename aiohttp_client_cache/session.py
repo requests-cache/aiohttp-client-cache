@@ -5,10 +5,10 @@ from __future__ import annotations
 import sys
 import warnings
 from asyncio import Lock
-from collections import defaultdict
 from contextlib import asynccontextmanager
 from logging import getLogger
 from typing import TYPE_CHECKING, cast
+from weakref import WeakValueDictionary
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
@@ -61,7 +61,8 @@ class CacheMixin(MIXIN_BASE):
         **kwargs,
     ):
         self.cache = cache or CacheBackend()
-        self._locks: dict[str, Lock] = defaultdict(Lock)
+        # Drops a key's Lock as soon as nothing is contending for it
+        self._locks: WeakValueDictionary[str, Lock] = WeakValueDictionary()
         self._null_lock = nullcontext()
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
@@ -89,7 +90,10 @@ class CacheMixin(MIXIN_BASE):
         if actions.skip_read:
             lock: Lock | nullcontext = self._null_lock
         else:
-            lock = self._locks[key]
+            try:
+                lock = self._locks[key]
+            except KeyError:
+                lock = self._locks[key] = Lock()
 
         async with lock:
             response = await self.cache.request(actions)
