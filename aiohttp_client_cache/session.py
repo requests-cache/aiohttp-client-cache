@@ -5,8 +5,8 @@ from __future__ import annotations
 import sys
 import warnings
 from asyncio import Lock
+from collections import defaultdict
 from contextlib import asynccontextmanager
-from functools import lru_cache
 from logging import getLogger
 from typing import TYPE_CHECKING, cast
 
@@ -49,11 +49,6 @@ else:
     from typing_extensions import Self
 
 
-@lru_cache(maxsize=16384)
-def _get_lock(_: int, __: str) -> Lock:
-    return Lock()
-
-
 class CacheMixin(MIXIN_BASE):
     """A mixin class for :py:class:`aiohttp.ClientSession` that adds caching support"""
 
@@ -66,6 +61,7 @@ class CacheMixin(MIXIN_BASE):
         **kwargs,
     ):
         self.cache = cache or CacheBackend()
+        self._locks: dict[str, Lock] = defaultdict(Lock)
         self._null_lock = nullcontext()
 
         # Pass along any valid kwargs for ClientSession (or custom session superclass)
@@ -93,7 +89,7 @@ class CacheMixin(MIXIN_BASE):
         if actions.skip_read:
             lock: Lock | nullcontext = self._null_lock
         else:
-            lock = _get_lock(id(self), key)
+            lock = self._locks[key]
 
         async with lock:
             response = await self.cache.request(actions)
