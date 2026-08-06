@@ -336,7 +336,7 @@ def test_split_kv_directive(value, expected_output) -> None:
     ],
 )
 def test_convert_to_utc_naive(dt: datetime, dt_utc: datetime) -> None:
-    assert convert_to_utc_naive(dt) == pytest.approx(dt_utc)
+    assert convert_to_utc_naive(dt) == dt_utc
 
 
 @pytest.mark.parametrize(
