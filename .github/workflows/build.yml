@@ -50,7 +50,7 @@ jobs:
       - uses: supercharge/redis-github-action@v2
         with:
           redis-version: '6'
-      - uses: rrainn/dynamodb-action@36eaff1005b37a22258716d4280f9e0377b834aa # v4.0.0
+      - uses: rrainn/dynamodb-action@6a3badf0a22ac70eeff82cc9f4f263b0e5ddfaf7 # v5.0.0
       - name: Run custom test server
         run: |
           cd test && uv run gunicorn -D -c server/gunicorn-cfg.py server:app
