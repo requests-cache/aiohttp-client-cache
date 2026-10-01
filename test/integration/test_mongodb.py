@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
@@ -30,10 +28,8 @@ class TestMongoDBCache(BaseStorageTest):
     storage_class = MongoDBCache
 
     async def test_connection_kwargs(self):
-        loop = asyncio.get_running_loop()
-        async with self.init_cache(self.storage_class, host='127.0.0.1', io_loop=loop) as cache:
-            assert cache.connection.address == ('127.0.0.1', 27017)
-            assert cache.connection.io_loop is loop
+        async with self.init_cache(self.storage_class, host='127.0.0.1') as cache:
+            assert await cache.connection.address == ('127.0.0.1', 27017)
 
     async def test_values_many(self):
         # If some entries are missing the "data" field for some reason, they

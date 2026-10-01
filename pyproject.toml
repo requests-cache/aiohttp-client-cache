@@ -26,10 +26,12 @@ dependencies = [
 
 [project.optional-dependencies]
 # Optional backend dependencies
-all         = ["aioboto3>=9.0", "aiobotocore>=2.0", "aiofiles>=0.6.0", "aiosqlite>=0.20", "motor>=3.1", "redis>=4.2"]
+all         = ["aioboto3>=9.0", "aiobotocore>=2.0", "aiofiles>=0.6.0", "aiosqlite>=0.20", "pymongo>=4.17.0", "redis>=4.2"]
 dynamodb    = ["aioboto3>=9.0", "aiobotocore>=2.0"]
 filesystem  = ["aiofiles>=0.6.0", "aiosqlite>=0.20"]
-mongodb     = ["motor>=3.1"]
+mongodb     = [
+    "pymongo>=4.17.0",
+]
 redis       = ["redis>=4.2"]
 sqlite      = ["aiosqlite>=0.20"]
 
