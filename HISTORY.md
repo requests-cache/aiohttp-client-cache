@@ -5,6 +5,7 @@
 - Added `_ExpandedRequestOptions.refresh` to satisfy Pyright type checking.
 - Revert `lru_cache` for request lock to avoid binding to multiple event loops (`RuntimeError: ...Lock is bound to a different event loop`)
 - Replaced deprecated `motor` with PyMongo Async.
+- Close the MongoDB client on `close()` (or `autoclose=True`), unless a `connection` was provided.
 
 ## 0.14.3 (2026-01-07)
 

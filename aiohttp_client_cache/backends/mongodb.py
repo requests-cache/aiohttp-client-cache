@@ -54,9 +54,14 @@ class MongoDBCache(BaseCache):
         connection_kwargs = get_valid_kwargs(
             AsyncMongoClient.__init__, kwargs, accept_varkwargs=False
         )
+        self._owns_connection = connection is None
         self.connection = connection or AsyncMongoClient(**connection_kwargs)
         self.db = self.connection[db_name]
         self.collection = self.db[collection_name]
+
+    async def close(self):
+        if self._owns_connection:
+            await self.connection.close()
 
     async def clear(self):
         await self.collection.drop()
