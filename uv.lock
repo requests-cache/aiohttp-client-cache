@@ -486,7 +486,7 @@ dev = [
     { name = "async-timeout", specifier = ">=4.0" },
     { name = "brotli", specifier = ">=1.0" },
     { name = "faker", specifier = ">=30.0" },
-    { name = "nox", specifier = ">=2022.11" },
+    { name = "nox", specifier = ">=2026.4.10" },
     { name = "pre-commit", specifier = ">=4.2" },
     { name = "pytest", specifier = ">=8.4" },
     { name = "pytest-aiohttp", specifier = ">=1.1" },
