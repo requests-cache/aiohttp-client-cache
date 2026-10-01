@@ -14,6 +14,7 @@ import pytest
 from async_timeout import timeout
 from itsdangerous.exc import BadSignature
 from itsdangerous.serializer import Serializer
+from yarl import URL
 
 from aiohttp_client_cache import CacheBackend, CachedSession
 from aiohttp_client_cache.cache_control import utcnow
@@ -291,7 +292,7 @@ class BaseBackendTest:
             session.cookie_jar.clear()
             await session.get(httpbin('cookies/set?test_cookie=value'))
 
-        cookies = session.cookie_jar.filter_cookies(httpbin('cookies'))
+        cookies = session.cookie_jar.filter_cookies(URL(httpbin('cookies')))
         assert cookies['test_cookie'].value == 'value'
 
     async def test_autoclose(self):
