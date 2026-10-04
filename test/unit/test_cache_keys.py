@@ -5,6 +5,8 @@ This just contains tests for some extra edge cases not covered elsewhere.
 from __future__ import annotations
 
 from copy import copy
+from decimal import Decimal
+from json import dumps
 
 import pytest
 from multidict import MultiDict
@@ -62,3 +64,67 @@ def test_encode_request_body(body, field):
     """Request body should be handled correctly whether it's a dict or already serialized"""
     cache_key = create_key('GET', 'https://example.com', **{field: body})
     assert isinstance(cache_key, str)
+
+
+@pytest.mark.parametrize(
+    'body_1, body_2',
+    [
+        ({'a': 'b&c=d'}, {'a': 'b', 'c': 'd'}),
+        ({'a=b': 'c'}, {'a': 'b=c'}),
+        ({'a': 1}, {'a': '1'}),
+        ({'a': True}, {'a': 'True'}),
+        ({'a': None}, {'a': 'None'}),
+        ({'a': {'b': 1}}, {'a': "{'b': 1}"}),
+        ({'a': [1]}, {'a': '[1]'}),
+        ([1], '[1]'),
+        (False, 0),
+        ({}, []),
+        ({}, None),
+        ('', False),
+    ],
+)
+def test_json_cache_keys_distinguish_bodies(body_1, body_2):
+    assert create_key('POST', 'https://example.com', json=body_1) != create_key(
+        'POST', 'https://example.com', json=body_2
+    )
+
+
+def test_json_cache_keys_preserve_object_order():
+    assert create_key('POST', 'https://example.com', json={'a': 1, 'b': 2}) == create_key(
+        'POST', 'https://example.com', json={'b': 2, 'a': 1}
+    )
+
+
+def test_json_cache_keys_preserve_ignored_parameters():
+    body = {'ignored': 'first', 'value': 1}
+    assert create_key(
+        'POST', 'https://example.com', json=body, ignored_params=['ignored']
+    ) == create_key(
+        'POST',
+        'https://example.com',
+        json={'value': 1, 'ignored': 'second'},
+        ignored_params=['ignored'],
+    )
+    assert body == {'ignored': 'first', 'value': 1}
+
+
+def test_json_cache_keys_accept_mixed_object_keys():
+    assert isinstance(create_key('POST', 'https://example.com', json={1: 'a', 'b': 2}), str)
+
+
+@pytest.mark.parametrize('key, alias', [(False, 'false'), (True, 'true'), (None, 'null')])
+def test_json_cache_keys_preserve_aliased_key_order(key, alias):
+    assert create_key('POST', 'https://example.com', json={key: 1, alias: 2}) != create_key(
+        'POST', 'https://example.com', json={alias: 2, key: 1}
+    )
+
+
+def test_json_cache_keys_use_custom_serializer():
+    def serialize(body):
+        return dumps(body, default=float)
+
+    decimal_key = create_key(
+        'POST', 'https://example.com', json={'a': Decimal('1.5')}, json_serialize=serialize
+    )
+    assert decimal_key == create_key('POST', 'https://example.com', json={'a': 1.5})
+    assert decimal_key != create_key('POST', 'https://example.com', json={'a': '1.5'})

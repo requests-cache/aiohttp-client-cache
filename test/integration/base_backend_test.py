@@ -6,6 +6,8 @@ import asyncio
 import pickle
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from decimal import Decimal
+from json import dumps
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
@@ -66,6 +68,42 @@ class BaseBackendTest:
                 response_1 = await session.request(method, url, **{field: params})
                 response_2 = await session.request(method, url, **{field: params})
                 assert not from_cache(response_1) and from_cache(response_2)
+
+    @pytest.mark.parametrize(
+        'body_1, body_2',
+        [
+            ({'a': 'b&c=d'}, {'a': 'b', 'c': 'd'}),
+            ({'a=b': 'c'}, {'a': 'b=c'}),
+            ({'a': 1}, {'a': '1'}),
+            ({'a': {'b': 1}}, {'a': "{'b': 1}"}),
+        ],
+    )
+    async def test_json_bodies_are_cached_separately(self, body_1, body_2):
+        url = httpbin('post')
+        async with self.init_session() as session:
+            for body in (body_1, body_2):
+                response = await session.post(url, json=body)
+                assert not from_cache(response)
+                assert (await response.json())['json'] == body
+
+                cached_response = await session.post(url, json=body)
+                assert from_cache(cached_response)
+                assert (await cached_response.json())['json'] == body
+
+    async def test_json_custom_serializer(self):
+        def serialize(body):
+            return dumps(body, default=float)
+
+        url = httpbin('post')
+        async with self.init_session(json_serialize=serialize) as session:
+            response = await session.post(url, json={'a': Decimal('1.5')})
+            assert (await response.json())['json'] == {'a': 1.5}
+
+            cached_response = await session.post(url, json={'a': 1.5})
+            assert from_cache(cached_response)
+            string_response = await session.post(url, json={'a': '1.5'})
+            assert not from_cache(string_response)
+            assert (await string_response.json())['json'] == {'a': '1.5'}
 
     @pytest.mark.parametrize('method', HTTPBIN_METHODS)
     @pytest.mark.parametrize('field', ['params', 'data', 'json', 'headers'])
