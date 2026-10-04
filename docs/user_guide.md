@@ -80,6 +80,12 @@ the same data multiple times:
 >>>     await session.post('http://httpbin.org/post', json={'param': 'value'})
 ```
 
+JSON values retain their types in cache keys. For example, `{'value': 1}` and
+`{'value': '1'}` are cached separately. The session's `json_serialize` function is
+used for these keys. Top-level field order is ignored for objects with only string keys.
+
+After upgrading, requests with JSON bodies won't reuse cache entries made by older versions.
+
 ### Status Codes
 
 By default, only responses with a 200 status code are cached. To cache additional status codes,

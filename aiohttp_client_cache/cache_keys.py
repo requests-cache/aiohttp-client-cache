@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from json import dumps
 from typing import Any, Union
 
 from aiohttp.typedefs import StrOrURL
@@ -23,6 +24,7 @@ def create_key(
     headers: dict | None = None,
     include_headers: bool = False,
     ignored_params: Iterable[str] | None = None,
+    json_serialize: Callable[[Any], str] = dumps,
     **kwargs,
 ) -> str:
     """Create a unique cache key based on request details"""
@@ -40,7 +42,7 @@ def create_key(
     key.update(method.upper().encode())
     key.update(str(norm_url).encode())
     key.update(encode_dict(data))
-    key.update(encode_dict(json))
+    key.update(encode_json(json, json_serialize))
     if include_headers:
         key.update(encode_dict(headers))
     return key.hexdigest()
@@ -83,3 +85,15 @@ def encode_dict(data: Any) -> bytes:
         return str(data).encode()
     item_pairs = [f'{k}={v}' for k, v in sorted((data or {}).items())]
     return '&'.join(item_pairs).encode()
+
+
+def encode_json(data: Any, serializer: Callable[[Any], str] = dumps) -> bytes:
+    if data is None:
+        return b''
+    if isinstance(data, bytes):
+        return data
+    if isinstance(data, Mapping):
+        data = dict(data)
+        if all(isinstance(key, str) for key in data):
+            data = dict(sorted(data.items()))
+    return serializer(data).encode()
