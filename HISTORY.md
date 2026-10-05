@@ -2,6 +2,8 @@
 
 ## Not released
 
+- Fixed cache key collisions between distinct JSON request bodies. Cache keys now use the
+  configured JSON serializer, including bytes serializers.
 - Added `_ExpandedRequestOptions.refresh` to satisfy Pyright type checking.
 - Revert `lru_cache` for request lock to avoid binding to multiple event loops (`RuntimeError: ...Lock is bound to a different event loop`)
 - Replaced deprecated `motor` with PyMongo Async.
