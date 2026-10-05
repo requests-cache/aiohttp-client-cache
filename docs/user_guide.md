@@ -81,8 +81,10 @@ the same data multiple times:
 ```
 
 JSON values retain their types in cache keys. For example, `{'value': 1}` and
-`{'value': '1'}` are cached separately. The session's `json_serialize` function is
-used for these keys. Top-level field order is ignored for objects with only string keys.
+`{'value': '1'}` are cached separately. Cache keys use `json_serialize_bytes` when
+configured on supported aiohttp versions. Otherwise, they use `json_serialize`.
+Every non-`None` JSON body is serialized, including bytes accepted by a custom serializer.
+Use `data=` for raw bodies. Top-level field order is ignored for objects with only string keys.
 
 After upgrading, requests with JSON bodies won't reuse cache entries made by older versions.
 

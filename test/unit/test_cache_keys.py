@@ -58,10 +58,18 @@ def test_encode_duplicate_params(url, params):
     )
 
 
-@pytest.mark.parametrize('field', ['data', 'json'])
-@pytest.mark.parametrize('body', [{'foo': 'bar'}, '{"foo": "bar"}', b'{"foo": "bar"}'])
+@pytest.mark.parametrize(
+    'field, body',
+    [
+        ('data', {'foo': 'bar'}),
+        ('json', {'foo': 'bar'}),
+        ('data', '{"foo": "bar"}'),
+        ('json', '{"foo": "bar"}'),
+        ('data', b'{"foo": "bar"}'),
+    ],
+)
 def test_encode_request_body(body, field):
-    """Request body should be handled correctly whether it's a dict or already serialized"""
+    """JSON values and raw data bodies should produce cache keys"""
     cache_key = create_key('GET', 'https://example.com', **{field: body})
     assert isinstance(cache_key, str)
 
