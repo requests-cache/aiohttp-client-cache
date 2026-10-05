@@ -82,9 +82,9 @@ class CacheMixin(MIXIN_BASE):
         # Attempt to fetch cached response
         headers = self._prepare_headers(kwargs.get('headers', None))
         kwargs['headers'] = headers
-        key = self.cache.create_key(
-            method, str_or_url, json_serialize=self.json_serialize, **kwargs
-        )
+        json_serializer = getattr(self, '_json_serialize_bytes', None)
+        json_serializer = self.json_serialize if json_serializer is None else json_serializer
+        key = self.cache.create_key(method, str_or_url, json_serialize=json_serializer, **kwargs)
         actions = self.cache.create_cache_actions(
             key, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
         )

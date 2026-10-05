@@ -24,7 +24,7 @@ def create_key(
     headers: dict | None = None,
     include_headers: bool = False,
     ignored_params: Iterable[str] | None = None,
-    json_serialize: Callable[[Any], str] = dumps,
+    json_serialize: Callable[[Any], str | bytes] = dumps,
     **kwargs,
 ) -> str:
     """Create a unique cache key based on request details"""
@@ -87,13 +87,12 @@ def encode_dict(data: Any) -> bytes:
     return '&'.join(item_pairs).encode()
 
 
-def encode_json(data: Any, serializer: Callable[[Any], str] = dumps) -> bytes:
+def encode_json(data: Any, serializer: Callable[[Any], str | bytes] = dumps) -> bytes:
     if data is None:
         return b''
-    if isinstance(data, bytes):
-        return data
     if isinstance(data, Mapping):
         data = dict(data)
         if all(isinstance(key, str) for key in data):
             data = dict(sorted(data.items()))
-    return serializer(data).encode()
+    serialized = serializer(data)
+    return serialized.encode() if isinstance(serialized, str) else serialized
