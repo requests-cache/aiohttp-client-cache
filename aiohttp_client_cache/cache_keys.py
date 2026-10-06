@@ -38,14 +38,24 @@ def create_key(
         json = filter_ignored_params(json, ignored_params)
 
     # Create a hash based on the normalized and filtered request
-    key = hashlib.sha256()
-    key.update(method.upper().encode())
-    key.update(str(norm_url).encode())
-    key.update(encode_dict(data))
-    key.update(encode_json(json, json_serialize))
+    components = [
+        method.upper().encode(),
+        str(norm_url).encode(),
+        encode_dict(data),
+        encode_json(json, json_serialize),
+    ]
     if include_headers:
-        key.update(encode_dict(headers))
-    return key.hexdigest()
+        components.append(encode_dict(headers))
+
+    return hash_parts(components).hex()
+
+
+def hash_parts(parts: Iterable[bytes | memoryview]) -> bytes:
+    key = hashlib.sha256()
+    for part in parts:
+        key.update(memoryview(part).nbytes.to_bytes(8, 'big'))
+        key.update(part)
+    return key.digest()
 
 
 def filter_ignored_params(
