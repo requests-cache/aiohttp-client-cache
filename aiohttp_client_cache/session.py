@@ -85,6 +85,10 @@ class CacheMixin(MIXIN_BASE):
         **kwargs,
     ) -> CachedResponse:
         """Wrapper around :py:meth:`.SessionClient._request` that adds caching"""
+        if not self.cache.is_method_allowed(method):
+            logger.debug(f'Method {method} is not cached; making request to {str_or_url}')
+            return set_response_defaults(await super()._request(method, str_or_url, **kwargs))
+
         # Attempt to fetch cached response
         headers = self._prepare_headers(kwargs.get('headers', None))
         kwargs['headers'] = headers
@@ -106,11 +110,6 @@ class CacheMixin(MIXIN_BASE):
         async with lock:
             response = await self.cache.request(actions)
 
-            def restore_cookies(r):
-                self.cookie_jar.update_cookies(r.cookies or {}, r.url)
-                for redirect in r.history:
-                    self.cookie_jar.update_cookies(redirect.cookies or {}, redirect.url)
-
             if actions.revalidate and response:
                 from_cache, new_response = await self._refresh_cached_response(
                     method, str_or_url, response, actions, **kwargs
@@ -118,12 +117,12 @@ class CacheMixin(MIXIN_BASE):
                 if not from_cache:
                     return set_response_defaults(new_response)
                 else:
-                    restore_cookies(new_response)
+                    self._restore_cookies(new_response)
                     return cast(CachedResponse, new_response)
 
             # Restore any cached cookies to the session
             if response:
-                restore_cookies(response)
+                self._restore_cookies(response)
                 return response
             # If the response was missing or expired, send and cache a new request
             else:
@@ -136,6 +135,11 @@ class CacheMixin(MIXIN_BASE):
                 if await self.cache.is_cacheable(new_response, actions):
                     await self.cache.save_response(new_response, actions.key, actions.expires)
                 return set_response_defaults(new_response)
+
+    def _restore_cookies(self, response: AnyResponse):
+        self.cookie_jar.update_cookies(response.cookies or {}, response.url)
+        for redirect in response.history:
+            self.cookie_jar.update_cookies(redirect.cookies or {}, redirect.url)
 
     async def _refresh_cached_response(
         self,
