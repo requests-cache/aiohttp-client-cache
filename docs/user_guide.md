@@ -83,6 +83,7 @@ the same data multiple times:
 JSON values retain their types in cache keys. For example, `{'value': 1}` and
 `{'value': '1'}` are cached separately. Cache keys use `json_serialize_bytes` when
 configured on supported aiohttp versions. Otherwise, they use `json_serialize`.
+To find or delete a cached JSON request, use {py:meth}`.CachedSession.has_url` and {py:meth}`.CachedSession.delete_url`, which create keys with the session's serializer.
 Every non-`None` JSON body is serialized, including bytes accepted by a custom serializer.
 Use `data=` for raw bodies. Top-level field order is ignored for objects with only string keys.
 

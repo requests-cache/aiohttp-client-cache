@@ -5,9 +5,10 @@ from __future__ import annotations
 import sys
 import warnings
 from asyncio import Lock
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from logging import getLogger
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from weakref import WeakValueDictionary
 
 from aiohttp import ClientSession
@@ -69,6 +70,11 @@ class CacheMixin(MIXIN_BASE):
         session_kwargs = get_valid_kwargs(super().__init__, {**kwargs, 'base_url': base_url})
         super().__init__(**session_kwargs)
 
+    @property
+    def _cache_json_serialize(self) -> Callable[[Any], str | bytes]:
+        json_serialize_bytes = getattr(self, '_json_serialize_bytes', None)
+        return self.json_serialize if json_serialize_bytes is None else json_serialize_bytes
+
     @extend_signature(ClientSession._request)
     async def _request(
         self,
@@ -82,9 +88,9 @@ class CacheMixin(MIXIN_BASE):
         # Attempt to fetch cached response
         headers = self._prepare_headers(kwargs.get('headers', None))
         kwargs['headers'] = headers
-        json_serializer = getattr(self, '_json_serialize_bytes', None)
-        json_serializer = self.json_serialize if json_serializer is None else json_serializer
-        key = self.cache.create_key(method, str_or_url, json_serialize=json_serializer, **kwargs)
+        key = self.cache.create_key(
+            method, str_or_url, json_serialize=self._cache_json_serialize, **kwargs
+        )
         actions = self.cache.create_cache_actions(
             key, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
         )
@@ -171,6 +177,21 @@ class CacheMixin(MIXIN_BASE):
                 'returning cached response'
             )
             return True, cached_response
+
+    async def delete_url(self, url: StrOrURL, method: str = 'GET', **kwargs: Any):
+        """Like :py:meth:`.CacheBackend.delete_url`, with keys created like this session's requests"""
+        await self.cache.delete_url(url, method, **self._cache_key_kwargs(**kwargs))
+
+    async def has_url(self, url: StrOrURL, method: str = 'GET', **kwargs: Any) -> bool:
+        """Like :py:meth:`.CacheBackend.has_url`, with keys created like this session's requests"""
+        return await self.cache.has_url(url, method, **self._cache_key_kwargs(**kwargs))
+
+    def _cache_key_kwargs(self, **kwargs: Any) -> dict[str, Any]:
+        return {
+            **kwargs,
+            'headers': self._prepare_headers(kwargs.get('headers')),
+            'json_serialize': self._cache_json_serialize,
+        }
 
     async def close(self):
         """Close both aiohttp connector and any backend connection(s) on contextmanager exit"""

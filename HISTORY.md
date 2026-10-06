@@ -5,6 +5,7 @@
 - Fixed cache key collisions between distinct JSON request bodies. Cache keys now use the
   configured JSON serializer, including bytes serializers.
 - Fixed cache key collisions between request bodies, such as `data=b'false'` and `json=False`, and between request bodies and headers. Existing cache entries won't be reused after upgrading.
+- Added `CachedSession.has_url()` and `CachedSession.delete_url()`, which create keys like the session's requests: with its JSON serializer and, with `include_headers`, its default headers.
 - Added `_ExpandedRequestOptions.refresh` to satisfy Pyright type checking.
 - Revert `lru_cache` for request lock to avoid binding to multiple event loops (`RuntimeError: ...Lock is bound to a different event loop`)
 - Replaced deprecated `motor` with PyMongo Async.
