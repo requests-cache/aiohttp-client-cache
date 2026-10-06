@@ -11,7 +11,7 @@
 
 ```{eval-rst}
 .. autoclass:: aiohttp_client_cache.session.CachedSession
-    :members: _request, disabled, delete_expired_responses
+    :members: _request, disabled, delete_expired_responses, has_url, delete_url
     :show-inheritance:
 ```
 

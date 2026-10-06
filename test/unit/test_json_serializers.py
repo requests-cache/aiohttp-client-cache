@@ -148,3 +148,32 @@ async def test_json_bytes_values_cache_separate_responses(aiohttp_server, serial
             assert await cached_response.json() == expected
 
     assert received == ['{"bytes": "false"}', 'false']
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'serializer_option',
+    [
+        'json_serialize',
+        pytest.param('json_serialize_bytes', marks=requires_bytes_serializer),
+    ],
+)
+async def test_session_url_helpers_use_session_json_serializer(aiohttp_server, serializer_option):
+    async def echo(request):
+        return web.Response(text=await request.text())
+
+    def serialize(body):
+        serialized = dumps(body, separators=(',', ':'))
+        return serialized.encode() if serializer_option == 'json_serialize_bytes' else serialized
+
+    app = web.Application()
+    app.router.add_post('/', echo)
+    server = await aiohttp_server(app)
+    url = server.make_url('/')
+    cache = CacheBackend(allowed_methods=['POST'])
+    async with CachedSession(cache=cache, **{serializer_option: serialize}) as session:
+        await session.post(url, json={'a': 1})
+        async with CachedSession(cache=cache):
+            assert await session.has_url(url, method='POST', json={'a': 1})
+            await session.delete_url(url, method='POST', json={'a': 1})
+        assert await cache.responses.size() == 0

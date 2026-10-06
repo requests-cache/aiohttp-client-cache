@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
-from aiohttp import ClientResponse
+from aiohttp import ClientResponse, web
 from yarl import URL
 
 from aiohttp_client_cache.backends import CacheBackend
@@ -222,3 +222,19 @@ async def test_session__cache_include_headers(mock_request):
         await session.get('https://test.com')
 
         assert mock_request.called is True
+
+
+async def test_session_url_helpers_include_session_headers(aiohttp_server):
+    async def ok(request):
+        return web.Response()
+
+    app = web.Application()
+    app.router.add_get('/', ok)
+    server = await aiohttp_server(app)
+    url = server.make_url('/')
+    cache = CacheBackend(include_headers=True)
+    async with CachedSession(cache=cache, headers={'X-Test': '1'}) as session:
+        await session.get(url)
+        assert await session.has_url(url)
+        await session.delete_url(url)
+        assert await cache.responses.size() == 0
