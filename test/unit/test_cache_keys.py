@@ -4,14 +4,20 @@ This just contains tests for some extra edge cases not covered elsewhere.
 
 from __future__ import annotations
 
+import tracemalloc
 from copy import copy
 from decimal import Decimal
 from json import dumps
 
 import pytest
+from aiohttp import web
 from multidict import MultiDict
 
+from aiohttp_client_cache.backends import CacheBackend
 from aiohttp_client_cache.cache_keys import create_key
+from aiohttp_client_cache.session import CachedSession
+
+BODY_SIZE = 10 * 1024 * 1024
 
 
 @pytest.mark.parametrize(
@@ -33,7 +39,7 @@ from aiohttp_client_cache.cache_keys import create_key
 def test_normalize_url_params(url, params):
     """All of these variations should produce the same cache key"""
     original_params = copy(params) if params is not None else params
-    cache_key = '9199329f46e4e97e4130e0802545c248e98cc344ebb73aa2bccf556c4a45a619'
+    cache_key = '17ac68009d0c70c25e7a7b1810a89683a84d437b009c0900c02fb2bb5b18c9f5'
     assert create_key('GET', url, params=params) == cache_key
     assert original_params == params  # Make sure we didn't modify the original params object
 
@@ -150,3 +156,84 @@ def test_cache_key_components_do_not_run_together(request_1, request_2):
     assert create_key(
         'POST', 'https://example.com', include_headers=True, **request_1
     ) != create_key('POST', 'https://example.com', include_headers=True, **request_2)
+
+
+@pytest.mark.parametrize(
+    'data_1, data_2',
+    [
+        (b'x', 'x'),
+        ({'a': 1}, 'a=1'),
+        ({'a': 'b&c=d'}, {'a': 'b', 'c': 'd'}),
+        ({}, b''),
+        (b'', ''),
+        ('', None),
+        ({'a': b'x'}, {'a': 'x'}),
+        ({'a': b'x', 'b': 'y'}, {'a': b'x', 'b': b'y'}),
+        ({'a': [1, 2]}, {'a': '[1, 2]'}),
+        ([('a', 'x')], "[('a', 'x')]"),
+    ],
+)
+def test_data_cache_keys_distinguish_bodies(data_1, data_2):
+    assert create_key('POST', 'https://example.com', data=data_1) != create_key(
+        'POST', 'https://example.com', data=data_2
+    )
+
+
+@pytest.mark.parametrize(
+    'data_1, data_2',
+    [
+        (bytearray(b'x'), b'x'),
+        ({'a': 1}, {'a': '1'}),
+        ({'a': '1', 'b': '2'}, {'b': '2', 'a': '1'}),
+        ({'a': [1, 2]}, MultiDict([('a', 1), ('a', 2)])),
+        ({'a': b'x'}, {'a': bytearray(b'x')}),
+    ],
+)
+def test_data_cache_keys_match_equivalent_bodies(data_1, data_2):
+    assert create_key('POST', 'https://example.com', data=data_1) == create_key(
+        'POST', 'https://example.com', data=data_2
+    )
+
+
+@pytest.mark.parametrize(
+    'make_data',
+    [
+        lambda body: body,
+        bytearray,
+        lambda body: {'a': memoryview(body)},
+    ],
+    ids=['bytes', 'bytearray', 'multipart'],
+)
+def test_data_cache_keys_do_not_copy_body(make_data):
+    data = make_data(bytes(BODY_SIZE))
+    tracemalloc.start()
+    try:
+        create_key('POST', 'https://example.com', data=data)
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    assert peak < BODY_SIZE // 10
+
+
+@pytest.mark.asyncio
+@pytest.mark.filterwarnings('ignore:In v4, passing bytes:DeprecationWarning')
+@pytest.mark.parametrize(
+    'data_1, data_2',
+    [
+        ({'a': b'x'}, {'a': 'x'}),
+        ({'a': [1, 2]}, {'a': '[1, 2]'}),
+    ],
+)
+async def test_data_bodies_sent_differently_cache_separately(aiohttp_server, data_1, data_2):
+    async def echo(request):
+        body = '' if request.content_type.startswith('multipart/') else await request.text()
+        return web.Response(text=f'{request.content_type} {body}')
+
+    app = web.Application()
+    app.router.add_post('/', echo)
+    server = await aiohttp_server(app)
+    async with CachedSession(cache=CacheBackend(allowed_methods=['POST'])) as session:
+        response_1 = await session.post(server.make_url('/'), data=data_1)
+        response_2 = await session.post(server.make_url('/'), data=data_2)
+        assert not response_2.from_cache
+        assert await response_1.text() != await response_2.text()
