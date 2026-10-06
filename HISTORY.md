@@ -5,6 +5,7 @@
 - Fixed cache key collisions between distinct JSON request bodies. Cache keys now use the
   configured JSON serializer, including bytes serializers.
 - Fixed cache key collisions between request bodies, such as `data=b'false'` and `json=False`, and between request bodies and headers. Existing cache entries won't be reused after upgrading.
+- Fixed cache key collisions between `data=` bodies that aiohttp sends differently, such as `b'x'` and `'x'`, `{'a': 1}` and `'a=1'`, `{'a': 'b&c=d'}` and `{'a': 'b', 'c': 'd'}`, `{'a': b'x'}` and `{'a': 'x'}`, or `{'a': [1, 2]}` and `{'a': '[1, 2]'}`. Header values are now URL-encoded in cache keys too.
 - Added `CachedSession.has_url()` and `CachedSession.delete_url()`, which create keys like the session's requests: with its JSON serializer and, with `include_headers`, its default headers.
 - Requests with HTTP methods that aren't in `allowed_methods` now skip the cache entirely, so their JSON bodies are no longer serialized for a cache key. Added `CacheBackend.is_method_allowed()`.
 - Added `_ExpandedRequestOptions.refresh` to satisfy Pyright type checking.

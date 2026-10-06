@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from io import IOBase
 from json import dumps
+from operator import itemgetter
 from typing import Any, Union
+from urllib.parse import urlencode
 
 from aiohttp.typedefs import StrOrURL
 from multidict import MultiDict
@@ -41,7 +44,7 @@ def create_key(
     components = [
         method.upper().encode(),
         str(norm_url).encode(),
-        encode_dict(data),
+        *encode_data(data),
         encode_json(json, json_serialize),
     ]
     if include_headers:
@@ -86,6 +89,23 @@ def normalize_url_params(url: StrOrURL, params: RequestParams | None = None) -> 
     return URL(url_normalize(str(url)))
 
 
+def encode_data(data: Any) -> tuple[bytes, bytes | memoryview]:
+    if data is None:
+        return b'', b''
+    if isinstance(data, (bytes, bytearray, memoryview)):
+        return b'bytes', memoryview(data)
+    if isinstance(data, str):
+        return b'str', data.encode()
+    if isinstance(data, Mapping):
+        fields = sorted(data.items(), key=itemgetter(0))
+        if any(isinstance(value, (bytes, bytearray, memoryview, IOBase)) for _, value in fields):
+            return b'multipart', hash_parts(
+                part for name, value in fields for part in (str(name).encode(), *encode_data(value))
+            )
+        return b'form', urlencode(fields, doseq=True).encode()
+    return b'other', str(data).encode()
+
+
 def encode_dict(data: Any) -> bytes:
     if not data:
         return b''
@@ -93,8 +113,7 @@ def encode_dict(data: Any) -> bytes:
         return data
     elif not isinstance(data, Mapping):
         return str(data).encode()
-    item_pairs = [f'{k}={v}' for k, v in sorted((data or {}).items())]
-    return '&'.join(item_pairs).encode()
+    return urlencode(sorted(data.items())).encode()
 
 
 def encode_json(data: Any, serializer: Callable[[Any], str | bytes] = dumps) -> bytes:
