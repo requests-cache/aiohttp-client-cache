@@ -33,7 +33,7 @@ from aiohttp_client_cache.cache_keys import create_key
 def test_normalize_url_params(url, params):
     """All of these variations should produce the same cache key"""
     original_params = copy(params) if params is not None else params
-    cache_key = 'e93c762132a09fb2398beafee0ed2e9f4240ad941e905581631b9ac9e70ab40e'
+    cache_key = '9199329f46e4e97e4130e0802545c248e98cc344ebb73aa2bccf556c4a45a619'
     assert create_key('GET', url, params=params) == cache_key
     assert original_params == params  # Make sure we didn't modify the original params object
 
@@ -136,3 +136,17 @@ def test_json_cache_keys_use_custom_serializer():
     )
     assert decimal_key == create_key('POST', 'https://example.com', json={'a': 1.5})
     assert decimal_key != create_key('POST', 'https://example.com', json={'a': '1.5'})
+
+
+@pytest.mark.parametrize(
+    'request_1, request_2',
+    [
+        ({'data': b'false'}, {'json': False}),
+        ({'data': '"a"'}, {'json': 'a'}),
+        ({'data': b'x=1'}, {'headers': {'x': '1'}}),
+    ],
+)
+def test_cache_key_components_do_not_run_together(request_1, request_2):
+    assert create_key(
+        'POST', 'https://example.com', include_headers=True, **request_1
+    ) != create_key('POST', 'https://example.com', include_headers=True, **request_2)

@@ -86,7 +86,7 @@ configured on supported aiohttp versions. Otherwise, they use `json_serialize`.
 Every non-`None` JSON body is serialized, including bytes accepted by a custom serializer.
 Use `data=` for raw bodies. Top-level field order is ignored for objects with only string keys.
 
-After upgrading, requests with JSON bodies won't reuse cache entries made by older versions.
+After upgrading, requests won't reuse cache entries made by older versions.
 
 ### Status Codes
 
