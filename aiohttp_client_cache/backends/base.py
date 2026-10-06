@@ -95,6 +95,9 @@ class CacheBackend:
     def disabled(self, value):
         return self._disabled.set(value)
 
+    def is_method_allowed(self, method: str) -> bool:
+        return method.upper() in self.allowed_methods
+
     async def is_cacheable(
         self, response: AnyResponse | None, actions: CacheActions | None = None
     ) -> bool:
@@ -104,7 +107,7 @@ class CacheBackend:
 
         cache_criteria = {
             'disabled cache': self.disabled,
-            'disabled method': str(response.method) not in self.allowed_methods,
+            'disabled method': not self.is_method_allowed(str(response.method)),
             'disabled status': response.status not in self.allowed_codes,
             'disabled by filter': not (
                 await self.filter_fn(response)

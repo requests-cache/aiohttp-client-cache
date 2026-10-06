@@ -165,6 +165,25 @@ async def test_session__cookies(mock_request):
 
 
 @patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
+async def test_session__redirect_cookies(mock_request):
+    cache = MagicMock(spec=CacheBackend)
+    redirect = MagicMock(
+        url=URL('https://redirect.com'), cookies=SimpleCookie({'redirect_cookie': 'value'})
+    )
+    response = AsyncMock(
+        is_expired=False, url=URL('https://test.com'), cookies=None, history=[redirect]
+    )
+    cache.request.return_value = response
+
+    async with CachedSession(cache=cache) as session:
+        session.cookie_jar.clear()
+        await session.get('http://test.url')
+        cookies = session.cookie_jar.filter_cookies(URL('https://redirect.com'))
+
+    assert cookies['redirect_cookie'].value == 'value'
+
+
+@patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
 async def test_session__empty_cookies(mock_request):
     """Previous versions didn't set cookies if they were empty. Just make sure it doesn't explode."""
     cache = MagicMock(spec=CacheBackend)

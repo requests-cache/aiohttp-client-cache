@@ -42,7 +42,9 @@ def serialize_bytes(body) -> bytes:
 @pytest.mark.asyncio
 @requires_bytes_serializer
 async def test_session_json_serialize_bytes_is_used_for_cache_key():
-    async with CachedSession(cache=CacheBackend(), json_serialize_bytes=serialize_bytes) as session:
+    async with CachedSession(
+        cache=CacheBackend(allowed_methods=['POST']), json_serialize_bytes=serialize_bytes
+    ) as session:
         key = await request_key(session, json={'at': datetime(2026, 1, 2)})
     assert key == create_key(
         'POST',
@@ -61,7 +63,9 @@ async def test_session_json_serialize_bytes_distinguishes_bodies():
     def serialize(body) -> bytes:
         return b'"tagged"' if isinstance(body, Tagged) else dumps(body).encode()
 
-    async with CachedSession(cache=CacheBackend(), json_serialize_bytes=serialize) as session:
+    async with CachedSession(
+        cache=CacheBackend(allowed_methods=['POST']), json_serialize_bytes=serialize
+    ) as session:
         assert await request_key(session, json=Tagged('x')) != await request_key(session, json='x')
 
 
@@ -91,7 +95,9 @@ async def test_session_json_serialize_bytes_takes_precedence():
         raise AssertionError('The string serializer should not be used')
 
     async with CachedSession(
-        cache=CacheBackend(), json_serialize=serialize, json_serialize_bytes=serialize_bytes
+        cache=CacheBackend(allowed_methods=['POST']),
+        json_serialize=serialize,
+        json_serialize_bytes=serialize_bytes,
     ) as session:
         key = await request_key(session, json={'a': 1})
     assert key == create_key('POST', 'https://example.com', json={'a': 1})
@@ -103,7 +109,9 @@ async def test_session_json_serialize_fallback():
         return dumps(body, default=datetime.isoformat)
 
     body = {'at': datetime(2026, 1, 2)}
-    async with CachedSession(cache=CacheBackend(), json_serialize=serialize) as session:
+    async with CachedSession(
+        cache=CacheBackend(allowed_methods=['POST']), json_serialize=serialize
+    ) as session:
         key = await request_key(session, json=body)
     assert key == create_key('POST', 'https://example.com', json=body, json_serialize=serialize)
 
@@ -177,3 +185,24 @@ async def test_session_url_helpers_use_session_json_serializer(aiohttp_server, s
             assert await session.has_url(url, method='POST', json={'a': 1})
             await session.delete_url(url, method='POST', json={'a': 1})
         assert await cache.responses.size() == 0
+
+
+@pytest.mark.asyncio
+async def test_uncached_method_serializes_json_once(aiohttp_server):
+    async def echo(request):
+        return web.Response(text=await request.text())
+
+    serialized = []
+
+    def serialize(body) -> str:
+        serialized.append(body)
+        return dumps(body)
+
+    app = web.Application()
+    app.router.add_post('/', echo)
+    server = await aiohttp_server(app)
+    async with CachedSession(cache=CacheBackend(), json_serialize=serialize) as session:
+        response = await session.post(server.make_url('/'), json={'a': 1})
+        assert await response.text() == '{"a": 1}'
+        assert not response.from_cache
+    assert serialized == [{'a': 1}]
