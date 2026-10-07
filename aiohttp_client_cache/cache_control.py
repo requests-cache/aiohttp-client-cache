@@ -243,8 +243,7 @@ def convert_to_utc_naive(dt: datetime):
     datetimes to the same format.
     """
     if dt.tzinfo:
-        dt.astimezone(UTC)
-        dt = dt.replace(tzinfo=None)
+        dt = dt.astimezone(UTC).replace(tzinfo=None)
     return dt
 
 
