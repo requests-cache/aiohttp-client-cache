@@ -1,6 +1,6 @@
 # History
 
-## Not released
+## 0.15.0 (2026-10-07)
 
 - Dropped Python 3.9 and 3.10 support due to the EOL.
 - Fixed `expire_after` datetimes with a non-UTC timezone, which lost their UTC offset instead of being converted to UTC.
