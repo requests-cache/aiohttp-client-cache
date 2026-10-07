@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from inspect import Parameter, signature
 from logging import getLogger
-from typing import Callable
 
 from aiohttp_client_cache.backends.base import (  # noqa: F401
     BaseCache,

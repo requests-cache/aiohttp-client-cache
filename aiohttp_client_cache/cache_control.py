@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Mapping
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from fnmatch import fnmatch
 from functools import singledispatch
 from itertools import chain
 from logging import getLogger
-from typing import Any, NoReturn, Union
+from typing import Any, NoReturn
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -33,8 +32,8 @@ REQUEST_CACHE_HEADERS = [
 ]
 RESPONSE_CACHE_HEADERS = ['Cache-Control', 'ETag', 'Expires', 'Age']
 
-CacheDirective = tuple[str, Union[None, int, bool]]
-ExpirationTime = Union[None, int, float, str, datetime, timedelta]
+CacheDirective = tuple[str, None | int | bool]
+ExpirationTime = None | int | float | str | datetime | timedelta
 ExpirationPatterns = dict[str, ExpirationTime]
 logger = getLogger(__name__)
 
@@ -218,25 +217,13 @@ def compose_refresh_headers(
     return conditional_request_supported, refresh_headers
 
 
-if sys.version_info >= (3, 10):
-
-    def parse_http_date(value: str) -> datetime | None:
-        """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
-        try:
-            return parsedate_to_datetime(value)
-        except ValueError:
-            logger.debug(f'Failed to parse timestamp: {value}')
-            return None
-
-else:  # pragma: no cover
-
-    def parse_http_date(value: str) -> datetime | None:
-        """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
-        try:
-            return parsedate_to_datetime(value)
-        except (ValueError, TypeError):
-            logger.debug(f'Failed to parse timestamp: {value}')
-            return None
+def parse_http_date(value: str) -> datetime | None:
+    """Attempt to parse an HTTP (RFC 5322-compatible) timestamp"""
+    try:
+        return parsedate_to_datetime(value)
+    except ValueError:
+        logger.debug(f'Failed to parse timestamp: {value}')
+        return None
 
 
 def split_kv_directive(header_value: str) -> CacheDirective:
@@ -256,7 +243,7 @@ def convert_to_utc_naive(dt: datetime):
     datetimes to the same format.
     """
     if dt.tzinfo:
-        dt.astimezone(timezone.utc)
+        dt.astimezone(UTC)
         dt = dt.replace(tzinfo=None)
     return dt
 
@@ -266,7 +253,7 @@ def convert_to_utc_naive(dt: datetime):
 # changes to request matching logic (i.e., new cache keys).
 def utcnow() -> datetime:
     """Get the current time in UTC, as a timezone-naive datetime"""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 @singledispatch

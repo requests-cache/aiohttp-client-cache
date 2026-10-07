@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
-import sys
 from collections.abc import Mapping
 from datetime import datetime
 from functools import singledispatch
 from http.cookies import SimpleCookie
 from logging import getLogger
-from typing import Any, Optional, Union
+from typing import Any, Self
 from unittest.mock import Mock
 
 import attr
@@ -23,11 +22,6 @@ from multidict import CIMultiDict, CIMultiDictProxy, MultiDict, MultiDictProxy
 from yarl import URL
 
 from aiohttp_client_cache.cache_control import utcnow
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 # CachedResponse attributes to not copy directly from ClientResponse
 EXCLUDE_ATTRS = {
@@ -52,10 +46,10 @@ CACHED_RESPONSE_DEFAULTS = {
     'is_expired': False,
 }
 
-JsonResponse = Optional[dict[str, Any]]
+JsonResponse = dict[str, Any] | None
 DictItems = list[tuple[str, str]]
 LinkItems = list[tuple[str, DictItems]]
-LinkMultiDict = MultiDictProxy[MultiDictProxy[Union[str, URL]]]
+LinkMultiDict = MultiDictProxy[MultiDictProxy[str | URL]]
 
 logger = getLogger(__name__)
 
@@ -305,7 +299,7 @@ class CachedStreamReader(StreamReader):
         self.feed_eof()
 
 
-AnyResponse = Union[ClientResponse, CachedResponse]
+AnyResponse = ClientResponse | CachedResponse
 
 
 @singledispatch

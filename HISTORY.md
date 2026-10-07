@@ -2,6 +2,7 @@
 
 ## Not released
 
+- Dropped Python 3.9 and 3.10 support due to the EOL.
 - Fixed cache key collisions between distinct JSON request bodies. Cache keys now use the
   configured JSON serializer, including bytes serializers.
 - Fixed cache key collisions between request bodies, such as `data=b'false'` and `json=False`, and between request bodies and headers. Existing cache entries won't be reused after upgrading.

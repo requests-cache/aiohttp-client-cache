@@ -13,7 +13,6 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
-from async_timeout import timeout
 from itsdangerous.exc import BadSignature
 from itsdangerous.serializer import Serializer
 from yarl import URL
@@ -153,7 +152,7 @@ class BaseBackendTest:
         An "unclosed ClientSession" warning is expected here, however.
         """
         # Timeout to avoid hanging if the test fails
-        async with timeout(5.0):
+        async with asyncio.timeout(5.0):
             session = await self._init_session()
             await session.get(httpbin('get'))
             del session

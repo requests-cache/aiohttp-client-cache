@@ -7,7 +7,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from io import IOBase
 from json import dumps
 from operator import itemgetter
-from typing import Any, Union
+from typing import Any
 from urllib.parse import urlencode
 
 from aiohttp.typedefs import StrOrURL
@@ -15,7 +15,7 @@ from multidict import MultiDict
 from url_normalize import url_normalize
 from yarl import URL
 
-RequestParams = Union[Mapping, Sequence, str]
+RequestParams = Mapping | Sequence | str
 
 
 def create_key(
