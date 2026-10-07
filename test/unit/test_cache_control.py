@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from contextlib import nullcontext
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from email.utils import format_datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -332,6 +332,10 @@ def test_split_kv_directive(value, expected_output) -> None:
         (
             RANDOM_DATETIME_NOW_UTC.replace(tzinfo=None),
             RANDOM_DATETIME_NOW_UTC.replace(tzinfo=None),
+        ),
+        (
+            datetime(2026, 1, 1, 12, tzinfo=timezone(timedelta(hours=2))),
+            datetime(2026, 1, 1, 10),
         ),
     ],
 )
