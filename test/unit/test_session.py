@@ -257,3 +257,29 @@ async def test_session_url_helpers_include_session_headers(aiohttp_server):
         assert await session.has_url(url)
         await session.delete_url(url)
         assert await cache.responses.size() == 0
+
+
+async def test_session__base_url_in_cache_key(aiohttp_server):
+    base_urls = []
+    for text in ['a', 'b']:
+
+        async def handler(request, text=text):
+            return web.Response(text=text)
+
+        app = web.Application()
+        app.router.add_get('/x', handler)
+        base_urls.append((await aiohttp_server(app)).make_url('/'))
+
+    cache = CacheBackend()
+    for base_url, expected_text in zip(base_urls, ['a', 'b'], strict=True):
+        async with CachedSession(base_url, cache=cache) as session:
+            response = await session.get('/x')
+            assert await response.text() == expected_text
+            assert response.from_cache is False
+            assert await session.has_url('/x')
+            assert await session.has_url(base_url / 'x')
+
+    async with CachedSession(base_urls[0], cache=cache) as session:
+        await session.delete_url('/x')
+        assert not await cache.has_url(base_urls[0] / 'x')
+        assert await cache.has_url(base_urls[1] / 'x')

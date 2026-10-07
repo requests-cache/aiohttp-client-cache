@@ -12,6 +12,7 @@ from weakref import WeakValueDictionary
 
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
+from yarl import URL
 
 from aiohttp_client_cache.backends import CacheBackend, get_valid_kwargs
 from aiohttp_client_cache.cache_control import CacheActions, ExpirationTime, compose_refresh_headers
@@ -77,11 +78,12 @@ class CacheMixin(MIXIN_BASE):
         # Attempt to fetch cached response
         headers = self._prepare_headers(kwargs.get('headers', None))
         kwargs['headers'] = headers
+        url = self._resolve_url(str_or_url)
         key = self.cache.create_key(
-            method, str_or_url, json_serialize=self._cache_json_serialize, **kwargs
+            method, url, json_serialize=self._cache_json_serialize, **kwargs
         )
         actions = self.cache.create_cache_actions(
-            key, str_or_url, expire_after=expire_after, refresh=refresh, **kwargs
+            key, url, expire_after=expire_after, refresh=refresh, **kwargs
         )
 
         if actions.skip_read:
@@ -169,11 +171,21 @@ class CacheMixin(MIXIN_BASE):
 
     async def delete_url(self, url: StrOrURL, method: str = 'GET', **kwargs: Any):
         """Like :py:meth:`.CacheBackend.delete_url`, with keys created like this session's requests"""
-        await self.cache.delete_url(url, method, **self._cache_key_kwargs(**kwargs))
+        await self.cache.delete_url(
+            self._resolve_url(url), method, **self._cache_key_kwargs(**kwargs)
+        )
 
     async def has_url(self, url: StrOrURL, method: str = 'GET', **kwargs: Any) -> bool:
         """Like :py:meth:`.CacheBackend.has_url`, with keys created like this session's requests"""
-        return await self.cache.has_url(url, method, **self._cache_key_kwargs(**kwargs))
+        return await self.cache.has_url(
+            self._resolve_url(url), method, **self._cache_key_kwargs(**kwargs)
+        )
+
+    def _resolve_url(self, str_or_url: StrOrURL) -> URL:
+        url = URL(str_or_url)
+        if self._base_url and not url.is_absolute():
+            return self._base_url.join(url)
+        return url
 
     def _cache_key_kwargs(self, **kwargs: Any) -> dict[str, Any]:
         return {
