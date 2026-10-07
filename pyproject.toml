@@ -54,14 +54,14 @@ dev = [
 
 # Documentation dependencies needed for Readthedocs builds
 docs = [
-    "furo                       >=2025.9",
+    "furo                       >=2025.12",
     "linkify-it-py              >=2.0",
     "markdown-it-py             >=2.2",
     "myst-parser                >=5.0",
     "python-forge               >=18.6",
-    "sphinx                     ~=8.2",
-    "sphinx-automodapi          >=0.18,<0.21",
-    "sphinx-autodoc-typehints   >=2.4",
+    "sphinx                     ~=9.0",
+    "sphinx-automodapi          ~=0.22.0",
+    "sphinx-autodoc-typehints   >=3.6.0",
     "sphinx-copybutton          >=0.5",
     "sphinx-inline-tabs         >=2023.4",
     "sphinxcontrib-apidoc       >=0.3",

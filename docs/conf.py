@@ -42,7 +42,7 @@ intersphinx_mapping = {
     'aioboto3': ('https://aioboto3.readthedocs.io/en/latest/', None),
     'aiohttp': ('https://docs.aiohttp.org/en/stable/', None),
     'aiosqlite': ('https://aiosqlite.omnilib.dev/en/latest/', None),
-    'botocore': ('http://botocore.readthedocs.io/en/latest/', None),
+    'botocore': ('https://botocore.amazonaws.com/v1/documentation/api/latest', None),
     'boto3': ('https://boto3.amazonaws.com/v1/documentation/api/latest', None),
     'pymongo': ('https://pymongo.readthedocs.io/en/stable/', None),
     'python': ('https://docs.python.org/3', None),
