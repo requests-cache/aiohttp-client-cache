@@ -13,7 +13,7 @@ build:
     # Use uv to export optional + documentation dependencies
     post_create_environment:
       - pip install uv
-      - uv export -q --no-dev --group docs --no-emit-project -o docs/requirements.txt
+      - uv export -q --no-dev --group docs --extra all --no-emit-project -o docs/requirements.txt
 python:
   install:
     - method: pip
