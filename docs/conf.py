@@ -1,19 +1,15 @@
 # Sphinx documentation build configuration file
-import sys
-from os.path import abspath, dirname, join
+from importlib.metadata import version as pkg_version
+from pathlib import Path
 
-DOCS_DIR = abspath(dirname(__file__))
-PROJECT_DIR = dirname(DOCS_DIR)
-PACKAGE_DIR = join(PROJECT_DIR, 'aiohttp_client_cache')
-
-# Add project path so we can import our package
-sys.path.insert(0, PROJECT_DIR)
-from aiohttp_client_cache import __version__  # noqa
+DOCS_DIR = Path(__file__).parent.absolute()
+PROJECT_DIR = DOCS_DIR.parent
+PACKAGE_DIR = PROJECT_DIR / 'aiohttp_client_cache'
 
 # General project info
 project = 'aiohttp-client-cache'
 needs_sphinx = '9.0'
-version = release = __version__
+version = release = pkg_version('aiohttp-client-cache')
 
 # General source info
 master_doc = 'index'
@@ -84,7 +80,7 @@ always_document_param_types = True
 
 # Use apidoc to auto-generate rst sources
 apidoc_excluded_paths = ['signatures.py']
-apidoc_module_dir = PACKAGE_DIR
+apidoc_module_dir = str(PACKAGE_DIR)
 apidoc_module_first = True
 apidoc_output_dir = 'modules'
 apidoc_separate_modules = True
