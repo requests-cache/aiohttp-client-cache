@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import inspect
 import re
+from collections.abc import Callable
 from logging import getLogger
-from typing import Callable
 
 AUTOMETHOD_INIT = '.. automethod:: __init__'
 logger = getLogger(__name__)

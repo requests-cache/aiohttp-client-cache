@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import sys
 import warnings
 from asyncio import Lock
 from collections.abc import Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from logging import getLogger
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 from weakref import WeakValueDictionary
 
 from aiohttp import ClientSession
@@ -20,8 +19,9 @@ from aiohttp_client_cache.response import AnyResponse, CachedResponse, set_respo
 from aiohttp_client_cache.signatures import extend_signature
 
 if TYPE_CHECKING:
+    from typing import Unpack
+
     from aiohttp.client import _RequestContextManager, _RequestOptions
-    from typing_extensions import Unpack
 
     class _ExpandedRequestOptions(_RequestOptions, total=False):
         expire_after: ExpirationTime
@@ -33,21 +33,6 @@ else:
     MIXIN_BASE = object
 
 logger = getLogger(__name__)
-
-if sys.version_info >= (3, 10):
-    from contextlib import nullcontext
-else:
-    from contextlib import AbstractAsyncContextManager
-
-    class nullcontext(AbstractAsyncContextManager):
-        async def __aexit__(self, *excinfo):
-            pass
-
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 
 class CacheMixin(MIXIN_BASE):
@@ -222,8 +207,7 @@ class CacheMixin(MIXIN_BASE):
         """Remove all expired responses from the cache"""
         await self.cache.delete_expired_responses()
 
-    # The version check is unnecessary but since aiohttp has done it we're forced into it too.
-    if sys.version_info >= (3, 11) and TYPE_CHECKING:
+    if TYPE_CHECKING:
 
         def get(
             self,

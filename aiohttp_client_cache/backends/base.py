@@ -5,10 +5,10 @@ import inspect
 import pickle
 from abc import ABCMeta, abstractmethod
 from collections import UserDict
-from collections.abc import AsyncIterable, Awaitable, Iterable
+from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from datetime import datetime
 from logging import getLogger
-from typing import Any, Callable, Union
+from typing import Any
 
 from aiohttp import ClientResponse
 from aiohttp.typedefs import StrOrURL
@@ -17,11 +17,8 @@ from aiohttp_client_cache.cache_control import CacheActions, ExpirationPatterns,
 from aiohttp_client_cache.cache_keys import create_key
 from aiohttp_client_cache.response import AnyResponse, CachedResponse
 
-ResponseOrKey = Union[CachedResponse, bytes, str, None]
-_FilterFn = Union[
-    Callable[[AnyResponse], bool],
-    Callable[[AnyResponse], Awaitable[bool]],
-]
+ResponseOrKey = CachedResponse | bytes | str | None
+_FilterFn = Callable[[AnyResponse], bool] | Callable[[AnyResponse], Awaitable[bool]]
 
 logger = getLogger(__name__)
 

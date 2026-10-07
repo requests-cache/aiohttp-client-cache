@@ -62,7 +62,7 @@ nox -e test
 Or to run tests for a specific python version:
 
 ```sh
-nox -e test-3.10
+nox -e test-3.11
 ```
 
 To generate a coverage report:

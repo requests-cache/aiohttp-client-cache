@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest import mock
 
 import pytest
@@ -81,7 +81,7 @@ async def test_is_expired__invalid(aiohttp_client):
     with pytest.raises(AttributeError, match="'str' object has no attribute 'tzinfo'"):
         await fetch_test_response(aiohttp_client, expires='asdf')
     with pytest.raises(UnsupportedExpiresError, match='Expected a naive datetime'):
-        await fetch_test_response(aiohttp_client, expires=datetime.now(timezone.utc))
+        await fetch_test_response(aiohttp_client, expires=datetime.now(UTC))
 
 
 async def test_content_disposition(aiohttp_client):

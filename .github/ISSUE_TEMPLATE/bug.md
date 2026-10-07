@@ -24,5 +24,5 @@ _Is there an existing workaround for this issue?_
 ### Environment
 
 - aiohttp-client-cache version: [e.g. `0.3.0`]
-- Python version: [e.g. `3.9`]
+- Python version: [e.g. `3.13`]
 - Platform: [e.g. Debian 10]
