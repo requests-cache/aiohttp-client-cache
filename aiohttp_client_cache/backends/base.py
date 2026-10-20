@@ -47,6 +47,7 @@ class CacheBackend:
         autoclose: bool = False,
         cache_control: bool = False,
         filter_fn: _FilterFn = lambda r: True,
+        restore_cookies: bool = True,
         **kwargs: Any,
     ):
         """
@@ -64,6 +65,8 @@ class CacheBackend:
             filter_fn: function that takes a :py:class:`aiohttp.ClientResponse` object and
                 returns a boolean indicating whether or not that response should be cached. Will be
                 applied to both new and previously cached responses
+            restore_cookies: Copy cookies from cached responses (and their redirects) into the
+                session's cookie jar on a cache hit 
         """
         self.name = cache_name
         self.expire_after = expire_after
@@ -73,6 +76,7 @@ class CacheBackend:
         self.cache_control = cache_control
         self.filter_fn = filter_fn
         self.autoclose = autoclose
+        self.restore_cookies = restore_cookies
         self._disabled = contextvars.ContextVar('_disabled', default=False)
 
         # Allows multiple redirects or other aliased URLs to point to the same cached response
