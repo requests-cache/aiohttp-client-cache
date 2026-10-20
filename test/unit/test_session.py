@@ -165,6 +165,27 @@ async def test_session__cookies(mock_request):
 
 
 @patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
+async def test_session__cookies_not_restored(mock_request):
+    cache = MagicMock(spec=CacheBackend)
+    cache.restore_cookies = False
+    redirect = MagicMock(
+        url=URL('https://redirect.com'), cookies=SimpleCookie({'redirect_cookie': 'value'})
+    )
+    response = AsyncMock(
+        is_expired=False,
+        url=URL('https://test.com'),
+        cookies=SimpleCookie({'test_cookie': 'value'}),
+        history=[redirect],
+    )
+    cache.request.return_value = response
+
+    async with CachedSession(cache=cache) as session:
+        session.cookie_jar.clear()
+        await session.get('http://test.url')
+        assert len(session.cookie_jar) == 0
+
+
+@patch.object(ClientSession, '_request', return_value=FakeCachedResponse)
 async def test_session__redirect_cookies(mock_request):
     cache = MagicMock(spec=CacheBackend)
     redirect = MagicMock(

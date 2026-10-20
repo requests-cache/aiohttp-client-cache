@@ -323,6 +323,16 @@ responses (on read). Example:
 >>> cache = SQLiteCache(filter_fn=filter_by_size)
 ```
 
+### Cookies
+
+By default, cookies from a cached response (and any redirects in its history) are copied into the
+session's cookie jar on a cache hit, as if the request had been sent. To keep cached responses from
+modifying the active session's cookies, use `restore_cookies=False`:
+
+```python
+>>> cache = SQLiteCache(restore_cookies=False)
+```
+
 ### Library Compatibility
 
 This library works by extending `aiohttp.ClientSession`, and there are other libraries out there
