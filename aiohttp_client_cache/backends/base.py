@@ -66,7 +66,7 @@ class CacheBackend:
                 returns a boolean indicating whether or not that response should be cached. Will be
                 applied to both new and previously cached responses
             restore_cookies: Copy cookies from cached responses (and their redirects) into the
-                session's cookie jar on a cache hit 
+                session's cookie jar on a cache hit
         """
         self.name = cache_name
         self.expire_after = expire_after
