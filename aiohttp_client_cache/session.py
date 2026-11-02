@@ -124,6 +124,8 @@ class CacheMixin(MIXIN_BASE):
                 return set_response_defaults(new_response)
 
     def _restore_cookies(self, response: AnyResponse):
+        if not getattr(self.cache, 'restore_cookies', True):
+            return
         self.cookie_jar.update_cookies(response.cookies or {}, response.url)
         for redirect in response.history:
             self.cookie_jar.update_cookies(redirect.cookies or {}, redirect.url)
